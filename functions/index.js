@@ -39,6 +39,8 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
   return batch.commit();
 });
 
+const { getGeohashRange, geohashForLocation } = require("geofire-common");
+
 /**
  * 2. updateGeohash
  * Trigger: Write en /locations/{uid}.
@@ -47,9 +49,18 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
 exports.updateGeohash = functions.firestore
   .document("locations/{userId}")
   .onWrite(async (change, context) => {
-    // Lógica para calcular geohash (requiere geofire-common o similar)
-    console.log("Updating geohash for user:", context.params.userId);
-    return null;
+    const data = change.after.data();
+    if (!data || !data.lat || !data.lng) return null;
+
+    const geohash = geohashForLocation([data.lat, data.lng]);
+    
+    // Evitar bucles infinitos comparando el geohash actual
+    if (data.geohash === geohash) return null;
+
+    return change.after.ref.update({
+      geohash: geohash,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
   });
 
 /**
@@ -82,8 +93,48 @@ exports.sendMessageNotification = functions.firestore
   .document("chats/{chatId}/messages/{messageId}")
   .onCreate(async (snapshot, context) => {
     const message = snapshot.data();
-    console.log("New message in chat:", context.params.chatId);
-    // Lógica para obtener el receptor y enviar notificación
+    const chatId = context.params.chatId;
+
+    // Obtener información del chat para saber quién es el receptor
+    const chatDoc = await db.collection("chats").doc(chatId).get();
+    const chatData = chatDoc.data();
+    
+    if (!chatData) return null;
+
+    // El receptor es el usuario del chat que NO envió el mensaje
+    const receiverId = chatData.users.find(uid => uid !== message.senderId);
+    if (!receiverId) return null;
+
+    // Obtener el perfil del receptor y el emisor
+    const [receiverDoc, senderDoc] = await Promise.all([
+      db.collection("users").doc(receiverId).get(),
+      db.collection("users").doc(message.senderId).get()
+    ]);
+
+    const receiverData = receiverDoc.data();
+    const senderData = senderDoc.data();
+
+    if (!receiverData || !receiverData.fcmToken) {
+      console.log("Receptor no tiene token FCM registrado.");
+      return null;
+    }
+
+    const payload = {
+      notification: {
+        title: `Nuevo mensaje de ${senderData?.nick || "Alguien"}`,
+        body: message.content,
+        icon: senderData?.fotoUrl || "/favicon.ico",
+        clickAction: `https://gay-meet-app-mvp-26.web.app/chat/${chatId}`
+      }
+    };
+
+    try {
+      await admin.messaging().sendToDevice(receiverData.fcmToken, payload);
+      console.log("Notificación enviada con éxito.");
+    } catch (error) {
+      console.error("Error enviando notificación:", error);
+    }
+
     return null;
   });
 
