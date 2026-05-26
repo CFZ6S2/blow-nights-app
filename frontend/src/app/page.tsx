@@ -11,8 +11,10 @@ export default function Home() {
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
+    } else if (!loading && profile && profile.edad === null) {
+      router.push('/setup-profile');
     }
-  }, [user, loading, router]);
+  }, [user, profile, loading, router]);
 
   if (loading) {
     return (
@@ -22,7 +24,7 @@ export default function Home() {
     );
   }
 
-  if (!user) return null;
+  if (!user || !profile) return null;
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-950 text-white p-8">
@@ -41,14 +43,14 @@ export default function Home() {
       <main className="flex-1 flex flex-col items-center justify-center text-center space-y-6">
         <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-purple-500 shadow-lg shadow-purple-500/20">
           <img 
-            src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}&background=random`} 
+            src={profile.fotoUrl || `https://ui-avatars.com/api/?name=${profile.nick || 'User'}&background=random`} 
             alt="Profile" 
             className="w-full h-full object-cover"
           />
         </div>
         <div>
-          <h2 className="text-3xl font-bold">¡Hola, {user.displayName || user.phoneNumber}!</h2>
-          <p className="text-slate-400 mt-2">Has iniciado sesión correctamente.</p>
+          <h2 className="text-3xl font-bold">¡Hola, {profile.nick}!</h2>
+          <p className="text-slate-400 mt-2">Estás en modo: <span className="text-purple-400 font-bold capitalize">{profile.rol}</span> buscando <span className="text-pink-400 font-bold">{profile.intencion === 'quedar' ? 'quedar ahora' : 'conocer gente'}</span>.</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl mt-8">

@@ -9,7 +9,8 @@ import {
   RecaptchaVerifier,
   signInWithPhoneNumber
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 
 const AuthContext = createContext({});
 
@@ -17,19 +18,31 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUser(user);
+        
+        // Escuchar cambios en el perfil de Firestore
+        const unsubscribeProfile = onSnapshot(doc(db, 'users', user.uid), (doc) => {
+          if (doc.exists()) {
+            setProfile(doc.data());
+          }
+          setLoading(false);
+        });
+
+        return () => unsubscribeProfile();
       } else {
         setUser(null);
+        setProfile(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
 
   const loginWithGoogle = async () => {
@@ -51,18 +64,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   const setupRecaptcha = (containerId) => {
-    if (!window.recaptchaVerifier) {
+    if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
         'size': 'invisible',
-        'callback': (response) => {
-          // reCAPTCHA solved, allow signInWithPhoneNumber.
-        }
+        'callback': () => {}
       });
     }
   };
 
   const loginWithPhone = async (phoneNumber) => {
     try {
+      setupRecaptcha('recaptcha-container');
       const appVerifier = window.recaptchaVerifier;
       const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
       return confirmationResult;
@@ -73,7 +85,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loginWithGoogle, loginWithPhone, logout, setupRecaptcha, loading }}>
+    <AuthContext.Provider value={{ user, profile, loginWithGoogle, loginWithPhone, logout, setupRecaptcha, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );
