@@ -1,0 +1,22 @@
+{
+  "name": "Gay Meet App",
+  "short_name": "GayMeet",
+  "description": "Conoce chicos cerca de ti. Mapa, chat y encuentros rápidos.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#8B5CF6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
