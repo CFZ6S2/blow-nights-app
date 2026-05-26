@@ -138,25 +138,100 @@ exports.sendMessageNotification = functions.firestore
     return null;
   });
 
+const stripe = require("stripe")(functions.config().stripe.secret_key);
+
 /**
  * 5. createCheckoutSession
  * Trigger: Callable Function (onCall).
- * Acción: Crea sesión de Stripe Checkout.
+ * Acción: Crea sesión de Stripe Checkout para suscripción Premium.
  */
 exports.createCheckoutSession = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Debes estar logueado.");
   }
-  // Lógica de Stripe
-  return { sessionId: "CHECKOUT_SESSION_ID" };
+
+  const { priceId } = data;
+  const uid = context.auth.uid;
+  const email = context.auth.token.email;
+
+  try {
+    // 1. Obtener o crear el cliente de Stripe
+    const subDoc = await db.collection("subscriptions").doc(uid).get();
+    let customerId = subDoc.exists ? subDoc.data().stripeCustomerId : null;
+
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: email,
+        metadata: { firebaseUID: uid }
+      });
+      customerId = customer.id;
+      await db.collection("subscriptions").doc(uid).set({
+        stripeCustomerId: customerId,
+        status: "incomplete"
+      }, { merge: true });
+    }
+
+    // 2. Crear la sesión de Checkout
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ["card"],
+      line_items: [{ price: priceId, quantity: 1 }],
+      mode: "subscription",
+      success_url: `${data.origin}/premium?success=true`,
+      cancel_url: `${data.origin}/premium?canceled=true`,
+      metadata: { firebaseUID: uid }
+    });
+
+    return { sessionId: session.id, url: session.url };
+  } catch (error) {
+    console.error("Stripe Error:", error);
+    throw new functions.https.HttpsError("internal", error.message);
+  }
 });
 
 /**
  * 6. stripeWebhook
  * Trigger: HTTP.
- * Acción: Procesa eventos de Stripe.
+ * Acción: Procesa eventos de Stripe (pago éxito, suscripción borrada, etc).
  */
 exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
-  // Lógica de Webhook
-  res.status(200).send("Webhook received");
+  const sig = req.headers["stripe-signature"];
+  const endpointSecret = functions.config().stripe.webhook_secret;
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
+  } catch (err) {
+    console.error("Webhook Error:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  const session = event.data.object;
+  const firebaseUID = session.metadata ? session.metadata.firebaseUID : null;
+
+  switch (event.type) {
+    case "checkout.session.completed":
+      if (firebaseUID) {
+        await db.collection("users").doc(firebaseUID).update({ premium: true });
+        await db.collection("subscriptions").doc(firebaseUID).update({
+          status: "active",
+          subscriptionId: session.subscription,
+          renewalDate: admin.firestore.FieldValue.serverTimestamp() // Stripe enviará la fecha real en otros eventos
+        });
+      }
+      break;
+    case "customer.subscription.deleted":
+      const customer = await stripe.customers.retrieve(session.customer);
+      const uid = customer.metadata.firebaseUID;
+      if (uid) {
+        await db.collection("users").doc(uid).update({ premium: false });
+        await db.collection("subscriptions").doc(uid).update({ status: "canceled" });
+      }
+      break;
+    default:
+      console.log(`Unhandled event type ${event.type}`);
+  }
+
+  res.json({ received: true });
 });

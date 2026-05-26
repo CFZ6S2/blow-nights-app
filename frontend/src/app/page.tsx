@@ -68,11 +68,23 @@ export default function Home() {
             <h3 className="font-bold">Chats</h3>
             <p className="text-[10px] text-slate-500 mt-1">Mensajes pendientes</p>
           </Link>
-          <div className="bg-white/5 p-5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all cursor-pointer group text-left">
-            <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">⭐</div>
-            <h3 className="font-bold">Premium</h3>
-            <p className="text-[10px] text-slate-500 mt-1">Ver planes</p>
-          </div>
+          <Link 
+            href="/premium"
+            className={`bg-white/5 p-5 rounded-3xl border ${profile?.premium ? 'border-yellow-500/30 bg-yellow-500/5' : 'border-white/10'} hover:bg-white/10 transition-all cursor-pointer group text-left relative overflow-hidden`}
+          >
+            {profile?.premium && (
+              <div className="absolute top-0 right-0 bg-yellow-500 text-slate-950 text-[8px] font-black px-2 py-0.5 rounded-bl-lg uppercase">
+                VIP
+              </div>
+            )}
+            <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">
+              {profile?.premium ? '👑' : '⭐'}
+            </div>
+            <h3 className="font-bold">{profile?.premium ? 'Mi Cuenta VIP' : 'Premium'}</h3>
+            <p className="text-[10px] text-slate-500 mt-1">
+              {profile?.premium ? 'Gestión activa' : 'Ver planes'}
+            </p>
+          </Link>
         </div>
       </main>
     </div>
