@@ -1,13 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/lib/firebase';
-import { loadStripe } from '@stripe/stripe-js';
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || 'pk_test_placeholder');
 
 export default function PremiumPage() {
   const { user, profile, loading } = useAuth();
@@ -15,28 +12,27 @@ export default function PremiumPage() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleSubscribe = async (priceId) => {
+  const handleSubscribe = async (planName) => {
     setIsSubmitting(true);
     setError('');
 
     try {
-      const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
-      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      // MODO DEMO: En lugar de Stripe, actualizamos directamente el perfil
+      const { setDoc, doc } = await import('firebase/firestore');
+      const { db } = await import('@/lib/firebase');
       
-      const response = await createCheckoutSession({ 
-        priceId, 
-        origin 
-      });
-
-      const { url } = response.data;
-      if (url) {
-        window.location.href = url;
-      } else {
-        throw new Error('No se pudo generar la sesión de Stripe');
-      }
+      await setDoc(doc(db, 'users', user.uid), { 
+        premium: true,
+        plan: planName,
+        premiumSince: new Date()
+      }, { merge: true });
+      
+      // Feedback táctil y redirección suave
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([50, 30, 50]);
+      router.push('/');
     } catch (err) {
-      console.error("Error creating checkout session", err);
-      setError('Hubo un error al conectar con Stripe. Inténtalo de nuevo.');
+      console.error("Error activating premium demo", err);
+      setError('Hubo un error al activar tu suscripción. Inténtalo de nuevo.');
     } finally {
       setIsSubmitting(false);
     }
@@ -57,10 +53,24 @@ export default function PremiumPage() {
 
       <main className="max-w-4xl mx-auto w-full space-y-12">
         <div className="text-center space-y-4">
-          <h2 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600">
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="inline-block bg-gradient-to-r from-fuchsia-600 to-indigo-600 px-6 py-2 rounded-full mb-4 shadow-[0_0_30px_rgba(217,70,239,0.3)]"
+          >
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">🔥 Oferta de Lanzamiento</span>
+          </motion.div>
+          <h2 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 leading-tight">
             Desbloquea todo el potencial
           </h2>
-          <p className="text-slate-400 text-lg">Únete a la comunidad VIP y disfruta de ventajas exclusivas.</p>
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-[2rem] max-w-lg mx-auto border-dashed border-fuchsia-500/50">
+            <p className="text-slate-200 text-sm font-bold">
+              ¡Estamos de celebración! 🎉
+            </p>
+            <p className="text-slate-400 text-xs mt-2">
+              Los <span className="text-fuchsia-400 font-black">primeros 1.000 usuarios</span> que se registren obtendrán el plan <span className="text-yellow-500 font-black">PREMIUM GRATIS</span> para siempre.
+            </p>
+          </div>
         </div>
 
         {error && (
@@ -82,57 +92,63 @@ export default function PremiumPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
             {/* Plan Mensual */}
-            <div className="bg-white/5 border border-white/10 p-8 rounded-3xl flex flex-col space-y-6 relative overflow-hidden group hover:border-purple-500/50 transition-all">
+            <motion.div 
+              whileHover={{ y: -10 }}
+              className="bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-[2.5rem] flex flex-col space-y-6 relative overflow-hidden group hover:border-fuchsia-500/50 transition-all shadow-xl"
+            >
               <div className="space-y-2">
-                <h3 className="text-xl font-bold">Mensual</h3>
+                <h3 className="text-xl font-black uppercase tracking-widest text-slate-400">Mensual</h3>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black">9,99€</span>
-                  <span className="text-slate-500">/mes</span>
+                  <span className="text-5xl font-black">9,99€</span>
+                  <span className="text-slate-500 text-xs font-black">/MES</span>
                 </div>
               </div>
-              <ul className="space-y-3 text-sm text-slate-400">
-                <li className="flex items-center gap-2">✅ Sin publicidad</li>
-                <li className="flex items-center gap-2">✅ Ver quién te visitó</li>
-                <li className="flex items-center gap-2">✅ Filtros avanzados</li>
-                <li className="flex items-center gap-2">✅ Modo incógnito</li>
+              <ul className="space-y-4 text-xs font-bold text-slate-400">
+                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> Sin publicidad</li>
+                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> Ver quién te visitó</li>
+                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> Filtros avanzados</li>
+                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> Modo incógnito</li>
               </ul>
               <button
                 disabled={isSubmitting}
                 onClick={() => handleSubscribe('price_monthly_placeholder')}
-                className="w-full bg-white text-black font-bold py-4 rounded-2xl hover:bg-slate-200 transition-all"
+                className="w-full bg-white text-black font-black py-5 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all uppercase tracking-widest text-[10px]"
               >
-                Suscribirme
+                Elegir este plan
               </button>
-            </div>
+            </motion.div>
 
             {/* Plan Anual (Más popular) */}
-            <div className="bg-gradient-to-br from-purple-900/40 to-indigo-900/40 border-2 border-purple-500 p-8 rounded-3xl flex flex-col space-y-6 relative overflow-hidden group transform scale-105 shadow-2xl shadow-purple-500/20">
-              <div className="absolute top-0 right-0 bg-purple-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase">
+            <motion.div 
+              whileHover={{ y: -10 }}
+              className="bg-gradient-to-br from-indigo-600/20 to-fuchsia-600/20 backdrop-blur-xl border-2 border-fuchsia-500 p-8 rounded-[2.5rem] flex flex-col space-y-6 relative overflow-hidden group shadow-[0_20px_50px_rgba(217,70,239,0.2)]"
+            >
+              <div className="absolute top-0 right-0 bg-fuchsia-500 text-white text-[10px] font-black px-4 py-2 rounded-bl-2xl uppercase tracking-widest">
                 Ahorra 40%
               </div>
               <div className="space-y-2">
-                <h3 className="text-xl font-bold text-purple-400">Anual</h3>
+                <h3 className="text-xl font-black uppercase tracking-widest text-fuchsia-400">Anual</h3>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black">69,99€</span>
-                  <span className="text-slate-500">/año</span>
+                  <span className="text-5xl font-black">69,99€</span>
+                  <span className="text-slate-500 text-xs font-black">/AÑO</span>
                 </div>
               </div>
-              <ul className="space-y-3 text-sm text-slate-300">
-                <li className="flex items-center gap-2 font-medium text-white">⭐ Todo lo del plan mensual</li>
-                <li className="flex items-center gap-2">✅ 3 Boosts al mes</li>
-                <li className="flex items-center gap-2">✅ Insignia VIP</li>
-                <li className="flex items-center gap-2">✅ Soporte prioritario</li>
+              <ul className="space-y-4 text-xs font-bold text-white/80">
+                <li className="flex items-center gap-3 font-black text-fuchsia-400"><span className="material-icons text-sm">stars</span> Todo lo del plan mensual</li>
+                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> 3 Boosts al mes</li>
+                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> Insignia VIP</li>
+                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> Soporte prioritario</li>
               </ul>
               <button
                 disabled={isSubmitting}
                 onClick={() => handleSubscribe('price_yearly_placeholder')}
-                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-4 rounded-2xl hover:opacity-90 transition-all shadow-lg"
+                className="w-full bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white font-black py-5 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-fuchsia-500/20"
               >
-                Elegir Plan Anual
+                Activar Plan Anual
               </button>
-            </div>
+            </motion.div>
           </div>
         )}
 

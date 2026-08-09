@@ -8,10 +8,16 @@
 - `rol`: "activo" | "pasivo" | "versátil"
 - `intencion`: "conocer" | "quedar"
 - `fotoUrl`: string
+- `extraPhotos`: string[]
+- `bio`: string
+- `altura`: number | null
+- `peso`: number | null
+- `complexion`: "delgado" | "normal" | "musculado" | "corpulento" | null
 - `online`: boolean
 - `lastSeen`: timestamp
 - `premium`: boolean
 - `disponibleHasta`: timestamp | null
+- `needsUpdate`: boolean
 
 ### `/locations/{userId}`
 - `lat`: number

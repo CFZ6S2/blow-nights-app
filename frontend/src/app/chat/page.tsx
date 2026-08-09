@@ -6,6 +6,7 @@ import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ChatSkeleton } from '@/components/Skeleton';
 
 export default function ChatListPage() {
   const { user, loading: authLoading } = useAuth();
@@ -22,28 +23,54 @@ export default function ChatListPage() {
       orderBy('lastMessageAt', 'desc')
     );
 
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const chatsData = [];
-      for (const d of snapshot.docs) {
-        const data = d.data();
-        const otherId = data.users.find(uid => uid !== user.uid);
-        const otherDoc = await getDoc(doc(db, 'users', otherId));
-        chatsData.push({
-          id: d.id,
-          ...data,
-          otherUser: otherDoc.data()
-        });
+    const unsubscribe = onSnapshot(q, 
+      async (snapshot) => {
+        // Obtener bloqueos
+        const { getDocs, query, collection, where } = await import('firebase/firestore');
+        const blocksSnap = await getDocs(query(collection(db, 'blocks'), where('blockerId', '==', user.uid)));
+        const blockedIds = blocksSnap.docs.map(doc => doc.data().blockedId);
+
+        const chatsData = [];
+        for (const d of snapshot.docs) {
+          const data = d.data();
+          const otherId = data.users.find(uid => uid !== user.uid);
+          
+          // Ocultar si está bloqueado
+          if (blockedIds.includes(otherId)) continue;
+
+          const otherDoc = await getDoc(doc(db, 'users', otherId));
+          chatsData.push({
+            id: d.id,
+            ...data,
+            otherUser: otherDoc.data()
+          });
+        }
+        setChats(chatsData);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Chat list snapshot error", error);
+        setLoading(false);
       }
-      setChats(chatsData);
-      setLoading(false);
-    });
+    );
 
     return () => unsubscribe();
   }, [user]);
 
   if (authLoading || loading) return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-950">
-      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-purple-500"></div>
+    <div className="flex flex-col min-h-screen bg-slate-950 text-white p-4">
+      <header className="py-6 px-4 flex justify-between items-center opacity-40">
+        <div className="w-10 h-10 rounded-full bg-white/5" />
+        <h1 className="text-2xl font-bold">Mis Mensajes</h1>
+        <div className="w-10" />
+      </header>
+      <div className="space-y-3 max-w-2xl mx-auto w-full">
+        <ChatSkeleton />
+        <ChatSkeleton />
+        <ChatSkeleton />
+        <ChatSkeleton />
+        <ChatSkeleton />
+      </div>
     </div>
   );
 
@@ -70,7 +97,7 @@ export default function ChatListPage() {
           chats.map((chat) => (
             <Link 
               key={chat.id} 
-              href={`/chat/${chat.id}`}
+              href={`/chat/detail?id=${chat.id}`}
               className="flex items-center gap-4 p-4 bg-white/5 border border-white/5 rounded-3xl hover:bg-white/10 transition-all group"
             >
               <div className="relative">
