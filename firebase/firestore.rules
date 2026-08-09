@@ -28,7 +28,10 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if request.auth != null && notBlocked(userId);
+      // get() can safely check the blocks collection per-document; list queries cannot
+      // (Firestore can't resolve a concatenated exists() path during query-safety analysis).
+      allow get: if request.auth != null && notBlocked(userId);
+      allow list: if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == userId && safeFields() && validAge();
       allow update: if isAdmin() || (request.auth != null && request.auth.uid == userId && safeFields() && validAge());
     }
