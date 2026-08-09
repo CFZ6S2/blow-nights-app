@@ -9,17 +9,28 @@ service cloud.firestore {
       return !exists(/databases/$(database)/documents/blocks/$(userId + '_' + request.auth.uid));
     }
 
+    // A client may include isAdmin/premium in a write (the app always echoes them),
+    // but the values must be truthful: isAdmin must match the real admin email,
+    // and premium may only be set to a value the user already had (or true if admin).
+    function safeFields() {
+      let d = request.resource.data;
+      let claimedAdmin = ('isAdmin' in d) && d.isAdmin == true;
+      let claimedPremium = ('premium' in d) && d.premium == true;
+      let existingPremium = resource != null && ('premium' in resource.data) && resource.data.premium == true;
+      return (!claimedAdmin || isAdmin())
+             && (!claimedPremium || isAdmin() || existingPremium);
+    }
+
+    // 'edad' (age) is nullable until the user completes setup-profile; once set, must be an adult.
+    function validAge() {
+      let d = request.resource.data;
+      return !('edad' in d) || d.edad == null || (d.edad is int && d.edad >= 18);
+    }
+
     match /users/{userId} {
       allow read: if request.auth != null && notBlocked(userId);
-      allow create: if request.auth != null && request.auth.uid == userId
-                    && !('premium' in request.resource.data)
-                    && !('isAdmin' in request.resource.data)
-                    && request.resource.data.age is int
-                    && request.resource.data.age >= 18;
-      allow update: if isAdmin()
-                    || (request.auth != null && request.auth.uid == userId
-                        && !('premium' in request.resource.data && request.resource.data.premium != resource.data.premium)
-                        && !('isAdmin' in request.resource.data));
+      allow create: if request.auth != null && request.auth.uid == userId && safeFields() && validAge();
+      allow update: if isAdmin() || (request.auth != null && request.auth.uid == userId && safeFields() && validAge());
     }
 
     match /locations/{userId} {

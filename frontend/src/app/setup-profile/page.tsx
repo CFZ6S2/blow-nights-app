@@ -93,6 +93,10 @@ export default function SetupProfilePage() {
       setError('Por favor, rellena los datos básicos y sube una foto principal.');
       return;
     }
+    if (parseInt(edad) < 18) {
+      setError('Debes ser mayor de 18 años para usar la aplicación.');
+      return;
+    }
 
     setIsSubmitting(true);
     setError('');
@@ -273,6 +277,7 @@ export default function SetupProfilePage() {
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Edad</label>
                     <input
                       type="number"
+                      min="18"
                       value={edad}
                       onChange={(e) => setEdad(e.target.value)}
                       placeholder="25"
