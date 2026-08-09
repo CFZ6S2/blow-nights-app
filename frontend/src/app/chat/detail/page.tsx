@@ -12,6 +12,7 @@ import ImageModal from '@/components/ImageModal';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
+import { calculateDistance } from '@/lib/geo';
 
 export default function ChatDetailPage() {
   const searchParams = useSearchParams();
@@ -21,7 +22,7 @@ export default function ChatDetailPage() {
   const { blockUser, reportUser } = useSafeActions();
   const { uploadFile, uploading, progress } = useMedia();
   const fileInputRef = useRef(null);
-  
+
   const [newMessage, setNewMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -33,18 +34,6 @@ export default function ChatDetailPage() {
   const router = useRouter();
   const [isNearBottom, setIsNearBottom] = useState(true);
   const [showOptions, setShowOptions] = useState(false);
-
-  function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return (R * c).toFixed(1);
-  }
 
   const triggerHaptic = (intensity = 10) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {

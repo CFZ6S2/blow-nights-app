@@ -11,19 +11,10 @@ import Skeleton from '@/components/Skeleton';
 import { useRouter } from 'next/navigation';
 import ProfileOverlay from './ProfileOverlay';
 
+import { calculateDistance } from '@/lib/geo';
+
 // Cambiamos a OpenFreeMap para mayor robustez y velocidad
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/dark";
-
-// Haversine distance formula (returns km)
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): string => {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a = Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-    Math.sin(dLon / 2) ** 2;
-  return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
-};
 
 // Componente de Marcador Memoizado para máximo rendimiento
 const UserMarker = memo(({ u, onClick, index }: { u: any, onClick: (id: string) => void, index: number }) => {

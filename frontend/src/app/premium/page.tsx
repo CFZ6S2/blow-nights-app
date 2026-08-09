@@ -17,22 +17,20 @@ export default function PremiumPage() {
     setError('');
 
     try {
-      // MODO DEMO: En lugar de Stripe, actualizamos directamente el perfil
-      const { setDoc, doc } = await import('firebase/firestore');
-      const { db } = await import('@/lib/firebase');
-      
-      await setDoc(doc(db, 'users', user.uid), { 
-        premium: true,
-        plan: planName,
-        premiumSince: new Date()
-      }, { merge: true });
-      
-      // Feedback táctil y redirección suave
-      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([50, 30, 50]);
-      router.push('/');
+      const { httpsCallable } = await import('firebase/functions');
+      const { functions } = await import('@/lib/firebase');
+
+      const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
+      const { data } = await createCheckoutSession({ plan: planName });
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        setError('No se pudo crear la sesión de pago.');
+      }
     } catch (err) {
-      console.error("Error activating premium demo", err);
-      setError('Hubo un error al activar tu suscripción. Inténtalo de nuevo.');
+      console.error("Error creating checkout session", err);
+      setError('Hubo un error al iniciar el pago. Inténtalo de nuevo.');
     } finally {
       setIsSubmitting(false);
     }

@@ -18,7 +18,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
       try {
         const q = query(collection(db, 'users'), where('online', '==', true), limit(12));
         const snapshot = await getDocs(q);
-        setOnlineCount(snapshot.size + 42);
+        setOnlineCount(snapshot.size);
         setRecentProfiles(snapshot.docs.map(doc => doc.data().fotoUrl).filter(Boolean));
       } catch (err) {
         // Silently ignore permission errors for unauthenticated users

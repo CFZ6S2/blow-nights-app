@@ -234,8 +234,8 @@ exports.sendMatchNotification = onDocumentCreated("matches/{matchId}", async (ev
 /**
  * 9. sendVisitNotification
  */
-exports.sendVisitNotification = onDocumentWritten("visits/{visitId}", async (event) => {
-    const visitData = event.data?.after?.data();
+exports.sendVisitNotification = onDocumentCreated("visits/{visitId}", async (event) => {
+    const visitData = event.data?.data();
     if (!visitData) return null;
 
     const receiverDoc = await db.collection("users").doc(visitData.visitedId).get();

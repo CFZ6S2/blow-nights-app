@@ -133,15 +133,36 @@ export const AuthProvider = ({ children }) => {
   const deleteAccount = async () => {
     if (!user) return;
     try {
-      const { deleteDoc, doc } = await import('firebase/firestore');
-      
-      // 1. Borrar datos de Firestore
-      await deleteDoc(doc(db, 'users', user.uid));
-      
-      // 2. Borrar cuenta de Auth
+      const { deleteDoc, doc, collection, query, where, getDocs } = await import('firebase/firestore');
+      const { ref, listAll, deleteObject } = await import('firebase/storage');
+      const { storage } = await import('@/lib/firebase');
+      const uid = user.uid;
+
+      const deleteMatchingDocs = async (col, field) => {
+        const q = query(collection(db, col), where(field, '==', uid));
+        const snap = await getDocs(q);
+        await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+      };
+
+      await Promise.all([
+        deleteMatchingDocs('likes', 'fromId'),
+        deleteMatchingDocs('likes', 'toId'),
+        deleteMatchingDocs('visits', 'visitorId'),
+        deleteMatchingDocs('visits', 'visitedId'),
+        deleteMatchingDocs('blocks', 'blockerId'),
+        deleteMatchingDocs('blocks', 'blockedId'),
+        deleteDoc(doc(db, 'locations', uid)),
+        deleteDoc(doc(db, 'verifications', uid)),
+      ]);
+
+      try {
+        const storageRef = ref(storage, `profilePictures/${uid}`);
+        const fileList = await listAll(storageRef);
+        await Promise.all(fileList.items.map(item => deleteObject(item)));
+      } catch {}
+
+      await deleteDoc(doc(db, 'users', uid));
       await deleteUser(user);
-      
-      console.log("Account deleted successfully");
     } catch (error) {
       console.error("Error deleting account:", error);
       if (error.code === 'auth/requires-recent-login') {
