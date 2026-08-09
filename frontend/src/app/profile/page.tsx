@@ -364,7 +364,6 @@ export default function MyProfilePage() {
             {allPhotos.length < 6 && (
               <Link 
                 href="/setup-profile"
-                prefetch={false}
                 className="aspect-square rounded-2xl bg-white/5 border border-dashed border-white/20 flex flex-col items-center justify-center gap-1 text-slate-500 hover:bg-white/10 transition-all"
               >
                 <span className="material-icons text-xl">add_a_photo</span>
@@ -439,7 +438,6 @@ export default function MyProfilePage() {
               <Link 
                 key={i}
                 href={item.href}
-                prefetch={false}
                 className="w-full p-5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl flex items-center justify-between group hover:bg-white/10 transition-all"
               >
                 {content}

@@ -3,10 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
-import MainMap from '@/components/Map';
 import LandingPage from '@/components/LandingPage';
 import Skeleton from '@/components/Skeleton';
+
+// maplibre-gl es pesado; se difiere para no bloquear el primer render de la página.
+const MainMap = dynamic(() => import('@/components/Map'), {
+  ssr: false,
+  loading: () => <Skeleton className="w-full h-[70vh] rounded-[2.5rem]" />,
+});
 
 export default function Home() {
   const { user, profile, isAdmin, loading, logout } = useAuth();
@@ -108,9 +114,8 @@ export default function Home() {
         
         {/* Acciones Rápidas */}
         <div className="grid grid-cols-2 gap-4">
-          <Link 
+          <Link
             href="/chat"
-            prefetch={false}
             className="bg-white/5 p-5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all cursor-pointer group text-left"
           >
             <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">💬</div>
@@ -118,9 +123,8 @@ export default function Home() {
             <p className="text-[10px] text-slate-500 mt-1">Mensajes pendientes</p>
           </Link>
 
-          <Link 
+          <Link
             href="/visits"
-            prefetch={false}
             className="bg-white/5 p-5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all cursor-pointer group text-left"
           >
             <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">👀</div>
