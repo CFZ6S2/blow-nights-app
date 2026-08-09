@@ -155,8 +155,8 @@ exports.sendLikeNotification = onDocumentCreated("likes/{likeId}", async (event)
     if (!likeData || likeData.isMatch) return null;
 
     const [receiverDoc, senderDoc] = await Promise.all([
-      db.collection("users").doc(likeData.likedId).get(),
-      db.collection("users").doc(likeData.senderId).get()
+      db.collection("users").doc(likeData.toId).get(),
+      db.collection("users").doc(likeData.fromId).get()
     ]);
 
     const receiverData = receiverDoc.data();
@@ -172,7 +172,7 @@ exports.sendLikeNotification = onDocumentCreated("likes/{likeId}", async (event)
       },
       data: {
         type: "like",
-        senderId: likeData.senderId,
+        senderId: likeData.fromId,
         click_action: "https://gay-meet-app-mvp-26.web.app/visits"
       }
     };
