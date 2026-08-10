@@ -34,8 +34,21 @@ export const AuthProvider = ({ children }) => {
     // Registro de Service Worker para PWA
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(err => {
+        navigator.serviceWorker.register('/sw.js').then((registration) => {
+          // Fuerza la comprobación de una versión nueva del SW en cada carga,
+          // para que los usuarios con una versión vieja instalada la reciban pronto.
+          registration.update().catch(() => {});
+        }).catch(err => {
           // ignore
+        });
+
+        // Cuando el nuevo Service Worker toma el control, recarga una vez
+        // para que el usuario obtenga el bundle actualizado automáticamente.
+        let reloaded = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (reloaded) return;
+          reloaded = true;
+          window.location.reload();
         });
       });
     }
