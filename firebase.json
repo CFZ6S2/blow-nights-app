@@ -33,15 +33,21 @@
     ],
     "headers": [
       {
-        "source": "/manifest.json",
+        "source": "**",
         "headers": [
-          { "key": "Cache-Control", "value": "no-cache" }
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
         ]
       },
       {
-        "source": "/sw.js",
+        "source": "/_next/static/**",
         "headers": [
-          { "key": "Cache-Control", "value": "no-cache" }
+          { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        ]
+      },
+      {
+        "source": "/icons/**",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=604800" }
         ]
       }
     ]
