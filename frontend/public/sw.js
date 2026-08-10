@@ -34,8 +34,15 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Network-first: siempre intenta traer la versión más reciente (HTML, JS con hash, etc.).
-  // Solo cae al cache (para soporte offline) si la red falla.
+  // Las navegaciones (HTML) ya llevan Cache-Control: no-store desde el hosting;
+  // dejamos que el navegador las gestione directamente en vez de duplicar la lógica aquí.
+  if (request.mode === 'navigate') {
+    return;
+  }
+
+  // Network-first para el resto de assets: intenta la red primero y cae al cache
+  // (soporte offline) solo si la red falla y hay algo cacheado; nunca deja la
+  // respuesta sin resolver, que rompía el fetch con "Failed to convert value to 'Response'".
   event.respondWith(
     fetch(request)
       .then(response => {
@@ -45,6 +52,8 @@ self.addEventListener('fetch', event => {
         }
         return response;
       })
-      .catch(() => caches.match(request))
+      .catch(() =>
+        caches.match(request).then(cached => cached || Response.error())
+      )
   );
 });

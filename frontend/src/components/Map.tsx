@@ -306,6 +306,7 @@ export default function MainMap() {
   };
 
   const filteredUsers = usersNearby.filter((u) => {
+    if (typeof u.lat !== 'number' || typeof u.lng !== 'number' || Number.isNaN(u.lat) || Number.isNaN(u.lng)) return false;
     if (u.edad < ageRange[0] || u.edad > ageRange[1]) return false;
     if (roleFilter && u.rol !== roleFilter) return false;
     if (intentionFilter && u.intencion !== intentionFilter) return false;
