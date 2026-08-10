@@ -21,7 +21,18 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const functions = getFunctions(app);
-export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
+// getMessaging() throws synchronously in browsers/webviews that lack the
+// required APIs (e.g. in-app browsers like WhatsApp/Instagram, some iOS
+// contexts). Guard it so an unsupported environment doesn't crash the app.
+let messagingInstance = null;
+if (typeof window !== 'undefined') {
+  try {
+    messagingInstance = getMessaging(app);
+  } catch (err) {
+    console.warn('Firebase Messaging not supported in this browser:', err?.message);
+  }
+}
+export const messaging = messagingInstance;
 
 export const analytics = typeof window !== 'undefined' ? 
   isSupported().then(supported => supported ? getAnalytics(app) : null) : 
