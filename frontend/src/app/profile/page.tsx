@@ -316,20 +316,22 @@ export default function MyProfilePage() {
         <button
           onClick={async () => {
             analytics.then(a => a && logEvent(a, 'share_app_click'));
-            if (navigator.share) {
-              try {
+            const shareUrl = `${window.location.origin}?ref=${user.uid}`;
+            try {
+              if (navigator.share) {
                 await navigator.share({
                   title: 'GAY MEET',
                   text: '¡Únete a Gay Meet! Conecta con chicos cerca de ti sin drama. 🏳️‍🌈🚀',
-                  url: `${window.location.origin}?ref=${user.uid}`
+                  url: shareUrl
                 });
-              } catch (err) {
-                console.log('Error compartiendo', err);
+              } else if (navigator.clipboard) {
+                await navigator.clipboard.writeText(shareUrl);
+                alert('¡Enlace copiado al portapapeles! Envíalo a tus amigos.');
+              } else {
+                prompt('Copia este enlace para invitar a tus amigos:', shareUrl);
               }
-            } else {
-              // Fallback: copiar al portapapeles
-              navigator.clipboard.writeText(`${window.location.origin}?ref=${user.uid}`);
-              alert('¡Enlace copiado al portapapeles! Envíalo a tus amigos.');
+            } catch (err) {
+              console.log('Error compartiendo', err);
             }
           }}
           className="w-full bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white font-[1000] py-6 rounded-[2.5rem] shadow-2xl flex items-center justify-center gap-4 active:scale-95 transition-all uppercase tracking-[0.2em] text-[10px]"
