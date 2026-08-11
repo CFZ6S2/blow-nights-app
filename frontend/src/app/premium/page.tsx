@@ -12,7 +12,7 @@ export default function PremiumPage() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleSubscribe = async (planName) => {
+  const handleSubscribe = async (priceId) => {
     setIsSubmitting(true);
     setError('');
 
@@ -21,7 +21,7 @@ export default function PremiumPage() {
       const { functions } = await import('@/lib/firebase');
 
       const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
-      const { data } = await createCheckoutSession({ plan: planName });
+      const { data } = await createCheckoutSession({ priceId, origin: window.location.origin });
 
       if (data?.url) {
         window.location.href = data.url;
@@ -111,6 +111,7 @@ export default function PremiumPage() {
               </ul>
               <button
                 disabled={isSubmitting}
+                // TODO(buyer): reemplaza por el Price ID real del plan mensual creado en el Dashboard de Stripe.
                 onClick={() => handleSubscribe('price_monthly_placeholder')}
                 className="w-full bg-white text-black font-black py-5 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all uppercase tracking-widest text-[10px]"
               >
@@ -141,6 +142,7 @@ export default function PremiumPage() {
               </ul>
               <button
                 disabled={isSubmitting}
+                // TODO(buyer): reemplaza por el Price ID real del plan anual creado en el Dashboard de Stripe.
                 onClick={() => handleSubscribe('price_yearly_placeholder')}
                 className="w-full bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white font-black py-5 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-fuchsia-500/20"
               >

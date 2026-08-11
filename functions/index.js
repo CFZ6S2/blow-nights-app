@@ -267,11 +267,14 @@ exports.sendVisitNotification = onDocumentCreated("visits/{visitId}", async (eve
     return null;
 });
 
-// Lazy loader para Stripe para evitar crash en healthcheck
+// Lazy loader para Stripe para evitar crash en healthcheck.
+// PARA ACTIVAR LOS PAGOS: define STRIPE_SECRET_KEY y STRIPE_WEBHOOK_SECRET,
+// por ejemplo en functions/.env (ver functions/.env.example) o con
+// `firebase functions:secrets:set STRIPE_SECRET_KEY`.
 let stripeInstance = null;
 function getStripe() {
   if (stripeInstance) return stripeInstance;
-  const stripeKey = process.env.STRIPE_SECRET_KEY || (functions.config().stripe ? functions.config().stripe.secret_key : null);
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeKey) return null;
   stripeInstance = require("stripe")(stripeKey);
   return stripeInstance;
@@ -328,7 +331,8 @@ exports.stripeWebhook = onRequest(async (req, res) => {
   if (!stripe) return res.status(500).send("Stripe no configurado.");
 
   const sig = req.headers["stripe-signature"];
-  const endpointSecret = functions.config().stripe?.webhook_secret;
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!endpointSecret) return res.status(500).send("Stripe webhook secret no configurado.");
 
   let event;
   try {
