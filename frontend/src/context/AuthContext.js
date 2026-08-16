@@ -162,11 +162,13 @@ export const AuthProvider = ({ children }) => {
         deleteMatchingDocs('likes', 'toId'),
         deleteMatchingDocs('visits', 'visitorId'),
         deleteMatchingDocs('visits', 'visitedId'),
-        deleteMatchingDocs('blocks', 'blockerId'),
-        deleteMatchingDocs('blocks', 'blockedId'),
         deleteDoc(doc(db, 'locations', uid)),
         deleteDoc(doc(db, 'verifications', uid)),
       ]);
+
+      // Bloqueos: viven en la subcolección users/{uid}/blocks, no en una colección raíz.
+      const ownBlocksSnap = await getDocs(collection(db, 'users', uid, 'blocks'));
+      await Promise.all(ownBlocksSnap.docs.map(d => deleteDoc(d.ref)));
 
       try {
         const storageRef = ref(storage, `profilePictures/${uid}`);

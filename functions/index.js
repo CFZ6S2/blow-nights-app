@@ -18,13 +18,34 @@ setGlobalOptions({ region: "us-central1" });
 exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
   const { uid, phoneNumber, email, displayName, photoURL } = user;
   
-  // Promoción: Los primeros 1000 usuarios son Premium automáticamente
+  // Promoción: Los primeros 100 usuarios son Premium automáticamente
   let isPremium = false;
   try {
-    const usersSnapshot = await db.collection("users").count().get();
-    const totalUsers = usersSnapshot.data().count;
-    isPremium = totalUsers < 1000;
-    console.log(`Usuario ${uid} registrado. Total usuarios: ${totalUsers}. Premium: ${isPremium}`);
+    const statsRef = db.collection("system").doc("promoStats");
+    let statsSnapshot = await statsRef.get();
+    let initialCount = 0;
+    
+    // Si es la primera vez, contamos los usuarios actuales como base
+    if (!statsSnapshot.exists) {
+      const usersSnapshot = await db.collection("users").count().get();
+      initialCount = usersSnapshot.data().count;
+    }
+
+    isPremium = await db.runTransaction(async (transaction) => {
+      const statsDoc = await transaction.get(statsRef);
+      let count = initialCount;
+      
+      if (statsDoc.exists) {
+        count = statsDoc.data().count || 0;
+      }
+      
+      if (count < 100) {
+        transaction.set(statsRef, { count: count + 1 }, { merge: true });
+        return true;
+      }
+      return false;
+    });
+    console.log(`Usuario ${uid} registrado. Promo Premium: ${isPremium}`);
   } catch (error) {
     console.error("Error al contar usuarios para premium promo:", error);
     // Fallback: Tu correo siempre es premium

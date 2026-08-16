@@ -11,9 +11,7 @@ export function useSafeActions() {
     if (!user) return { error: 'No autenticado' };
     
     try {
-      const blockId = `${user.uid}_${blockedId}`;
-      await setDoc(doc(db, 'blocks', blockId), {
-        blockerId: user.uid,
+      await setDoc(doc(db, 'users', user.uid, 'blocks', blockedId), {
         blockedId: blockedId,
         timestamp: serverTimestamp()
       });

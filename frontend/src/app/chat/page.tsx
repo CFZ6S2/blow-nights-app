@@ -26,8 +26,8 @@ export default function ChatListPage() {
     const unsubscribe = onSnapshot(q, 
       async (snapshot) => {
         // Obtener bloqueos
-        const { getDocs, query, collection, where } = await import('firebase/firestore');
-        const blocksSnap = await getDocs(query(collection(db, 'blocks'), where('blockerId', '==', user.uid)));
+        const { getDocs, collection } = await import('firebase/firestore');
+        const blocksSnap = await getDocs(collection(db, 'users', user.uid, 'blocks'));
         const blockedIds = blocksSnap.docs.map(doc => doc.data().blockedId);
 
         const chatsData = [];
