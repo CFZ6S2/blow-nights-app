@@ -30,10 +30,10 @@ function PublicProfileContent() {
   const headerScale = useTransform(scrollY, [-100, 0], [1.2, 1]); // Zoom out on pull-to-refresh
   
   const { sendLike } = useLikes();
-  const [matchData, setMatchData] = useState(null);
+  const [matchData, setMatchData] = useState<any>(null);
   const [hasLiked, setHasLiked] = useState(false);
 
-  const triggerHaptic = (intensity = 10) => {
+  const triggerHaptic = (intensity: number | number[] = 10) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(intensity);
     }
@@ -113,7 +113,7 @@ function PublicProfileContent() {
   );
 
   const allPhotos = [profile.fotoUrl, ...(profile.extraPhotos || [])].filter(Boolean);
-  const distance = currentProfile?.lat && profile?.lat 
+  const distance = currentProfile?.lat && currentProfile?.lng && profile?.lat && profile?.lng 
     ? calculateDistance(currentProfile.lat, currentProfile.lng, profile.lat, profile.lng)
     : null;
 
@@ -140,7 +140,7 @@ function PublicProfileContent() {
           onScroll={handleScroll}
           className="flex h-full overflow-x-auto snap-x snap-mandatory no-scrollbar pointer-events-auto"
         >
-          {allPhotos.map((photo, i) => (
+          {allPhotos.map((photo: string, i: number) => (
             <div key={i} className="snap-center min-w-full h-full relative overflow-hidden">
               <motion.img 
                 layoutId={i === 0 ? `marker-photo-${id}` : undefined}
@@ -237,7 +237,7 @@ function PublicProfileContent() {
             <div className="space-y-4">
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Intereses</p>
               <div className="flex flex-wrap gap-2">
-                {intereses.map((interes, idx) => (
+                {intereses.map((interes: string, idx: number) => (
                   <motion.span 
                     key={idx}
                     initial={{ opacity: 0, scale: 0.8 }}
@@ -273,7 +273,7 @@ function PublicProfileContent() {
                 
                 {profile.permittedUsers?.includes(currentUser?.uid) ? (
                   <div className="grid grid-cols-3 gap-2">
-                    {profile.privatePhotos.map((photo, idx) => (
+                    {profile.privatePhotos.map((photo: string, idx: number) => (
                       <motion.div 
                         key={idx}
                         initial={{ opacity: 0, scale: 0.9 }}

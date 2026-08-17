@@ -5,19 +5,19 @@ import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { collection, query, where, onSnapshot, doc, setDoc, getDocs, count } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, setDoc } from 'firebase/firestore';
 import { db, analytics } from '@/lib/firebase';
 import { logEvent } from 'firebase/analytics';
 import Link from 'next/link';
 
 export default function MyProfilePage() {
-  const { user, profile, loading, logout, deleteAccount } = useAuth();
+  const { user, profile, loading, logout, deleteAccount, requestVerification } = useAuth();
   const { toggleNotifications } = useNotifications();
   const router = useRouter();
   
-  const [stats, setStats] = useState({ visits: 0, likes: 0, matches: 0 });
+  const [stats, setStats] = useState({ visits: 0, likes: 0, matches: 0, invitesCount: 0 });
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isOptimisticAvailable, setIsOptimisticAvailable] = useState(null);
+  const [isOptimisticAvailable, setIsOptimisticAvailable] = useState<boolean | null>(null);
   const [geoError, setGeoError] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const isAvailable = isOptimisticAvailable !== null ? isOptimisticAvailable : !!profile?.online;
@@ -31,7 +31,7 @@ export default function MyProfilePage() {
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
     try {
-      await deleteAccount();
+      await deleteAccount?.();
       router.push('/login');
     } catch (err) {
       setIsDeleting(false);
@@ -49,7 +49,7 @@ export default function MyProfilePage() {
       // Suscribirse a estadísticas de visitas
       const vQ = query(collection(db, 'visits'), where('visitedId', '==', user.uid));
       const unsubscribeVisits = onSnapshot(vQ, (snap) => {
-        setStats(prev => ({ ...prev, visits: snap.size }));
+        setStats(prev => ({ ...prev, visits: snap.size || 0 }));
       });
 
       // Suscribirse a estadísticas de likes recibidos
@@ -61,7 +61,7 @@ export default function MyProfilePage() {
       // Suscribirse a estadísticas de matches
       const mQ = query(collection(db, 'matches'), where('users', 'array-contains', user.uid));
       const unsubscribeMatches = onSnapshot(mQ, (snap) => {
-        setStats(prev => ({ ...prev, matches: snap.size }));
+        setStats(prev => ({ ...prev, matches: snap.size || 0 }));
       });
 
       return () => {
@@ -252,6 +252,7 @@ export default function MyProfilePage() {
               onClick={async () => {
                 if (!profile?.premium) return router.push('/premium');
                 triggerHaptic(20);
+                if (!user) return;
                 await setDoc(doc(db, 'users', user.uid), {
                   ghostMode: !profile?.ghostMode
                 }, { merge: true });
@@ -275,6 +276,75 @@ export default function MyProfilePage() {
           )}
         </section>
 
+        {/* Cruising Mode Toggle */}
+        <section className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-[2.5rem] relative overflow-hidden group">
+          <div className="flex items-center justify-between relative z-10">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-black uppercase tracking-widest">Modo Cruising</h3>
+                <span className="bg-red-500/20 text-red-400 text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider">18+</span>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1">Check-in anónimo, GPS difuso, foto oculta</p>
+            </div>
+            <button
+              onClick={async () => {
+                triggerHaptic(20);
+                if (!user) return;
+                await setDoc(doc(db, 'users', user.uid), {
+                  cruisingMode: !profile?.cruisingMode
+                }, { merge: true });
+              }}
+              className={`w-14 h-8 rounded-full transition-all relative ${
+                profile?.cruisingMode ? 'bg-red-600' : 'bg-slate-800'
+              }`}
+            >
+              <motion.div
+                animate={{ x: profile?.cruisingMode ? 24 : 4 }}
+                className="absolute top-1 w-6 h-6 bg-white rounded-full shadow-lg"
+              />
+            </button>
+          </div>
+          {profile?.cruisingMode && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              className="mt-4 bg-red-500/5 border border-red-500/10 p-3 rounded-2xl overflow-hidden"
+            >
+              <p className="text-[9px] text-red-400/80 font-bold leading-relaxed">
+                <span className="material-icons text-[9px] align-middle mr-1">shield</span>
+                Activo: tus check-ins son siempre anónimos (+1), tu ubicación se difumina a 150m y tu foto no aparece en listados de locales.
+              </p>
+            </motion.div>
+          )}
+        </section>
+
+        {/* NSFW Filter Toggle */}
+        <section className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-[2.5rem] relative overflow-hidden group">
+          <div className="flex items-center justify-between relative z-10">
+            <div>
+              <h3 className="text-sm font-black uppercase tracking-widest">Filtro NSFW</h3>
+              <p className="text-[10px] text-slate-500 mt-1">Difumina fotos explícitas en perfiles y chats</p>
+            </div>
+            <button
+              onClick={async () => {
+                triggerHaptic(20);
+                if (!user) return;
+                await setDoc(doc(db, 'users', user.uid), {
+                  nsfwBlur: profile?.nsfwBlur === false ? true : false
+                }, { merge: true });
+              }}
+              className={`w-14 h-8 rounded-full transition-all relative ${
+                profile?.nsfwBlur !== false ? 'bg-fuchsia-600' : 'bg-slate-800'
+              }`}
+            >
+              <motion.div
+                animate={{ x: profile?.nsfwBlur !== false ? 24 : 4 }}
+                className="absolute top-1 w-6 h-6 bg-white rounded-full shadow-lg"
+              />
+            </button>
+          </div>
+        </section>
+
         {/* Push Notifications Toggle */}
         <section className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-[2.5rem] relative overflow-hidden group">
           <div className="flex items-center justify-between relative z-10">
@@ -288,7 +358,7 @@ export default function MyProfilePage() {
             <button
               onClick={async () => {
                 triggerHaptic(20);
-                await toggleNotifications();
+                toggleNotifications?.();
               }}
               className={`w-14 h-8 rounded-full transition-all relative ${
                 profile?.notificationsEnabled ? 'bg-fuchsia-600' : 'bg-slate-800'
@@ -315,13 +385,18 @@ export default function MyProfilePage() {
 
         <button
           onClick={async () => {
-            analytics.then(a => a && logEvent(a, 'share_app_click'));
-            const shareUrl = `${window.location.origin}?ref=${user.uid}`;
+            if (analytics) {
+              try {
+                const a = await analytics;
+                if (a) logEvent(a, 'share_app_click');
+              } catch(e) {}
+            }
+            const shareUrl = `${window.location.origin}?ref=${user?.uid || ''}`;
             try {
               if (navigator.share) {
                 await navigator.share({
-                  title: 'GAY MEET',
-                  text: '¡Únete a Gay Meet! Conecta con chicos cerca de ti sin drama. 🏳️‍🌈🚀',
+                  title: 'BLOW NIGHTS',
+                  text: '¡Únete a Blow Nights! Tu circuito nocturno LGTBIQ+ en vivo. 🏳️‍🌈🚀',
                   url: shareUrl
                 });
               } else if (navigator.clipboard) {
@@ -340,7 +415,7 @@ export default function MyProfilePage() {
           Invitar a un amigo
         </button>
         <p className="text-[10px] text-center text-slate-500 font-bold uppercase tracking-widest mt-4">
-          {profile?.invitesCount >= 3 
+          {(profile?.invitesCount || 0) >= 3 
             ? '✅ ¡Has desbloqueado Premium con tus invitaciones!' 
             : `🎁 Invita a ${3 - (profile?.invitesCount || 0)} amigos más para conseguir Premium gratis`}
         </p>
@@ -395,9 +470,11 @@ export default function MyProfilePage() {
                     triggerHaptic(20);
                     if (confirm("Sube una foto tuya (selfie) para verificar tu identidad. Esta foto solo será vista por los administradores.")) {
                       try {
-                        const success = await requestVerification(file);
-                        if (success) {
-                          alert("¡Solicitud enviada! Revisaremos tu perfil en las próximas 24h.");
+                        if (requestVerification) {
+                          const success = await requestVerification(file);
+                          if (success) {
+                            alert("¡Solicitud enviada! Revisaremos tu perfil en las próximas 24h.");
+                          }
                         }
                       } catch (err) {
                         alert("Error al enviar la solicitud. Inténtalo de nuevo.");
@@ -412,6 +489,8 @@ export default function MyProfilePage() {
             { label: 'Plan Premium', icon: 'stars', href: '/premium', color: 'text-yellow-500' },
             { label: 'Términos de Servicio', icon: 'gavel', href: '/terms', color: 'text-slate-400' },
             { label: 'Política de Privacidad', icon: 'admin_panel_settings', href: '/privacy', color: 'text-slate-400' },
+            { label: 'Panel de mi Local', icon: 'storefront', href: '/venue-admin', color: 'text-fuchsia-400' },
+            { label: 'Escanear Entradas', icon: 'qr_code_scanner', href: '/scanner', color: 'text-fuchsia-400' },
             { label: 'Ajustes y Seguridad', icon: 'security', href: '#', color: 'text-slate-400' }
           ].map((item, i) => {
             const content = (

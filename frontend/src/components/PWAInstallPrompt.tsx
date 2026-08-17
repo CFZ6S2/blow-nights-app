@@ -72,7 +72,7 @@ export default function PWAInstallPrompt() {
           </div>
           
           <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-black text-white tracking-tight uppercase mb-1">Instala Gay Meet</h4>
+            <h4 className="text-sm font-black text-white tracking-tight uppercase mb-1">Instala Blow Nights</h4>
             <p className="text-[10px] text-slate-400 leading-tight">
               {platform === 'ios' 
                 ? 'Pulsa [Compartir] y luego "Añadir a pantalla de inicio"' 

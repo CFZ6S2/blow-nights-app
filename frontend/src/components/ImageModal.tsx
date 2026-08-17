@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function ImageModal({ url, isOpen, onClose }) {
+export default function ImageModal({ url, isOpen, onClose }: { url: string, isOpen: boolean, onClose: () => void }) {
   return (
     <AnimatePresence>
       {isOpen && (

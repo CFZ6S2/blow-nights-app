@@ -1,7 +1,7 @@
 {
-  "name": "Gay Meet App",
-  "short_name": "GayMeet",
-  "description": "Conoce chicos cerca de ti. Mapa, chat y encuentros rápidos.",
+  "name": "Blow Nights",
+  "short_name": "BlowNights",
+  "description": "Tu circuito nocturno LGTBIQ+. Locales, entradas y planes en vivo.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#020617",

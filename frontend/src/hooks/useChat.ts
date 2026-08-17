@@ -5,12 +5,12 @@ import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, g
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 
-export const useChat = (chatId) => {
+export const useChat = (chatId: string | null) => {
   const { user } = useAuth();
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOtherTyping, setIsOtherTyping] = useState(false);
-  const [activeUsers, setActiveUsers] = useState([]);
+  const [activeUsers, setActiveUsers] = useState<any[]>([]);
 
   useEffect(() => {
     if (!chatId || !user) return;
@@ -40,7 +40,7 @@ export const useChat = (chatId) => {
 
     const unsubscribeMessages = onSnapshot(q, 
       (snapshot) => {
-        const msgs = [];
+        const msgs: any[] = [];
         snapshot.forEach((doc) => {
           msgs.push({ id: doc.id, ...doc.data() });
         });
@@ -60,7 +60,7 @@ export const useChat = (chatId) => {
         
         // Typing
         const typingState = data.typing || {};
-        const otherUserId = data.users.find(id => id !== user.uid);
+        const otherUserId = data.users.find((id: string) => id !== user.uid);
         setIsOtherTyping(!!typingState[otherUserId]);
 
         // Active Users
@@ -103,7 +103,7 @@ export const useChat = (chatId) => {
     const unreadMessages = messages.filter(m => m.senderId !== user.uid && m.read === false);
     
     if (unreadMessages.length > 0) {
-      const batch = [];
+      const batch: any[] = [];
       unreadMessages.forEach(msg => {
         batch.push(updateDoc(doc(db, 'chats', chatId, 'messages', msg.id), {
           read: true,
@@ -117,7 +117,7 @@ export const useChat = (chatId) => {
   // Debounce para el estado de escritura
   const [localTyping, setLocalTyping] = useState(false);
   
-  const setTypingStatus = async (isTyping) => {
+  const setTypingStatus = async (isTyping: boolean) => {
     if (!user || !chatId || isTyping === localTyping) return;
     
     setLocalTyping(isTyping);
@@ -128,7 +128,7 @@ export const useChat = (chatId) => {
     }).catch(console.error);
   };
 
-  const grantPrivateAccess = async (targetUserId) => {
+  const grantPrivateAccess = async (targetUserId: string) => {
     if (!user) return;
     try {
       await updateDoc(doc(db, 'users', user.uid), {
@@ -146,7 +146,7 @@ export const useChat = (chatId) => {
   return { messages, loading, isOtherTyping, activeUsers, sendMessage, setTypingStatus, markAsRead, grantPrivateAccess };
 };
 
-export const getOrCreateChat = async (user1Id, user2Id) => {
+export const getOrCreateChat = async (user1Id: string, user2Id: string) => {
   const chatId = [user1Id, user2Id].sort().join('_');
   const chatRef = doc(db, 'chats', chatId);
   const chatSnap = await getDoc(chatRef);

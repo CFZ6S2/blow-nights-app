@@ -28,7 +28,7 @@ export default function RulesPage() {
             <span className="text-slate-500">DE ORO</span>
           </h2>
           <p className="text-slate-400 max-w-xl mx-auto font-medium">
-            Gay Meet es un espacio seguro y real. Para mantenerlo así, todos seguimos estos principios fundamentales.
+            Blow Nights es un espacio seguro y real. Para mantenerlo así, todos seguimos estos principios fundamentales.
           </p>
         </div>
 
@@ -105,7 +105,7 @@ export default function RulesPage() {
       </main>
 
       <footer className="mt-32 text-center text-[10px] font-medium text-slate-700 uppercase tracking-[0.2em] pb-10">
-        © 2026 GAY MEET • SEGURIDAD Y CONFIANZA
+        © 2026 BLOW NIGHTS • SEGURIDAD Y CONFIANZA
       </footer>
     </div>
   );

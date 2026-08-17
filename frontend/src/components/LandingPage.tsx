@@ -1,307 +1,487 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, getCountFromServer } from 'firebase/firestore';
 import { db, analytics } from '@/lib/firebase';
 import { logEvent } from 'firebase/analytics';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 
 interface LandingPageProps {
   onStart: () => void;
 }
 
+const stagger: any = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08 } },
+};
+const fadeUp: any = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] } },
+};
+
 export default function LandingPage({ onStart }: LandingPageProps) {
   const [onlineCount, setOnlineCount] = useState(0);
-  const [recentProfiles, setRecentProfiles] = useState([]);
+  const [venueCount, setVenueCount] = useState(0);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const q = query(collection(db, 'users'), where('online', '==', true), limit(12));
-        const snapshot = await getDocs(q);
-        setOnlineCount(snapshot.size);
-        setRecentProfiles(snapshot.docs.map(doc => doc.data().fotoUrl).filter(Boolean));
-      } catch (err) {
-        // Silently ignore permission errors for unauthenticated users
-        // The landing page will show the default fallback count
-      }
+        const usersQ = query(collection(db, 'users'), where('online', '==', true), limit(50));
+        const usersSnap = await getDocs(usersQ);
+        setOnlineCount(usersSnap.size);
+
+        const venuesQ = query(collection(db, 'venues'), where('isActive', '==', true));
+        const venuesSnap = await getCountFromServer(venuesQ);
+        setVenueCount(venuesSnap.data().count);
+      } catch {}
     };
     fetchStats();
   }, []);
+
+  const handleStart = () => {
+    analytics?.then(a => a && logEvent(a, 'landing_start_click'));
+    onStart();
+  };
+
   return (
-    <div className="min-h-screen bg-slate-950 text-white selection:bg-fuchsia-500/30">
-      {/* Hero Section */}
-      <header className="relative min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden">
-        {/* Animated Background Gradients */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-4xl opacity-20 pointer-events-none">
-          <motion.div 
-            animate={{ 
-              scale: [1, 1.2, 1],
-              rotate: [0, 90, 0],
-              opacity: [0.3, 0.6, 0.3]
-            }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] bg-fuchsia-600 blur-[120px] rounded-full"
+    <div className="min-h-screen bg-slate-950 text-white selection:bg-fuchsia-500/30 overflow-x-hidden">
+
+      {/* ═══ HERO ═══ */}
+      <header className="relative min-h-[100dvh] flex flex-col items-center justify-center px-6 overflow-hidden">
+        {/* Ambient glow */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <motion.div
+            animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.3, 0.15] }}
+            transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
+            className="absolute -top-[30%] -left-[20%] w-[70%] h-[70%] bg-fuchsia-600 blur-[160px] rounded-full"
           />
-          <motion.div 
-            animate={{ 
-              scale: [1, 1.3, 1],
-              rotate: [0, -90, 0],
-              opacity: [0.2, 0.5, 0.2]
-            }}
-            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-            className="absolute bottom-[-10%] right-[-10%] w-[70%] h-[70%] bg-indigo-600 blur-[150px] rounded-full"
+          <motion.div
+            animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.25, 0.1] }}
+            transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
+            className="absolute -bottom-[20%] -right-[15%] w-[60%] h-[60%] bg-indigo-600 blur-[180px] rounded-full"
           />
         </div>
 
-        <div className="relative z-10 max-w-4xl w-full text-center space-y-12">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="space-y-6"
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                {onlineCount > 0 ? `${onlineCount} chicos online ahora` : 'Únete a +500 chicos cerca'}
-              </span>
-            </div>
-            
-            <h1 className="text-5xl md:text-8xl font-[1000] tracking-tighter leading-[0.9] text-white">
-              CONECTA CON CHICOS <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-500 via-purple-500 to-indigo-500">
-                SIN DRAMA NI RUIDO
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          animate="visible"
+          className="relative z-10 max-w-3xl w-full text-center space-y-8"
+        >
+          {/* Live pill */}
+          <motion.div variants={fadeUp} className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+            </span>
+            <span className="text-[11px] font-bold text-slate-400 tracking-wide">
+              {onlineCount > 0 ? `${onlineCount} personas activas ahora` : 'En vivo en tu ciudad'}
+            </span>
+          </motion.div>
+
+          {/* Headline */}
+          <motion.div variants={fadeUp} className="space-y-4">
+            <h1 className="text-[clamp(3rem,10vw,6.5rem)] font-[1000] tracking-[-0.04em] leading-[0.85]">
+              BLOW{' '}
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-400 via-purple-400 to-indigo-400">
+                NIGHTS
               </span>
             </h1>
-            
-            <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed">
-              Perfiles reales, planes directos y máxima seguridad. <br className="hidden md:block" />
-              Diseñado exclusivamente para la comunidad gay y bi.
+            <p className="text-lg md:text-xl text-slate-400 max-w-xl mx-auto leading-relaxed font-medium">
+              Tu circuito nocturno LGTBIQ+ en vivo.<br className="hidden sm:block" />
+              Locales, entradas, check-in y planes reales en tu ciudad.
             </p>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
-          >
-            <button 
-              onClick={() => {
-                analytics.then(a => a && logEvent(a, 'landing_start_click'));
-                onStart();
-              }}
-              className="w-full sm:w-auto px-12 py-6 rounded-[2rem] bg-white text-black font-[1000] text-sm uppercase tracking-[0.2em] hover:bg-slate-200 transition-all shadow-[0_20px_50px_rgba(255,255,255,0.1)] active:scale-95"
+          {/* CTA */}
+          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+            <button
+              onClick={handleStart}
+              className="w-full sm:w-auto px-14 py-5 rounded-2xl bg-white text-black font-[900] text-[13px] uppercase tracking-[0.15em] hover:bg-slate-100 active:scale-[0.97] transition-all shadow-[0_15px_40px_rgba(255,255,255,0.08)]"
             >
-              Empezar ahora
+              Entrar gratis
             </button>
-            <Link 
+            <Link
               href="/rules"
-              className="w-full sm:w-auto px-12 py-6 rounded-[2rem] bg-white/5 text-white border border-white/10 font-[1000] text-sm uppercase tracking-[0.2em] hover:bg-white/10 transition-all backdrop-blur-md"
+              className="w-full sm:w-auto px-14 py-5 rounded-2xl bg-white/[0.04] text-white/80 border border-white/10 font-bold text-[13px] uppercase tracking-[0.1em] hover:bg-white/[0.08] transition-all backdrop-blur-sm text-center"
             >
               Cómo funciona
             </Link>
           </motion.div>
 
-          {/* Social Proof Profile Grid */}
-          <div className="mt-20 flex justify-center -space-x-4 overflow-hidden py-4">
-            {(recentProfiles.length > 0 ? recentProfiles : [1,2,3,4,5,6]).map((img, i) => (
+          {/* Stats bar */}
+          <motion.div variants={fadeUp} className="flex items-center justify-center gap-8 pt-6 text-center">
+            {[
+              { value: venueCount > 0 ? `${venueCount}+` : '—', label: 'Locales' },
+              { value: '6', label: 'Tipos de venue' },
+              { value: 'QR', label: 'Entradas digitales' },
+            ].map((s, i) => (
+              <div key={i} className="space-y-1">
+                <div className="text-2xl font-[900] tracking-tight text-white">{s.value}</div>
+                <div className="text-[9px] font-bold uppercase tracking-[0.15em] text-slate-500">{s.label}</div>
+              </div>
+            ))}
+          </motion.div>
+        </motion.div>
+
+        {/* Scroll hint */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        >
+          <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity }} className="text-slate-600">
+            <span className="material-icons text-xl">expand_more</span>
+          </motion.div>
+        </motion.div>
+      </header>
+
+      {/* ═══ WHAT IS BLOW NIGHTS ═══ */}
+      <section className="py-24 md:py-32 px-6">
+        <div className="max-w-5xl mx-auto space-y-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-2xl space-y-4"
+          >
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-fuchsia-500">Qué es Blow Nights</p>
+            <h2 className="text-3xl md:text-5xl font-[900] tracking-tight leading-[1.1]">
+              No es una app de citas.<br />
+              <span className="text-slate-500">Es tu circuito nocturno.</span>
+            </h2>
+            <p className="text-slate-400 text-base leading-relaxed max-w-lg">
+              Blow Nights conecta personas, locales y eventos en tiempo real. Haz check-in en tu garito, compra entradas con QR, y descubre quién sale esta noche — todo desde una sola app.
+            </p>
+          </motion.div>
+
+          {/* Feature grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              {
+                icon: 'nightlife',
+                title: 'Locales en vivo',
+                desc: 'Bares, discotecas, afters, saunas — mira quién hay en cada sitio ahora mismo.',
+                gradient: 'from-fuchsia-500/15 to-purple-500/5',
+                border: 'border-fuchsia-500/15',
+                iconColor: 'text-fuchsia-400',
+              },
+              {
+                icon: 'confirmation_number',
+                title: 'Entradas QR',
+                desc: 'Compra tu entrada desde la app y enséñala en puerta. Sin colas, sin papel.',
+                gradient: 'from-yellow-500/10 to-amber-500/5',
+                border: 'border-yellow-500/15',
+                iconColor: 'text-yellow-400',
+              },
+              {
+                icon: 'location_on',
+                title: 'Check-in inteligente',
+                desc: 'Público, fantasma o anónimo. Tú decides cómo apareces en cada local.',
+                gradient: 'from-green-500/10 to-emerald-500/5',
+                border: 'border-green-500/15',
+                iconColor: 'text-green-400',
+              },
+              {
+                icon: 'map',
+                title: 'Mapa en tiempo real',
+                desc: 'Ve quién está cerca y qué locales tienen ambiente ahora.',
+                gradient: 'from-indigo-500/10 to-blue-500/5',
+                border: 'border-indigo-500/15',
+                iconColor: 'text-indigo-400',
+              },
+              {
+                icon: 'shield',
+                title: 'Modo Cruising',
+                desc: 'Check-in anónimo, GPS difuso y foto oculta. Privacidad total para zonas 18+.',
+                gradient: 'from-red-500/10 to-rose-500/5',
+                border: 'border-red-500/15',
+                iconColor: 'text-red-400',
+              },
+              {
+                icon: 'travel_explore',
+                title: 'Multi-ciudad',
+                desc: 'Madrid, Barcelona, Valencia... Blow Nights llega a cada ciudad con su propio circuito.',
+                gradient: 'from-cyan-500/10 to-teal-500/5',
+                border: 'border-cyan-500/15',
+                iconColor: 'text-cyan-400',
+              },
+            ].map((f, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, scale: 0.5, x: 20 }}
-                animate={{ opacity: 1, scale: 1, x: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="relative w-12 h-12 md:w-16 md:h-16 rounded-full border-4 border-slate-950 overflow-hidden bg-slate-900 shadow-2xl"
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.06 }}
+                className={`bg-gradient-to-br ${f.gradient} border ${f.border} rounded-3xl p-6 space-y-3 hover:scale-[1.02] transition-transform`}
               >
-                <img 
-                  src={typeof img === 'string' ? img : `https://i.pravatar.cc/150?u=${i}`} 
-                  alt="Perfil" 
-                  className="w-full h-full object-cover grayscale-[0.5] hover:grayscale-0 transition-all duration-500"
-                />
+                <div className="w-11 h-11 rounded-xl bg-white/5 flex items-center justify-center">
+                  <span className={`material-icons ${f.iconColor} text-xl`}>{f.icon}</span>
+                </div>
+                <h3 className="text-[15px] font-[800] tracking-tight">{f.title}</h3>
+                <p className="text-[13px] text-slate-400 leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
 
-          {/* App Mockup */}
+      {/* ═══ HOW IT WORKS ═══ */}
+      <section className="py-24 md:py-32 px-6 border-t border-white/[0.04]">
+        <div className="max-w-4xl mx-auto space-y-16">
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 50 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="relative mt-20 mx-auto max-w-[280px] md:max-w-[320px]"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center space-y-3"
           >
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent z-10 h-[120%] -bottom-[20%]" />
-            <div className="relative rounded-[3rem] overflow-hidden border-[8px] border-slate-900 shadow-[0_50px_100px_rgba(0,0,0,0.8)] aspect-[9/19.5]">
-              <img 
-                src="/gay_dating_app_mockup_1779911851373.png" 
-                alt="App Interface" 
-                className="w-full h-full object-cover"
-              />
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-fuchsia-500">Cómo funciona</p>
+            <h2 className="text-3xl md:text-5xl font-[900] tracking-tight">Tres toques y estás dentro</h2>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            {[
+              {
+                step: '01',
+                title: 'Crea tu perfil',
+                desc: 'Google Sign-In, nick y foto. En 30 segundos estás dentro.',
+                icon: 'person_add',
+              },
+              {
+                step: '02',
+                title: 'Explora tu ciudad',
+                desc: 'Mira el mapa, elige un local y haz check-in con un toque.',
+                icon: 'explore',
+              },
+              {
+                step: '03',
+                title: 'Sal y disfruta',
+                desc: 'Compra entradas, conecta con gente y vive la noche.',
+                icon: 'celebration',
+              },
+            ].map((s, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="relative space-y-4 text-center md:text-left"
+              >
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/5 border border-white/10">
+                  <span className="material-icons text-fuchsia-400 text-2xl">{s.icon}</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 justify-center md:justify-start">
+                    <span className="text-[10px] font-[900] text-slate-600 tracking-widest">{s.step}</span>
+                    <h3 className="text-lg font-[800] tracking-tight">{s.title}</h3>
+                  </div>
+                  <p className="text-[13px] text-slate-500 leading-relaxed">{s.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ VENUE TYPES ═══ */}
+      <section className="py-24 md:py-32 px-6 border-t border-white/[0.04]">
+        <div className="max-w-5xl mx-auto space-y-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="space-y-3"
+          >
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-fuchsia-500">Tipos de locales</p>
+            <h2 className="text-3xl md:text-5xl font-[900] tracking-tight">De la previa al after</h2>
+            <p className="text-slate-400 max-w-lg">Cada tipo de local tiene su franja horaria. Blow Nights organiza tu noche entera.</p>
+          </motion.div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {[
+              { icon: 'local_bar', name: 'Bares / Previas', hours: '20:00 – 02:00', tag: null },
+              { icon: 'nightlife', name: 'Discotecas', hours: '01:00 – 06:00', tag: null },
+              { icon: 'wb_twilight', name: 'Afters', hours: '06:00 – 12:00', tag: null },
+              { icon: 'hot_tub', name: 'Saunas', hours: '12:00 – 03:00', tag: '18+' },
+              { icon: 'sensor_door', name: 'Cruising Bars', hours: '22:00 – 06:00', tag: '18+' },
+              { icon: 'park', name: 'Zonas Exteriores', hours: '22:00 – 06:00', tag: '18+' },
+            ].map((v, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05 }}
+                className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 flex items-start gap-3 hover:bg-white/[0.06] transition-colors"
+              >
+                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
+                  <span className="material-icons text-slate-400 text-lg">{v.icon}</span>
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-[13px] font-[800] truncate">{v.name}</h4>
+                    {v.tag && (
+                      <span className="bg-red-500/20 text-red-400 text-[8px] font-[900] px-1.5 py-0.5 rounded uppercase tracking-wider flex-shrink-0">
+                        {v.tag}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-600 font-medium mt-0.5">{v.hours}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ B2B / FOR VENUES ═══ */}
+      <section className="py-24 md:py-32 px-6 border-t border-white/[0.04]">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-gradient-to-br from-fuchsia-600/10 via-indigo-600/5 to-transparent border border-fuchsia-500/10 rounded-[2rem] p-8 md:p-12 space-y-8"
+          >
+            <div className="space-y-3">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-fuchsia-400">Para locales</p>
+              <h2 className="text-2xl md:text-4xl font-[900] tracking-tight">
+                ¿Tienes un local LGTBIQ+?
+              </h2>
+              <p className="text-slate-400 max-w-lg leading-relaxed">
+                Blow Nights te da un panel de gestión completo: vende entradas, lanza promos flash geolocalizadas,
+                valida QR en puerta y controla la afluencia en tiempo real.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { icon: 'storefront', label: 'Panel de local' },
+                { icon: 'qr_code_scanner', label: 'Escáner QR' },
+                { icon: 'campaign', label: 'Promos flash' },
+                { icon: 'analytics', label: 'Métricas en vivo' },
+              ].map((t, i) => (
+                <div key={i} className="flex items-center gap-3 bg-white/[0.04] border border-white/[0.06] rounded-xl p-4">
+                  <span className="material-icons text-fuchsia-400 text-xl">{t.icon}</span>
+                  <span className="text-[12px] font-bold">{t.label}</span>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={handleStart}
+              className="px-8 py-4 rounded-xl bg-fuchsia-600 text-white font-[800] text-[12px] uppercase tracking-[0.12em] hover:bg-fuchsia-500 active:scale-[0.97] transition-all"
+            >
+              Registra tu local
+            </button>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ═══ PRIVACY & SAFETY ═══ */}
+      <section className="py-24 md:py-32 px-6 border-t border-white/[0.04]">
+        <div className="max-w-4xl mx-auto text-center space-y-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="space-y-4"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto">
+              <span className="material-icons text-indigo-400 text-3xl">verified_user</span>
+            </div>
+            <h2 className="text-3xl md:text-5xl font-[900] tracking-tight">Privacidad de verdad</h2>
+            <p className="text-slate-400 max-w-lg mx-auto leading-relaxed">
+              Tres modos de visibilidad, GPS difuso en zonas sensibles, filtro NSFW,
+              álbumes privados y check-in anónimo. Tu noche, tus reglas.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
+            {[
+              { icon: 'visibility', label: 'Público', desc: 'Tu perfil y foto visibles', color: 'text-fuchsia-400' },
+              { icon: 'visibility_off', label: 'Fantasma', desc: 'Navega sin dejar rastro', color: 'text-indigo-400' },
+              { icon: 'shield', label: 'Anónimo', desc: 'Solo sumas al +1', color: 'text-red-400' },
+            ].map((m, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08 }}
+                className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 space-y-2"
+              >
+                <span className={`material-icons ${m.color} text-2xl`}>{m.icon}</span>
+                <h4 className="text-sm font-[800]">{m.label}</h4>
+                <p className="text-[11px] text-slate-500">{m.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ INSTALL PWA ═══ */}
+      <section className="py-24 md:py-32 px-6 border-t border-white/[0.04]">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-gradient-to-br from-indigo-600 to-fuchsia-600 rounded-[2rem] p-10 md:p-16 text-center space-y-6 relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-[80px] rounded-full -translate-y-1/2 translate-x-1/3" />
+            <div className="relative z-10 space-y-6">
+              <h2 className="text-3xl md:text-5xl font-[900] tracking-tight text-white">
+                Lleva tu circuito<br />en el bolsillo
+              </h2>
+              <p className="text-white/70 text-base md:text-lg max-w-lg mx-auto leading-relaxed">
+                Instala Blow Nights como app. Notificaciones en vivo, acceso desde la home y experiencia nativa.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('show-pwa-prompt'))}
+                  className="w-full sm:w-auto px-10 py-5 rounded-2xl bg-white text-black font-[900] text-[12px] uppercase tracking-[0.12em] hover:bg-white/90 active:scale-[0.97] transition-all flex items-center justify-center gap-3"
+                >
+                  <span className="material-icons text-lg">install_mobile</span>
+                  Instalar App
+                </button>
+                <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Sin App Store</span>
+              </div>
             </div>
           </motion.div>
         </div>
-      </header>
-
-      {/* Benefits Section */}
-      <section className="py-32 px-6 bg-slate-950 relative overflow-hidden">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {[
-            { icon: 'near_me', title: 'Cercanía Real', desc: 'Descubre quién hay a metros de ti con precisión quirúrgica.' },
-            { icon: 'verified_user', title: 'Seguridad', desc: 'Reportes instantáneos y moderación activa 24/7.' },
-            { icon: 'visibility_off', title: 'Privacidad', desc: 'Álbumes con candado y modo incógnito para pasar desapercibido.' },
-            { icon: 'auto_awesome', title: 'Filtros Pro', desc: 'Busca por edad, rol e intenciones. Sin rodeos.' }
-          ].map((benefit, i) => (
-            <motion.div 
-              key={i}
-              whileInView={{ opacity: 1, y: 0 }}
-              initial={{ opacity: 0, y: 20 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="p-8 rounded-[2.5rem] bg-white/5 border border-white/10 hover:bg-white/[0.08] transition-all group"
-            >
-              <div className="w-14 h-14 rounded-2xl bg-fuchsia-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <span className="material-icons text-fuchsia-500 text-2xl">{benefit.icon}</span>
-              </div>
-              <h3 className="text-xl font-black mb-3 tracking-tight">{benefit.title}</h3>
-              <p className="text-sm text-slate-500 leading-relaxed">{benefit.desc}</p>
-            </motion.div>
-          ))}
-        </div>
       </section>
 
-      {/* How it works */}
-      <section className="py-32 px-6 bg-slate-900/30">
-        <div className="max-w-4xl mx-auto text-center space-y-20">
-          <div className="space-y-4">
-            <h2 className="text-4xl md:text-6xl font-[1000] tracking-tighter">TRES PASOS AL ÉXITO</h2>
-            <p className="text-slate-400 font-medium">Olvídate de registros infinitos y preguntas absurdas.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
-            <div className="hidden md:block absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-y-1/2 z-0" />
-            
-            {[
-              { num: '01', title: 'Crea tu perfil', desc: 'Solo nick, edad y tu mejor foto. Nada más.' },
-              { num: '02', title: 'Mira el mapa', desc: 'Explora tu zona y mira quién está disponible ahora.' },
-              { num: '03', title: 'Habla y queda', desc: 'Mándale un mensaje y concretad un plan real.' }
-            ].map((step, i) => (
-              <div key={i} className="relative z-10 space-y-6">
-                <div className="w-16 h-16 rounded-full bg-slate-950 border border-white/10 flex items-center justify-center mx-auto text-fuchsia-500 font-[1000] text-xl shadow-2xl">
-                  {step.num}
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-black text-lg tracking-tight uppercase">{step.title}</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed px-4">{step.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Trust & Community */}
-      <section className="py-32 px-6 text-center">
-        <div className="max-w-2xl mx-auto space-y-12">
-          <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-tr from-fuchsia-600 to-indigo-600 flex items-center justify-center mx-auto shadow-2xl rotate-12">
-            <span className="material-icons text-white text-4xl">security</span>
-          </div>
-          <div className="space-y-6">
-            <h2 className="text-3xl font-[1000] tracking-tight">TU SEGURIDAD ES NUESTRO EJE</h2>
-            <p className="text-slate-400 leading-relaxed">
-              No somos solo una app más. Moderamos activamente cada reporte y protegemos tus datos con cifrado de grado bancario. Un espacio libre de odio para que seas tú mismo.
-            </p>
-          </div>
-          <button 
-            onClick={onStart}
-            className="px-12 py-6 rounded-full bg-white text-black font-[1000] text-xs uppercase tracking-[0.3em] shadow-2xl hover:scale-105 transition-all"
+      {/* ═══ FINAL CTA ═══ */}
+      <section className="py-24 md:py-32 px-6 border-t border-white/[0.04]">
+        <div className="max-w-2xl mx-auto text-center space-y-8">
+          <h2 className="text-3xl md:text-5xl font-[900] tracking-tight">
+            La noche empieza<br />
+            <span className="text-slate-500">cuando tú llegas</span>
+          </h2>
+          <button
+            onClick={handleStart}
+            className="px-16 py-6 rounded-2xl bg-white text-black font-[900] text-sm uppercase tracking-[0.15em] hover:bg-slate-100 active:scale-[0.97] transition-all shadow-[0_20px_50px_rgba(255,255,255,0.06)]"
           >
-            Entrar a la comunidad
+            Entrar a Blow Nights
           </button>
+          <p className="text-[11px] text-slate-600 font-medium">
+            Gratis. Sin descargas. Solo Google Sign-In.
+          </p>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-32 px-6 bg-slate-900/10">
-        <div className="max-w-6xl mx-auto space-y-20">
-          <div className="text-center space-y-4">
-            <h2 className="text-4xl md:text-6xl font-[1000] tracking-tighter">LO QUE DICEN LOS CHICOS</h2>
-            <p className="text-slate-400 font-medium">Miles de conexiones reales cada día.</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { name: 'Alex, 24', text: 'Por fin una app que no está llena de bots. El mapa es súper preciso y he quedado con gente real en mi barrio.', color: 'from-fuchsia-500 to-purple-500' },
-              { name: 'Marc, 31', text: 'Lo mejor es la privacidad de los álbumes. Me siento seguro compartiendo mis fotos solo con quien yo quiero.', color: 'from-indigo-500 to-cyan-500' },
-              { name: 'Dani, 28', text: 'La fluidez de la app es increíble. Se nota que está bien hecha y el soporte responde rápido.', color: 'from-orange-500 to-rose-500' }
-            ].map((t, i) => (
-              <div key={i} className="p-8 rounded-[3rem] bg-white/5 border border-white/10 space-y-6 relative overflow-hidden group">
-                <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${t.color}`} />
-                <p className="text-lg font-medium leading-relaxed italic text-white/90">"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full bg-gradient-to-tr ${t.color}`} />
-                  <span className="font-black text-xs uppercase tracking-widest">{t.name}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="py-32 px-6">
-        <div className="max-w-3xl mx-auto space-y-16">
-          <h2 className="text-4xl font-[1000] text-center tracking-tighter">PREGUNTAS FRECUENTES</h2>
-          <div className="space-y-6">
-            {[
-              { q: '¿Es realmente gratuita?', a: 'Sí, las funciones principales como el mapa, chat y fotos son gratis. Tenemos un modo Premium opcional para quien quiera extras.' },
-              { q: '¿Cómo protegen mi privacidad?', a: 'Usamos cifrado de grado bancario y permitimos álbumes privados con candado. Tú decides quién ve qué.' },
-              { q: '¿Hay perfiles falsos?', a: 'Moderamos la comunidad 24/7 y tenemos un sistema de verificación de fotos para asegurar que todos son quienes dicen ser.' }
-            ].map((faq, i) => (
-              <div key={i} className="p-8 rounded-[2rem] bg-white/5 border border-white/10 space-y-3">
-                <h4 className="font-black text-sm uppercase tracking-widest text-fuchsia-500">{faq.q}</h4>
-                <p className="text-slate-400 text-sm leading-relaxed">{faq.a}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* PWA CTA Section */}
-      <section className="py-32 px-6">
-        <div className="max-w-5xl mx-auto bg-gradient-to-br from-indigo-600 to-fuchsia-600 rounded-[3rem] p-12 md:p-20 text-center space-y-8 shadow-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-125 transition-transform duration-700" />
-          
-          <div className="relative z-10 space-y-6">
-            <h2 className="text-4xl md:text-6xl font-[1000] tracking-tighter text-white">LLEVA GAY MEET <br />EN TU BOLSILLO</h2>
-            <p className="text-white/80 text-lg md:text-xl font-medium max-w-2xl mx-auto">
-              Instala nuestra aplicación para recibir notificaciones en tiempo real, acceso rápido y una experiencia 100% nativa.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <button 
-                onClick={() => {
-                  window.dispatchEvent(new CustomEvent('show-pwa-prompt'));
-                }}
-                className="w-full sm:w-auto px-12 py-6 rounded-full bg-white text-black font-[1000] text-xs uppercase tracking-[0.3em] shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3"
-              >
-                <span className="material-icons">install_mobile</span>
-                Instalar App ahora
-              </button>
-              <div className="flex items-center gap-2 text-white/60 text-[10px] font-black uppercase tracking-widest">
-                <span className="material-icons text-sm">check_circle</span>
-                Sin App Store • 100% Seguro
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-20 px-6 border-t border-white/5 text-center space-y-8">
+      {/* ═══ FOOTER ═══ */}
+      <footer className="py-16 px-6 border-t border-white/[0.04] text-center space-y-6">
         <div className="flex justify-center gap-8">
-          <Link href="/terms" className="text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-white transition-all">Términos</Link>
-          <Link href="/privacy" className="text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-white transition-all">Privacidad</Link>
-          <Link href="/rules" className="text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-white transition-all">Normas</Link>
+          <Link href="/terms" className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600 hover:text-white transition-colors">Términos</Link>
+          <Link href="/privacy" className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600 hover:text-white transition-colors">Privacidad</Link>
+          <Link href="/rules" className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600 hover:text-white transition-colors">Normas</Link>
         </div>
-        <p className="text-[10px] font-medium text-slate-700 uppercase tracking-[0.2em]">© 2026 GAY MEET • Made with ❤️ for the community</p>
+        <p className="text-[10px] text-slate-700 font-medium uppercase tracking-[0.15em]">
+          &copy; 2026 Blow Nights
+        </p>
       </footer>
     </div>
   );

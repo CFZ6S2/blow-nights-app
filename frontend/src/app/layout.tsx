@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { CityProvider } from "@/context/CityContext";
 import { BottomNav } from "@/components/BottomNav";
 import { PageTransition } from "@/components/PageTransition";
 import NotificationManager from "@/components/NotificationManager";
@@ -20,13 +21,18 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const outfit = Outfit({
+  variable: "--font-outfit",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
-  title: "Gay Meet App - MVP",
-  description: "Encuentra personas cerca de ti rápidamente.",
+  title: "Blow Nights - Tu Circuito Nocturno",
+  description: "Locales, entradas y planes en vivo para la comunidad LGTBIQ+.",
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Gay Meet',
+    title: 'Blow Nights',
   },
   formatDetection: {
     telephone: false,
@@ -41,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} h-full antialiased`}
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
@@ -50,7 +56,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Gay Meet" />
+        <meta name="apple-mobile-web-app-title" content="Blow Nights" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-192.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192.png" />
@@ -59,6 +65,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-slate-950 text-white">
         <AuthProvider>
+          <CityProvider>
           <NotificationProvider>
             <NotificationManager />
             <NotificationToast />
@@ -71,6 +78,7 @@ export default function RootLayout({
             <BottomNav />
             <PWAInstallPrompt />
           </NotificationProvider>
+          </CityProvider>
         </AuthProvider>
       </body>
     </html>

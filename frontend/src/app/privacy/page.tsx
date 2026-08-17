@@ -75,7 +75,7 @@ export default function PrivacyPage() {
         </main>
 
         <footer className="pt-12 border-t border-white/5 text-center">
-          <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">© 2026 Gay Meet App. Tu privacidad es nuestra prioridad.</p>
+          <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">© 2026 Blow Nights App. Tu privacidad es nuestra prioridad.</p>
         </footer>
       </div>
     </div>

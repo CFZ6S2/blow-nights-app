@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { 
   onAuthStateChanged, 
   GoogleAuthProvider, 
+  OAuthProvider,
   signInWithPopup, 
   signOut,
   deleteUser
@@ -11,21 +12,43 @@ import {
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { usePresence } from '@/hooks/usePresence';
+import { User as UserProfile } from '@/types';
+import { User as FirebaseUser } from 'firebase/auth';
 
-const AuthContext = createContext({
+interface AuthContextType {
+  user: FirebaseUser | null;
+  profile: UserProfile | null;
+  claims: Record<string, any> | null;
+  isAdmin: boolean;
+  isCityAdmin?: boolean;
+  isVenueManager?: boolean;
+  hasChillAccess: boolean;
+  loading: boolean;
+  loginWithGoogle: () => Promise<void>;
+  loginWithApple: () => Promise<void>;
+  logout: () => Promise<void>;
+  deleteAccount?: () => Promise<void>;
+  requestVerification?: (file: File) => Promise<boolean | undefined>;
+}
+
+const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
+  claims: null,
   isAdmin: false,
+  hasChillAccess: false,
   loading: true,
   loginWithGoogle: async () => {},
+  loginWithApple: async () => {},
   logout: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [claims, setClaims] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
 
   usePresence(user?.uid, profile);
@@ -53,7 +76,7 @@ export const AuthProvider = ({ children }) => {
       });
     }
 
-    let unsubscribeProfile = null;
+    let unsubscribeProfile: (() => void) | null = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (unsubscribeProfile) {
@@ -64,11 +87,15 @@ export const AuthProvider = ({ children }) => {
       if (user) {
         setUser(user);
         
+        user.getIdTokenResult(true).then((idTokenResult) => {
+          setClaims(idTokenResult.claims);
+        }).catch(err => console.error("Error fetching claims", err));
+        
         // Escuchar cambios en el perfil de Firestore
         unsubscribeProfile = onSnapshot(doc(db, 'users', user.uid), 
           (doc) => {
             if (doc.exists()) {
-              setProfile(doc.data());
+              setProfile({ id: doc.id, ...doc.data() } as UserProfile);
             } else {
               setProfile(null);
             }
@@ -82,6 +109,7 @@ export const AuthProvider = ({ children }) => {
       } else {
         setUser(null);
         setProfile(null);
+        setClaims(null);
         setLoading(false);
       }
     });
@@ -135,6 +163,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithApple = async () => {
+    const provider = new OAuthProvider('apple.com');
+    provider.addScope('email');
+    provider.addScope('name');
+    try {
+      const result = await signInWithPopup(auth, provider);
+      // Apple logic could be identical to Google regarding referrals
+      // We'll skip the referral part for Apple to keep it simple, or replicate if needed
+    } catch (error) {
+      console.error("Error signing in with Apple", error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       await signOut(auth);
@@ -151,7 +193,7 @@ export const AuthProvider = ({ children }) => {
       const { storage } = await import('@/lib/firebase');
       const uid = user.uid;
 
-      const deleteMatchingDocs = async (col, field) => {
+      const deleteMatchingDocs = async (col: string, field: string) => {
         const q = query(collection(db, col), where(field, '==', uid));
         const snap = await getDocs(q);
         await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
@@ -178,7 +220,7 @@ export const AuthProvider = ({ children }) => {
 
       await deleteDoc(doc(db, 'users', uid));
       await deleteUser(user);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting account:", error);
       if (error.code === 'auth/requires-recent-login') {
         alert("Por seguridad, debes haber iniciado sesión recientemente para borrar tu cuenta. Por favor, cierra sesión e inicia de nuevo.");
@@ -187,7 +229,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const requestVerification = async (photoFile) => {
+  const requestVerification = async (photoFile: File) => {
     if (!user || !photoFile) return;
     try {
       const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
@@ -218,18 +260,27 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const isAdmin = user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL || user?.email === 'cesar.herrera.rojo@gmail.com';
+  const isAdmin = claims?.role === 'admin' || user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL || user?.email === 'cesar.herrera.rojo@gmail.com';
+  const isCityAdmin = claims?.role === 'cityAdmin' || profile?.role === 'cityAdmin';
+  const isVenueManager = isAdmin || isCityAdmin || claims?.role === 'venueOwner' || claims?.role === 'venue' || profile?.role === 'venueOwner' || profile?.role === 'venue';
+  const hasChillAccess = isAdmin || !!claims?.premium || !!profile?.premium
+    || (typeof claims?.pass_expires === 'number' && claims.pass_expires > Date.now());
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      profile, 
-      isAdmin, 
-      loginWithGoogle, 
-      logout, 
-      deleteAccount, 
+    <AuthContext.Provider value={{
+      user,
+      profile,
+      claims,
+      isAdmin,
+      isCityAdmin,
+      isVenueManager,
+      hasChillAccess,
+      loginWithGoogle,
+      loginWithApple,
+      logout,
+      deleteAccount,
       requestVerification,
-      loading 
+      loading
     }}>
       {loading ? (
         <div className="flex items-center justify-center min-h-screen bg-slate-950">

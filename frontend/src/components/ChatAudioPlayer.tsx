@@ -3,12 +3,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-export default function ChatAudioPlayer({ url }) {
+export default function ChatAudioPlayer({ url }: { url: string }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
-  const audioRef = useRef(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const togglePlay = () => {
+    if (!audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
     } else {
@@ -18,6 +19,7 @@ export default function ChatAudioPlayer({ url }) {
   };
 
   const handleTimeUpdate = () => {
+    if (!audioRef.current) return;
     const p = (audioRef.current.currentTime / audioRef.current.duration) * 100;
     setProgress(p);
   };

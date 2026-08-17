@@ -12,7 +12,7 @@ export default function PremiumPage() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleSubscribe = async (priceId) => {
+  const handleSubscribe = async (priceId: string) => {
     setIsSubmitting(true);
     setError('');
 
@@ -21,7 +21,8 @@ export default function PremiumPage() {
       const { functions } = await import('@/lib/firebase');
 
       const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
-      const { data } = await createCheckoutSession({ priceId, origin: window.location.origin });
+      const result = await createCheckoutSession({ priceId, origin: window.location.origin });
+      const data: any = result.data;
 
       if (data?.url) {
         window.location.href = data.url;

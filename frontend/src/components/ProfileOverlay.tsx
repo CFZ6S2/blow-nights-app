@@ -19,11 +19,12 @@ interface ProfileOverlayProps {
 }
 
 import { calculateDistance } from '@/lib/geo';
+import { User } from '@/types';
 
 export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
   const router = useRouter();
   const { user: currentUser, profile: currentProfile } = useAuth();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [activePhoto, setActivePhoto] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -36,11 +37,13 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
   const contentFade = useTransform(scrollY, [0, 100], [1, 0.9]);
 
   const [hasLiked, setHasLiked] = useState(false);
-  const [matchData, setMatchData] = useState(null);
+  const [matchData, setMatchData] = useState<any>(null);
   const [showLikeAnim, setShowLikeAnim] = useState(false);
+  const [nsfwRevealed, setNsfwRevealed] = useState<Record<number, boolean>>({});
   const [showSuperAnim, setShowSuperAnim] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const { blockUser, reportUser } = useSafeActions();
+  const { sendLike } = useLikes();
 
   const triggerHaptic = (intensity = 10) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -51,10 +54,9 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const userDoc = await getDoc(doc(db, 'users', id));
-        if (userDoc.exists()) {
-          const profileData = userDoc.data();
-          setProfile(profileData);
+        const docSnap = await getDoc(doc(db, 'users', id));
+        if (docSnap.exists()) {
+          setProfile({ id: docSnap.id, ...docSnap.data() } as User);
           
           // Registrar visita si no es mi propio perfil
           if (currentUser && id !== currentUser.uid) {
@@ -112,7 +114,7 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
     // Animación inmediata y Haptic
     if (isSuper) {
       setShowSuperAnim(true);
-      triggerHaptic([40, 60, 40]);
+      triggerHaptic(40);
       setTimeout(() => setShowSuperAnim(false), 2000);
     } else {
       setShowLikeAnim(true);
@@ -122,6 +124,8 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
 
     const result = await sendLike(id, isSuper);
     if (result.isMatch) {
+      setMatchData(result.matchData);
+      triggerHaptic(50);
       // Pequeño delay para que se vea la animación de like antes del overlay de match
       setTimeout(() => {
         setMatchData(result.matchData);
@@ -137,8 +141,10 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
     </div>
   );
 
+  if (!profile) return null;
+
   const isOwnProfile = currentUser?.uid === id;
-  const isMatch = !!matchData || !!(profile?.matches && profile.matches.includes(currentUser?.uid)); // Simplificado para el demo
+  const isMatch = !!matchData || !!(profile?.matches && profile.matches.includes(currentUser?.uid || '')); // Simplificado para el demo
   const hasAccessToPrivate = isOwnProfile || isMatch;
 
   const publicPhotos = [profile.fotoUrl, ...(profile.extraPhotos || [])].filter(Boolean);
@@ -147,7 +153,7 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
   // Si no tiene acceso, mostramos las privadas pero marcadas
   const allPhotos = [...publicPhotos, ...privatePhotos];
   
-  const distance = currentProfile?.lat && profile?.lat 
+  const distance = currentProfile?.lat && currentProfile?.lng && profile?.lat && profile?.lng 
     ? calculateDistance(currentProfile.lat, currentProfile.lng, profile.lat, profile.lng)
     : '0.5';
 
@@ -195,18 +201,30 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
               const isPrivate = i >= publicPhotos.length;
               const locked = isPrivate && !hasAccessToPrivate;
 
+              const isNsfw = !!(profile.nsfwPhotos && profile.nsfwPhotos.includes(i));
+              const blurNsfw = isNsfw && currentProfile?.nsfwBlur !== false && !nsfwRevealed[i];
+
               return (
                 <div key={i} className="snap-center min-w-full h-full relative overflow-hidden">
-                  <motion.img 
+                  <motion.img
                     layoutId={i === 0 ? `marker-photo-${id}` : undefined}
-                    src={photo} 
-                    alt={profile.nick} 
-                    animate={{ 
+                    src={photo}
+                    alt={profile.nick}
+                    animate={{
                       scale: activePhoto === i ? 1.05 : 1,
-                      filter: (activePhoto === i ? 'blur(0px)' : 'blur(4px)') + (locked ? ' blur(40px) brightness(0.5)' : '')
+                      filter: (activePhoto === i ? 'blur(0px)' : 'blur(4px)') + (locked ? ' blur(40px) brightness(0.5)' : '') + (blurNsfw ? ' blur(30px)' : '')
                     }}
-                    className="w-full h-full object-cover" 
+                    className="w-full h-full object-cover"
                   />
+                  {blurNsfw && !locked && (
+                    <button
+                      onClick={() => setNsfwRevealed(prev => ({ ...prev, [i]: true }))}
+                      className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/30"
+                    >
+                      <span className="material-icons text-white/80 text-3xl">visibility_off</span>
+                      <span className="text-[9px] text-white/70 font-black uppercase tracking-widest mt-2">Contenido NSFW — toca para ver</span>
+                    </button>
+                  )}
                   {locked && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/20">
                       <motion.div 
@@ -341,8 +359,10 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
               <div className="space-y-4">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Intereses</p>
                 <div className="flex flex-wrap gap-2">
-                  {intereses.map((interes, idx) => (
-                    <span key={idx} className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-bold text-slate-400">#{interes}</span>
+                  {profile.intereses && profile.intereses.map((interes: string, idx: number) => (
+                    <span key={idx} className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-slate-300">
+                      {interes}
+                    </span>
                   ))}
                 </div>
               </div>

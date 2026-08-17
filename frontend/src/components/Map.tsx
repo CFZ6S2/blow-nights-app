@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, memo } from 'react';
-import Map, { Marker, NavigationControl } from 'react-map-gl/maplibre';
+import Map, { Marker, NavigationControl, MapRef } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useAuth } from '@/context/AuthContext';
 import { collection, onSnapshot, query, where, doc, setDoc } from 'firebase/firestore';
@@ -10,6 +10,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Skeleton from '@/components/Skeleton';
 import { useRouter } from 'next/navigation';
 import ProfileOverlay from './ProfileOverlay';
+import { User, Chill } from '@/types';
+import { useCity } from '@/context/CityContext';
 
 import { calculateDistance } from '@/lib/geo';
 
@@ -17,13 +19,13 @@ import { calculateDistance } from '@/lib/geo';
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/dark";
 
 // Componente de Marcador Memoizado para máximo rendimiento
-const UserMarker = memo(({ u, onClick, index }: { u: any, onClick: (id: string) => void, index: number }) => {
+const UserMarker = memo(({ u, onClick, index }: { u: User, onClick: (id: string) => void, index: number }) => {
   const isBoosted = u.boostedUntil && u.boostedUntil.toDate() > new Date();
 
   return (
     <Marker 
-      latitude={u.lat} 
-      longitude={u.lng}
+      latitude={u.lat as number} 
+      longitude={u.lng as number}
       anchor="bottom"
     >
       <motion.div 
@@ -94,7 +96,7 @@ const UserMarker = memo(({ u, onClick, index }: { u: any, onClick: (id: string) 
             className="bg-slate-900/90 backdrop-blur-xl border border-white/20 p-4 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] min-w-[160px]"
           >
             <div className="flex items-center gap-3 mb-2">
-              <p className="font-black text-base text-white">{u.nick}, {u.edad}</p>
+              <p className="font-black text-base text-white">{u.nick}, {u.edad || '?'}</p>
               {u.verified && <span className="material-icons text-blue-500 text-sm">verified</span>}
               {u.premium && <span className="text-[9px] bg-gradient-to-r from-yellow-400 to-yellow-600 text-black px-2 py-0.5 rounded-full font-black shadow-lg shadow-yellow-500/20">VIP</span>}
             </div>
@@ -115,10 +117,91 @@ const UserMarker = memo(({ u, onClick, index }: { u: any, onClick: (id: string) 
 
 UserMarker.displayName = 'UserMarker';
 
+// Componente de Marcador para Locales / Cruising
+const VenueMarker = memo(({ v, onClick, index }: { v: any, onClick: (id: string) => void, index: number }) => {
+  const isCruising = v.type === 'cruising';
+  return (
+    <Marker 
+      latitude={v.location.latitude} 
+      longitude={v.location.longitude}
+      anchor="bottom"
+    >
+      <motion.div 
+        initial={{ scale: 0.6, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ delay: Math.min(index * 0.05, 0.5), type: "spring", stiffness: 200, damping: 15 }}
+        onClick={() => onClick(v.id)}
+        className="relative group cursor-pointer"
+      >
+        <div className={`w-12 h-12 rounded-[1rem] border-2 flex items-center justify-center shadow-2xl transform group-hover:scale-110 group-active:scale-95 transition-all duration-300 ${
+          isCruising 
+          ? 'bg-slate-900 border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.4)]' 
+          : 'bg-slate-900 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.4)]'
+        }`}>
+          {v.coverImage ? (
+            <img src={v.coverImage} alt={v.name} className="w-full h-full object-cover rounded-xl opacity-80" />
+          ) : (
+            <span className="material-icons text-white text-2xl">
+              {isCruising ? 'park' : v.type === 'sauna' ? 'hot_tub' : v.type === 'chill' ? 'local_fire_department' : 'nightlife'}
+            </span>
+          )}
+        </div>
+        
+        {/* Tooltip Local */}
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 hidden group-hover:block z-50 animate-in fade-in slide-in-from-bottom-2 duration-300 pointer-events-none">
+          <div className="bg-slate-900/90 backdrop-blur-xl border border-white/20 px-4 py-2 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] whitespace-nowrap flex flex-col items-center">
+            <p className="font-black text-sm text-white">{v.name}</p>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{v.type}</p>
+          </div>
+          <div className="w-3 h-3 bg-slate-900/90 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2 border-r border-b border-white/20"></div>
+        </div>
+      </motion.div>
+    </Marker>
+  );
+});
+
+VenueMarker.displayName = 'VenueMarker';
+
+const ChillMarker = memo(({ c, onClick, index }: { c: Chill, onClick: (id: string) => void, index: number }) => {
+  const spots = c.max_capacity - c.accepted_users.length;
+  return (
+    <Marker latitude={c.approx_lat} longitude={c.approx_lng} anchor="center">
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: Math.min(index * 0.05, 0.5), type: "spring", stiffness: 200 }}
+        onClick={() => onClick(c.id)}
+        className="relative group cursor-pointer"
+      >
+        <motion.div
+          className="absolute inset-0 rounded-full bg-fuchsia-500/20 blur-xl -z-10"
+          animate={{ scale: [1, 1.8, 1], opacity: [0.4, 0, 0.4] }}
+          transition={{ duration: 3, repeat: Infinity }}
+        />
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-fuchsia-600 to-purple-700 border-2 border-fuchsia-400 flex items-center justify-center shadow-[0_0_20px_rgba(192,38,211,0.5)] group-hover:scale-110 transition-transform">
+          <span className="material-icons text-white text-xl">local_fire_department</span>
+        </div>
+        <div className="absolute -bottom-1 -right-1 bg-black border border-fuchsia-500/50 rounded-full px-1.5 py-0.5 text-[8px] font-black text-fuchsia-400">
+          {spots > 0 ? spots : '0'}
+        </div>
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 hidden group-hover:block z-50 pointer-events-none">
+          <div className="bg-slate-900/90 backdrop-blur-xl border border-fuchsia-500/30 px-4 py-2 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] whitespace-nowrap flex flex-col items-center">
+            <p className="font-black text-sm text-white">{c.title}</p>
+            <p className="text-[9px] font-bold text-fuchsia-400">{c.host_nick} &middot; {spots > 0 ? `${spots} plazas` : 'Lleno'}</p>
+          </div>
+          <div className="w-3 h-3 bg-slate-900/90 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2 border-r border-b border-fuchsia-500/30"></div>
+        </div>
+      </motion.div>
+    </Marker>
+  );
+});
+
+ChillMarker.displayName = 'ChillMarker';
+
 export default function MainMap() {
   const { user, profile } = useAuth();
   const router = useRouter();
-  const mapRef = useRef(null);
+  const mapRef = useRef<MapRef>(null);
   
   const [viewState, setViewState] = useState({
     latitude: 40.485,
@@ -126,11 +209,20 @@ export default function MainMap() {
     zoom: 14
   });
   
-  const [usersNearby, setUsersNearby] = useState([]);
-  const [isOptimisticAvailable, setIsOptimisticAvailable] = useState(null);
+  const [usersNearby, setUsersNearby] = useState<User[]>([]);
+  const [venuesMap, setVenuesMap] = useState<any[]>([]);
+  const [chillsMap, setChillsMap] = useState<Chill[]>([]);
+  const { citySlug } = useCity();
+  const [isOptimisticAvailable, setIsOptimisticAvailable] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  
+  // Estados para Creación de Pines
+  const [isAddingPin, setIsAddingPin] = useState(false);
+  const [newPinType, setNewPinType] = useState('cruising');
+  const [newPinName, setNewPinName] = useState('');
+  const [isSavingPin, setIsSavingPin] = useState(false);
   
   // Estados para Modo Viaje
   const [travelSearch, setTravelSearch] = useState('');
@@ -151,8 +243,8 @@ export default function MainMap() {
   // Estados de filtros
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [ageRange, setAgeRange] = useState([18, 99]);
-  const [roleFilter, setRoleFilter] = useState(null);
-  const [intentionFilter, setIntentionFilter] = useState(null);
+  const [roleFilter, setRoleFilter] = useState<string | null>(null);
+  const [intentionFilter, setIntentionFilter] = useState<string | null>(null);
   const [onlyPremium, setOnlyPremium] = useState(false);
   const [onlyWithPhoto, setOnlyWithPhoto] = useState(false);
   const [distanceFilter, setDistanceFilter] = useState(50); // 50km por defecto
@@ -180,12 +272,12 @@ export default function MainMap() {
     const q = query(collection(db, 'users'), where('online', '==', true));
     const unsubscribe = onSnapshot(q, 
       (snapshot) => {
-        const users = [];
+        const users: User[] = [];
         const blockedUsers = profile?.blockedUsers || [];
         
         snapshot.forEach((doc) => {
-          if (doc.id !== user?.uid && !blockedUsers.includes(doc.id)) {
-            users.push({ id: doc.id, ...doc.data() });
+          if (!blockedUsers.includes(doc.id) && doc.id !== user?.uid) {
+            users.push({ id: doc.id, ...doc.data() } as User);
           }
         });
         setUsersNearby(users);
@@ -197,8 +289,41 @@ export default function MainMap() {
       }
     );
 
-    return () => unsubscribe();
-  }, [user]);
+    const qVenues = query(collection(db, 'venues'), where('isActive', '==', true));
+    const unsubVenues = onSnapshot(qVenues, (snapshot) => {
+      const v: any[] = [];
+      const now = new Date();
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        // Filtrar chills caducados (24h)
+        if (data.type === 'chill' && data.expiresAt && data.expiresAt.toDate() < now) {
+          return;
+        }
+        if (data.location?.latitude && data.location?.longitude) {
+          v.push({ id: doc.id, ...data });
+        }
+      });
+      setVenuesMap(v);
+    });
+
+    let unsubChills = () => {};
+    if (citySlug) {
+      const qChills = query(
+        collection(db, 'chills'),
+        where('city_slug', '==', citySlug),
+        where('status', 'in', ['active', 'full'])
+      );
+      unsubChills = onSnapshot(qChills, (snap) => {
+        setChillsMap(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Chill)));
+      });
+    }
+
+    return () => {
+      unsubscribe();
+      unsubVenues();
+      unsubChills();
+    };
+  }, [user, profile, citySlug]);
 
   const centerOnUser = () => {
     if (!mapRef.current) return;
@@ -210,7 +335,7 @@ export default function MainMap() {
         setUserLocation([longitude, latitude]);
         
         // Animación suave FlyTo
-        mapRef.current.flyTo({
+        mapRef.current?.flyTo({
           center: [longitude, latitude],
           zoom: 15,
           duration: 2000,
@@ -223,6 +348,7 @@ export default function MainMap() {
   };
 
   const toggleAvailability = async () => {
+    if (!user) return;
     triggerHaptic(20);
     const nextState = !isAvailable;
     
@@ -233,12 +359,12 @@ export default function MainMap() {
       if (nextState) {
         navigator.geolocation.getCurrentPosition(async (pos) => {
           const { latitude, longitude } = pos.coords;
-          await setDoc(doc(db, 'locations', user.uid), {
+          await setDoc(doc(db, 'locations', user.uid as string), {
             lat: latitude,
             lng: longitude,
             updatedAt: new Date()
           });
-          await setDoc(doc(db, 'users', user.uid), {
+          await setDoc(doc(db, 'users', user.uid as string), {
             online: true,
             lat: latitude,
             lng: longitude
@@ -248,9 +374,7 @@ export default function MainMap() {
           setTimeout(() => setIsOptimisticAvailable(null), 1000);
         });
       } else {
-        await setDoc(doc(db, 'users', user.uid), {
-          online: false
-        }, { merge: true });
+        await setDoc(doc(db, 'users', user?.uid as string), { online: nextState }, { merge: true });
         setTimeout(() => setIsOptimisticAvailable(null), 1000);
       }
     } catch (error) {
@@ -307,16 +431,16 @@ export default function MainMap() {
 
   const filteredUsers = usersNearby.filter((u) => {
     if (typeof u.lat !== 'number' || typeof u.lng !== 'number' || Number.isNaN(u.lat) || Number.isNaN(u.lng)) return false;
-    if (u.edad < ageRange[0] || u.edad > ageRange[1]) return false;
+    if (u.edad !== null && (u.edad < ageRange[0] || u.edad > ageRange[1])) return false;
     if (roleFilter && u.rol !== roleFilter) return false;
     if (intentionFilter && u.intencion !== intentionFilter) return false;
     if (onlyPremium && !u.premium) return false;
     if (onlyWithPhoto && !u.fotoUrl) return false;
     
     // Filtro de distancia
-    if (profile?.lat && u.lat) {
-      const d = parseFloat(calculateDistance(profile.lat, profile.lng, u.lat, u.lng));
-      if (d > distanceFilter) return false;
+    if (profile?.lat && u.lat && userLocation) {
+      const distance = calculateDistance(userLocation[0], userLocation[1], u.lat as number, u.lng as number);
+      if (parseFloat(distance) > distanceFilter) return false;
     }
     
     return true;
@@ -342,6 +466,42 @@ export default function MainMap() {
 
     // Inyectar proactivamente patrones conocidos que dan guerra
     ['wood-pattern', 'grass-pattern', 'park-pattern'].forEach(injectMissingImage);
+  };
+
+  const handleSavePin = async () => {
+    if (!newPinName.trim() || !user) return;
+    setIsSavingPin(true);
+    triggerHaptic(20);
+    
+    try {
+      const expiresAt = newPinType === 'chill' ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null;
+      
+      const ref = doc(collection(db, 'venues'));
+      await setDoc(ref, {
+        name: newPinName.trim(),
+        type: newPinType,
+        location: {
+          latitude: viewState.latitude,
+          longitude: viewState.longitude
+        },
+        isActive: true,
+        currentCount: 0,
+        cityId: profile?.cityId || 'madrid',
+        ownerId: 'community',
+        createdBy: user.uid,
+        createdAt: new Date(),
+        ...(expiresAt ? { expiresAt } : {})
+      });
+      
+      setIsAddingPin(false);
+      setNewPinName('');
+      setNewPinType('cruising');
+    } catch (e) {
+      console.error(e);
+      alert('Error al crear el punto');
+    } finally {
+      setIsSavingPin(false);
+    }
   };
 
   return (
@@ -434,8 +594,37 @@ export default function MainMap() {
               <UserMarker 
                 key={u.id} 
                 u={u} 
-                onClick={handleViewProfile} 
-                index={index} 
+                index={index}
+                onClick={(id) => {
+                  triggerHaptic(10);
+                  setSelectedProfileId(id);
+                }} 
+              />
+            ))}
+
+            {/* Marcadores de Locales / Cruising */}
+            {venuesMap.map((v, index) => (
+              <VenueMarker
+                key={v.id}
+                v={v}
+                index={index}
+                onClick={(id) => {
+                  triggerHaptic(10);
+                  router.push(`/venues/detail?id=${id}`);
+                }}
+              />
+            ))}
+
+            {/* Marcadores de Chills */}
+            {chillsMap.map((c, index) => (
+              <ChillMarker
+                key={c.id}
+                c={c}
+                index={index}
+                onClick={(id) => {
+                  triggerHaptic(10);
+                  router.push(`/chills/${id}`);
+                }}
               />
             ))}
           </AnimatePresence>
@@ -443,6 +632,19 @@ export default function MainMap() {
 
         {/* Botones Flotantes Superiores */}
         <div className="absolute top-6 right-6 flex flex-col gap-4 z-20">
+          {profile?.premium && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => { triggerHaptic(10); setIsAddingPin(!isAddingPin); }}
+              className={`w-12 h-12 rounded-2xl backdrop-blur-xl text-white border flex items-center justify-center shadow-2xl transition-all ${
+                isAddingPin ? 'bg-fuchsia-600 border-fuchsia-400' : 'bg-slate-900/80 border-white/10 hover:bg-slate-800'
+              }`}
+            >
+              <span className="material-icons text-xl">{isAddingPin ? 'close' : 'add_location'}</span>
+            </motion.button>
+          )}
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -465,9 +667,67 @@ export default function MainMap() {
           </motion.button>
         </div>
 
+        {/* Crosshair & Pin Creation Overlay */}
+        {isAddingPin && (
+          <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-30">
+            <motion.div 
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="relative -top-6"
+            >
+              <div className="w-12 h-12 flex items-center justify-center text-fuchsia-500">
+                <span className="material-icons text-4xl shadow-2xl drop-shadow-[0_0_15px_rgba(217,70,239,0.8)]">
+                  {newPinType === 'cruising' ? 'park' : 'local_fire_department'}
+                </span>
+              </div>
+              <div className="absolute top-full left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-fuchsia-500 rounded-full shadow-[0_0_10px_#d946ef]"></div>
+            </motion.div>
+
+            {/* Bottom Sheet Form */}
+            <motion.div 
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="absolute bottom-8 w-[90%] max-w-sm bg-slate-900/95 backdrop-blur-2xl border border-white/10 p-5 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] pointer-events-auto"
+            >
+              <h3 className="text-sm font-black text-white mb-4 tracking-tight">Crear Punto Comunitario</h3>
+              <div className="space-y-3">
+                <div className="flex bg-black/40 rounded-xl p-1">
+                  <button 
+                    onClick={() => setNewPinType('cruising')} 
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${newPinType === 'cruising' ? 'bg-fuchsia-600 text-white shadow-lg shadow-fuchsia-500/20' : 'text-slate-400'}`}
+                  >
+                    Cruising 🌲
+                  </button>
+                  <button 
+                    onClick={() => setNewPinType('chill')} 
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${newPinType === 'chill' ? 'bg-red-600 text-white shadow-lg shadow-red-500/20' : 'text-slate-400'}`}
+                  >
+                    Chill ❄️
+                  </button>
+                </div>
+                <input 
+                  value={newPinName}
+                  onChange={e => setNewPinName(e.target.value)}
+                  placeholder="Nombre del lugar..."
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none text-white"
+                />
+                <button 
+                  disabled={!newPinName.trim() || isSavingPin}
+                  onClick={handleSavePin}
+                  className="w-full bg-white text-black font-black uppercase tracking-widest text-[10px] py-3 rounded-xl disabled:opacity-50 transition-all"
+                >
+                  {isSavingPin ? 'Guardando...' : 'Fijar Aquí'}
+                </button>
+                {newPinType === 'chill' && <p className="text-[9px] text-center text-slate-500 uppercase tracking-widest">Este evento desaparecerá en 24h</p>}
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         {/* Botón flotante de Disponibilidad */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[85%] max-w-xs z-20">
-          <motion.button
+        {!isAddingPin && (
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[85%] max-w-xs z-20">
+            <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={toggleAvailability}
@@ -481,6 +741,7 @@ export default function MainMap() {
             <span className="text-xs uppercase tracking-[0.2em]">{isAvailable ? 'VISIBLE AHORA' : 'VOLVERME VISIBLE'}</span>
           </motion.button>
         </div>
+        )}
       </motion.div>
 
       {/* Profile Overlay Renderizado fuera del contenedor blurreado */}

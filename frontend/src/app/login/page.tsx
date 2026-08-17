@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 
 export default function LoginPage() {
-  const { user, loginWithGoogle } = useAuth();
+  const { user, loginWithGoogle, loginWithApple } = useAuth();
   const [error, setError] = useState('');
   const router = useRouter();
 
@@ -22,6 +22,14 @@ export default function LoginPage() {
       await loginWithGoogle();
     } catch (err) {
       setError('Error al iniciar sesión con Google.');
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    try {
+      await loginWithApple();
+    } catch (err) {
+      setError('Error al iniciar sesión con Apple.');
     }
   };
 
@@ -45,9 +53,9 @@ export default function LoginPage() {
             <span className="material-icons text-white text-4xl">favorite</span>
           </motion.div>
           <h1 className="text-5xl font-[1000] tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-500 via-purple-500 to-indigo-500">
-            GAY MEET
+            BLOW NIGHTS
           </h1>
-          <p className="text-slate-400 font-medium uppercase text-[10px] tracking-[0.3em]">Acceso Seguro a la Comunidad</p>
+          <p className="text-slate-400 font-medium uppercase text-[10px] tracking-[0.3em]">Tu Circuito Nocturno</p>
         </div>
 
         {error && (
@@ -67,6 +75,14 @@ export default function LoginPage() {
           >
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
             Entrar con Google
+          </button>
+
+          <button
+            onClick={handleAppleLogin}
+            className="w-full flex items-center justify-center gap-4 bg-black text-white border border-white/20 font-[1000] py-6 rounded-2xl hover:bg-slate-900 transition-all duration-300 shadow-xl text-[10px] uppercase tracking-[0.2em]"
+          >
+            <span className="material-icons text-xl">apple</span>
+            Entrar con Apple
           </button>
 
           <div className="flex justify-between gap-2 pt-4">

@@ -1,6 +1,6 @@
 {
   "name": "functions",
-  "description": "Cloud Functions for Gay Meet App",
+  "description": "Cloud Functions for Blow Nights",
   "scripts": {
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",

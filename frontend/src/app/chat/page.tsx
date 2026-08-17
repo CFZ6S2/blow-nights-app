@@ -10,7 +10,7 @@ import { ChatSkeleton } from '@/components/Skeleton';
 
 export default function ChatListPage() {
   const { user, loading: authLoading } = useAuth();
-  const [chats, setChats] = useState([]);
+  const [chats, setChats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -33,7 +33,7 @@ export default function ChatListPage() {
         const chatsData = [];
         for (const d of snapshot.docs) {
           const data = d.data();
-          const otherId = data.users.find(uid => uid !== user.uid);
+          const otherId = d.data().users.find((uid: string) => uid !== user.uid);
           
           // Ocultar si está bloqueado
           if (blockedIds.includes(otherId)) continue;

@@ -21,16 +21,16 @@ export default function ChatDetailPage() {
   const { messages, loading, isOtherTyping, activeUsers, sendMessage, setTypingStatus, markAsRead, grantPrivateAccess } = useChat(chatId);
   const { blockUser, reportUser } = useSafeActions();
   const { uploadFile, uploading, progress } = useMedia();
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [newMessage, setNewMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [mediaRecorder, setMediaRecorder] = useState(null);
-  const [otherUser, setOtherUser] = useState(null);
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [mediaRecorder, setMediaRecorder] = useState<any>(null);
+  const [otherUser, setOtherUser] = useState<any>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const scrollRef = useRef();
+  const scrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [isNearBottom, setIsNearBottom] = useState(true);
   const [showOptions, setShowOptions] = useState(false);
@@ -49,9 +49,9 @@ export default function ChatDetailPage() {
 
   useEffect(() => {
     const fetchOtherUser = async () => {
-      const chatDoc = await getDoc(doc(db, 'chats', chatId));
+      const chatDoc = await getDoc(doc(db, 'chats', chatId as string));
       if (chatDoc.exists()) {
-        const otherId = chatDoc.data().users.find(uid => uid !== user?.uid);
+        const otherId = chatDoc.data()?.users.find((uid: string) => uid !== user?.uid);
         if (otherId) {
           const userDoc = await getDoc(doc(db, 'users', otherId));
           setOtherUser(userDoc.data());
@@ -67,13 +67,13 @@ export default function ChatDetailPage() {
     }
   }, [messages, isOtherTyping, isNearBottom]);
 
-  const handleScroll = (e) => {
+  const handleScroll = (e: any) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
     const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
     setIsNearBottom(isAtBottom);
   };
 
-  const handleSend = (e) => {
+  const handleSend = (e: any) => {
     e.preventDefault();
     if (newMessage.trim()) {
       triggerHaptic(15);
@@ -83,12 +83,12 @@ export default function ChatDetailPage() {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: any) => {
     setNewMessage(e.target.value);
     setTypingStatus(e.target.value.length > 0);
   };
 
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = async (e: any) => {
     const file = e.target.files?.[0];
     if (!file || !user || !chatId) return;
 
@@ -106,10 +106,10 @@ export default function ChatDetailPage() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      const chunks = [];
+      const recorder: any = new MediaRecorder(stream);
+      const chunks: any[] = [];
 
-      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.ondataavailable = (e: any) => chunks.push(e.data);
       recorder.onstop = async () => {
         const blob = new Blob(chunks, { type: 'audio/webm' });
         const file = new File([blob], "voice_note.webm", { type: 'audio/webm' });
@@ -154,7 +154,7 @@ export default function ChatDetailPage() {
     </div>
   );
 
-  const distance = myProfile?.lat && otherUser?.lat 
+  const distance = myProfile?.lat && myProfile?.lng && otherUser?.lat && otherUser?.lng 
     ? calculateDistance(myProfile.lat, myProfile.lng, otherUser.lat, otherUser.lng)
     : '0.5';
 
@@ -312,7 +312,7 @@ export default function ChatDetailPage() {
       >
         <AnimatePresence initial={false}>
           {messages.map((msg, index) => {
-            const isMe = msg.senderId === user.uid;
+            const isMe = msg.senderId === user?.uid;
             return (
               <motion.div 
                 key={msg.id || index}
@@ -450,7 +450,7 @@ export default function ChatDetailPage() {
         </form>
       </footer>
       <ImageModal 
-        url={selectedImage} 
+        url={selectedImage || ''} 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
       />

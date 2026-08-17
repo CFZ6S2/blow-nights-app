@@ -1,0 +1,347 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { collection, query, where, onSnapshot, doc, setDoc, addDoc, deleteDoc, serverTimestamp, Timestamp, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useVenues, VENUE_TYPES } from '@/hooks/useVenues';
+import { useCity } from '@/context/CityContext';
+import { fuzzCoordinates } from '@/lib/geo';
+import CitySelector from '@/components/CitySelector';
+import Link from 'next/link';
+
+function VenueCounter({ venueId }: { venueId: string }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const now = Timestamp.now();
+    const q = query(
+      collection(db, 'checkins'),
+      where('venueId', '==', venueId),
+      where('expiresAt', '>', now)
+    );
+    const unsub = onSnapshot(q, (snap) => setCount(snap.size));
+    return unsub;
+  }, [venueId]);
+
+  if (count === 0) return null;
+
+  return (
+    <span className="bg-fuchsia-500/20 text-fuchsia-400 text-[10px] font-black px-2 py-0.5 rounded-full">
+      {count} {count === 1 ? 'persona' : 'personas'}
+    </span>
+  );
+}
+
+const CRUISING_TYPES = new Set(['sauna', 'cruising_bar', 'outdoor_zone']);
+
+type VisibilityMode = 'public' | 'ghost' | 'anonymous';
+
+export default function VenuesPage() {
+  const { user, profile, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const { cityId, currentCity } = useCity();
+  const [venues, setVenues] = useState<any[]>([]);
+  const { grouped, loading: venuesLoading } = useVenues(cityId);
+  const [activeCheckin, setActiveCheckin] = useState<any>(null);
+  const [checkingIn, setCheckingIn] = useState(false);
+  const [visibilityMode, setVisibilityMode] = useState<VisibilityMode>('public');
+  const [activeTab, setActiveTab] = useState<string>('previa');
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, authLoading, router]);
+
+  useEffect(() => {
+    if (!user) return;
+    const now = Timestamp.now();
+
+    const q1 = query(collection(db, 'checkins'), where('userId', '==', user.uid), where('expiresAt', '>', now));
+    const q2 = query(collection(db, 'checkins'), where('realUserId', '==', user.uid), where('expiresAt', '>', now));
+
+    let results: any[] = [];
+    const merge = () => {
+      const active = results.length > 0 ? results[0] : null;
+      setActiveCheckin(active);
+    };
+
+    const unsub1 = onSnapshot(q1, (snap) => {
+      results = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      merge();
+    });
+    const unsub2 = onSnapshot(q2, (snap) => {
+      const anonResults = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      if (anonResults.length > 0 && results.length === 0) {
+        results = anonResults;
+      }
+      merge();
+    });
+
+    return () => { unsub1(); unsub2(); };
+  }, [user]);
+
+  const handleCheckin = async (venueId: string, venueName: string) => {
+    if (!user || checkingIn) return;
+    setCheckingIn(true);
+    try {
+      if (activeCheckin) {
+        await deleteDoc(doc(db, 'checkins', activeCheckin.id));
+      }
+
+      const tomorrow2pm = new Date();
+      tomorrow2pm.setDate(tomorrow2pm.getDate() + 1);
+      tomorrow2pm.setHours(14, 0, 0, 0);
+
+      const isAnon = visibilityMode === 'anonymous' || profile?.cruisingMode;
+      const checkinData: Record<string, any> = {
+        userId: isAnon ? `anon_${user.uid}` : user.uid,
+        realUserId: user.uid,
+        venueId,
+        venueName,
+        cityId: cityId || '',
+        visibility: isAnon ? 'anonymous' : visibilityMode,
+        anonymous: isAnon,
+        createdAt: serverTimestamp(),
+        expiresAt: Timestamp.fromDate(tomorrow2pm),
+      };
+
+      if (isAnon && navigator.geolocation) {
+        try {
+          const pos = await new Promise<GeolocationPosition>((res, rej) =>
+            navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 })
+          );
+          const fuzzed = fuzzCoordinates(pos.coords.latitude, pos.coords.longitude);
+          checkinData.lat = fuzzed.lat;
+          checkinData.lng = fuzzed.lng;
+        } catch {}
+      }
+
+      await addDoc(collection(db, 'checkins'), checkinData);
+    } catch (err) {
+      console.error('Error checking in:', err);
+    } finally {
+      setCheckingIn(false);
+    }
+  };
+
+  const handleCheckout = async () => {
+    if (!activeCheckin) return;
+    try {
+      await deleteDoc(doc(db, 'checkins', activeCheckin.id));
+    } catch (err) {
+      console.error('Error checking out:', err);
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-10 h-10 border-t-2 border-fuchsia-500 rounded-full" />
+      </div>
+    );
+  }
+
+  const tabs = Object.entries(VENUE_TYPES);
+
+  if (venuesLoading) return <div className="min-h-screen bg-slate-950 flex justify-center items-center"><div className="w-8 h-8 border-2 border-fuchsia-500 rounded-full animate-spin border-t-transparent" /></div>;
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-white pb-32">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-fuchsia-600/10 blur-[120px] rounded-full" />
+        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] bg-indigo-600/10 blur-[120px] rounded-full" />
+      </div>
+
+      <main className="relative z-10 p-6 md:p-12 max-w-2xl mx-auto space-y-6">
+        <header className="pt-8 space-y-3">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-black tracking-tight">¿A dónde sales hoy?</h1>
+            <CitySelector />
+          </div>
+          <p className="text-xs text-slate-500">Selecciona tu garito y mira quién va</p>
+        </header>
+
+        {activeCheckin && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 p-5 rounded-3xl"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-green-500/20 flex items-center justify-center">
+                  <span className="material-icons text-green-400">location_on</span>
+                </div>
+                <div>
+                  <p className="text-sm font-black">{activeCheckin.venueName}</p>
+                  <p className="text-[10px] text-slate-500">
+                    {activeCheckin.visibility === 'anonymous' ? 'Modo Anónimo (+1)' :
+                     activeCheckin.visibility === 'ghost' ? 'Modo Fantasma' : 'Visible para todos'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleCheckout}
+                className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold hover:bg-white/10 transition-all"
+              >
+                Salir
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => setVisibilityMode('public')}
+            className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+              visibilityMode === 'public'
+                ? 'bg-fuchsia-500/20 border-fuchsia-500/30 text-fuchsia-400'
+                : 'bg-white/5 border-white/10 text-slate-500'
+            }`}
+          >
+            <span className="material-icons text-sm align-middle mr-1">visibility</span>
+            Público
+          </button>
+          <button
+            onClick={() => setVisibilityMode('ghost')}
+            className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+              visibilityMode === 'ghost'
+                ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400'
+                : 'bg-white/5 border-white/10 text-slate-500'
+            }`}
+          >
+            <span className="material-icons text-sm align-middle mr-1">visibility_off</span>
+            Fantasma
+          </button>
+          <button
+            onClick={() => setVisibilityMode('anonymous')}
+            className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+              visibilityMode === 'anonymous'
+                ? 'bg-red-500/20 border-red-500/30 text-red-400'
+                : 'bg-white/5 border-white/10 text-slate-500'
+            }`}
+          >
+            <span className="material-icons text-sm align-middle mr-1">shield</span>
+            Anónimo
+          </button>
+        </div>
+
+        {visibilityMode === 'anonymous' && (
+          <div className="bg-red-500/5 border border-red-500/10 p-3 rounded-2xl">
+            <p className="text-[10px] text-red-400/80 font-bold">
+              <span className="material-icons text-[10px] align-middle mr-1">info</span>
+              Modo Anónimo: sumas al contador (+1 activo) sin mostrar tu perfil ni foto. GPS difuso a 150m.
+            </p>
+          </div>
+        )}
+
+        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          {tabs.map(([key, meta]: [string, any]) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={`flex-shrink-0 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border whitespace-nowrap ${
+                activeTab === key
+                  ? 'bg-white/10 border-white/20 text-white'
+                  : 'bg-white/5 border-white/5 text-slate-500'
+              }`}
+            >
+              <span className="material-icons text-sm align-middle mr-1">{meta.icon}</span>
+              {meta.label}
+            </button>
+          ))}
+        </div>
+
+        <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">
+          {VENUE_TYPES[activeTab as keyof typeof VENUE_TYPES]?.hours}
+        </p>
+
+        <div className="space-y-3">
+          {venuesLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-24 bg-white/5 rounded-3xl animate-pulse" />
+            ))
+          ) : grouped[activeTab as keyof typeof grouped]?.length === 0 ? (
+            <div className="text-center py-16 space-y-4">
+              <span className="material-icons text-5xl text-slate-700">nightlife</span>
+              <p className="text-sm text-slate-500">No hay locales en esta franja todavía</p>
+              <p className="text-[10px] text-slate-600">Los locales se irán sumando pronto</p>
+            </div>
+          ) : (
+            grouped[activeTab as keyof typeof grouped]?.map((venue: any) => (
+              <motion.div
+                key={venue.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`bg-white/5 backdrop-blur-xl border rounded-3xl p-5 transition-all ${
+                  activeCheckin?.venueId === venue.id
+                    ? 'border-green-500/30 bg-green-500/5'
+                    : 'border-white/10 hover:bg-white/10'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                      <span className="material-icons text-fuchsia-400">
+                        {VENUE_TYPES[venue.type as keyof typeof VENUE_TYPES]?.icon || 'place'}
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-sm font-black truncate">{venue.name}</h3>
+                        {CRUISING_TYPES.has(venue.type) && (
+                          <span className="bg-red-500/20 text-red-400 text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider">18+</span>
+                        )}
+                        <VenueCounter venueId={venue.id} />
+                      </div>
+                      {venue.address && (
+                        <p className="text-[10px] text-slate-500 truncate">{venue.address}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {activeCheckin?.venueId === venue.id ? (
+                    <div className="flex items-center gap-2 ml-3">
+                      <span className="text-[10px] font-black text-green-400 uppercase tracking-widest">Aquí</span>
+                      <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleCheckin(venue.id, venue.name)}
+                      disabled={checkingIn}
+                      className="ml-3 px-4 py-2.5 rounded-2xl bg-fuchsia-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-fuchsia-500 transition-all active:scale-95 disabled:opacity-50 flex-shrink-0"
+                    >
+                      {checkingIn ? '...' : 'Ir'}
+                    </button>
+                  )}
+                </div>
+
+                {venue.ticketPricing && Object.keys(venue.ticketPricing).length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
+                    <div className="flex gap-2 flex-wrap">
+                      {Object.entries(venue.ticketPricing).map(([type, pricing]: [string, any]) => (
+                        <span key={type} className="text-[9px] bg-white/5 text-slate-400 px-2 py-1 rounded-lg">
+                          {type}: {(pricing.amount / 100).toFixed(2)}€
+                        </span>
+                      ))}
+                    </div>
+                    <Link
+                      href={`/venues/detail?id=${venue.id}`}
+                      className="text-[10px] font-black text-yellow-500 uppercase tracking-widest"
+                    >
+                      Entradas
+                    </Link>
+                  </div>
+                )}
+              </motion.div>
+            ))
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}

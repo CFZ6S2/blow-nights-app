@@ -24,9 +24,9 @@ export default function AdminDashboard() {
     pendingReports: 0,
     pendingVerifications: 0
   });
-  const [reports, setReports] = useState([]);
-  const [verifications, setVerifications] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [reports, setReports] = useState<any[]>([]);
+  const [verifications, setVerifications] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('stats');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -41,7 +41,7 @@ export default function AdminDashboard() {
 
     // Real-time Stats
     const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-      const allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
       setUsers(allUsers);
       setStats(prev => ({
         ...prev,
@@ -54,7 +54,7 @@ export default function AdminDashboard() {
     const unsubReports = onSnapshot(
       query(collection(db, 'reports'), orderBy('timestamp', 'desc')), 
       (snapshot) => {
-        const allReports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const allReports = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
         setReports(allReports);
         setStats(prev => ({
           ...prev,
@@ -66,7 +66,7 @@ export default function AdminDashboard() {
     const unsubVerifications = onSnapshot(
       query(collection(db, 'verifications'), orderBy('timestamp', 'desc')),
       (snapshot) => {
-        const allVers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const allVers = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
         setVerifications(allVers);
         setStats(prev => ({
           ...prev,
@@ -82,7 +82,7 @@ export default function AdminDashboard() {
     };
   }, [isAdmin]);
 
-  const togglePremium = async (userId, currentStatus) => {
+  const togglePremium = async (userId: string, currentStatus: boolean) => {
     try {
       await updateDoc(doc(db, 'users', userId), {
         premium: !currentStatus
@@ -92,7 +92,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const resolveReport = async (reportId) => {
+  const resolveReport = async (reportId: string) => {
     try {
       await updateDoc(doc(db, 'reports', reportId), {
         status: 'resolved'
@@ -102,7 +102,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleVerification = async (userId, status) => {
+  const handleVerification = async (userId: string, status: string) => {
     try {
       await updateDoc(doc(db, 'verifications', userId), { status });
       await updateDoc(doc(db, 'users', userId), { 
@@ -467,7 +467,7 @@ export default function AdminDashboard() {
   );
 }
 
-function StatCard({ label, value, icon, color, border }) {
+function StatCard({ label, value, icon, color, border }: { label: string, value: number, icon: string, color: string, border: string }) {
   return (
     <div className={`bg-gradient-to-br ${color} backdrop-blur-xl border ${border} rounded-3xl p-4 flex flex-col items-center justify-center text-center`}>
       <span className="material-icons text-xl mb-1 opacity-60">{icon}</span>
@@ -477,7 +477,7 @@ function StatCard({ label, value, icon, color, border }) {
   );
 }
 
-function TabButton({ active, onClick, label, icon }) {
+function TabButton({ active, onClick, label, icon }: { active: boolean, onClick: () => void, label: string, icon: string }) {
   return (
     <button
       onClick={onClick}

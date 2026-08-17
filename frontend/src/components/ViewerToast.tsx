@@ -3,10 +3,11 @@
 import { useViewers } from '@/hooks/useViewers';
 import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { User } from '@/types';
 
 export default function ViewerToast() {
   const { user } = useAuth();
-  const viewers = useViewers(user?.uid);
+  const viewers = useViewers(user?.uid) as User[];
 
   if (viewers.length === 0) return null;
 

@@ -1,12 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { motion, Variants } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import LandingPage from '@/components/LandingPage';
+import CitySelector from '@/components/CitySelector';
 import Skeleton from '@/components/Skeleton';
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
 
 // maplibre-gl es pesado; se difiere para no bloquear el primer render de la página.
 const MainMap = dynamic(() => import('@/components/Map'), {
@@ -17,6 +29,7 @@ const MainMap = dynamic(() => import('@/components/Map'), {
 export default function Home() {
   const { user, profile, isAdmin, loading, logout } = useAuth();
   const router = useRouter();
+  const boostCooldown = useMemo(() => new Date(Date.now() - 24*60*60*1000), []);
 
   useEffect(() => {
     if (!loading && user && (!profile || profile.edad === null || profile.edad === undefined)) {
@@ -80,14 +93,15 @@ export default function Home() {
             />
           </div>
           <div>
-            <h1 className="text-lg font-black bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500 uppercase tracking-tighter">
-              Gay Meet
+            <h1 className="font-display text-lg font-black bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500 uppercase tracking-tighter">
+              Blow Nights
             </h1>
             <p className="text-[10px] text-slate-400 font-medium">¡Hola, {profile.nick}! {isAdmin && <span className="text-purple-400 font-black ml-1">[ADMIN]</span>}</p>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
+          <CitySelector />
           {isAdmin && (
             <Link href="/admin" prefetch={false} className="bg-purple-600/20 text-purple-400 border border-purple-600/50 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase hover:bg-purple-600/30 transition-all">
               Panel Admin
@@ -106,68 +120,108 @@ export default function Home() {
         {/* Sección del Mapa */}
         <section className="space-y-4">
           <div className="flex justify-between items-end">
-            <h2 className="text-xl font-bold">Cerca de ti</h2>
+            <h2 className="font-display text-xl font-bold">Cerca de ti</h2>
             <span className="text-xs text-purple-400 font-medium">Ubicación aproximada</span>
           </div>
           <MainMap />
         </section>
         
         {/* Acciones Rápidas */}
-        <div className="grid grid-cols-2 gap-4">
-          <Link
-            href="/chat"
-            className="bg-white/5 p-5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all cursor-pointer group text-left"
-          >
-            <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">💬</div>
-            <h3 className="font-bold">Chats</h3>
-            <p className="text-[10px] text-slate-500 mt-1">Mensajes pendientes</p>
-          </Link>
-
-          <Link
-            href="/visits"
-            className="bg-white/5 p-5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all cursor-pointer group text-left"
-          >
-            <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">👀</div>
-            <h3 className="font-bold">Visitas</h3>
-            <p className="text-[10px] text-slate-500 mt-1">Quién te ha visto</p>
-          </Link>
-
-          <div 
-            onClick={() => {
-              window.dispatchEvent(new CustomEvent('show-pwa-prompt'));
-            }}
-            className="col-span-2 bg-gradient-to-r from-fuchsia-600/10 to-indigo-600/10 p-5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all cursor-pointer group text-left flex items-center justify-between"
-          >
-            <div className="flex items-center gap-4">
-              <div className="text-3xl group-hover:scale-110 transition-transform">📲</div>
-              <div>
-                <h3 className="font-bold">Instalar App</h3>
-                <p className="text-[10px] text-slate-500 mt-1">Lleva Gay Meet en tu pantalla de inicio</p>
+        <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-2 gap-4">
+          <motion.div variants={itemVariants} whileTap={{ scale: 0.95 }} className="h-full">
+            <Link
+              href="/venues"
+              className="glass-card flex flex-col p-5 group h-full relative overflow-hidden"
+            >
+              <div className="text-3xl mb-3 group-hover:scale-110 transition-transform relative z-10">
+                <span className="material-icons text-fuchsia-400 text-3xl drop-shadow-[0_0_8px_rgba(192,38,211,0.5)]">nightlife</span>
               </div>
+              <h3 className="font-display font-bold relative z-10">¿A dónde sales?</h3>
+              <p className="text-[10px] text-slate-400 mt-1 relative z-10">Elige tu garito</p>
+              <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-600/10 to-violet-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </Link>
+          </motion.div>
+
+          <motion.div variants={itemVariants} whileTap={{ scale: 0.95 }} className="h-full">
+            <Link
+              href="/wallet"
+              className="glass-card flex flex-col p-5 group h-full relative overflow-hidden"
+            >
+              <div className="text-3xl mb-3 group-hover:scale-110 transition-transform relative z-10">
+                <span className="material-icons text-yellow-400 text-3xl drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]">confirmation_number</span>
+              </div>
+              <h3 className="font-display font-bold relative z-10">Mi Cartera</h3>
+              <p className="text-[10px] text-slate-400 mt-1 relative z-10">Entradas y pases</p>
+              <div className="absolute inset-0 bg-gradient-to-br from-yellow-600/10 to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </Link>
+          </motion.div>
+
+          <motion.div variants={itemVariants} whileTap={{ scale: 0.95 }} className="h-full">
+            <Link
+              href="/chat"
+              className="glass-card flex flex-col p-5 group h-full relative overflow-hidden"
+            >
+              <div className="text-3xl mb-3 group-hover:scale-110 transition-transform relative z-10">💬</div>
+              <h3 className="font-display font-bold relative z-10">Chats</h3>
+              <p className="text-[10px] text-slate-400 mt-1 relative z-10">Mensajes pendientes</p>
+            </Link>
+          </motion.div>
+
+          <motion.div variants={itemVariants} whileTap={{ scale: 0.95 }} className="h-full">
+            <Link
+              href="/visits"
+              className="glass-card flex flex-col p-5 group h-full relative overflow-hidden"
+            >
+              <div className="text-3xl mb-3 group-hover:scale-110 transition-transform relative z-10">👀</div>
+              <h3 className="font-display font-bold relative z-10">Visitas</h3>
+              <p className="text-[10px] text-slate-400 mt-1 relative z-10">Quién te ha visto</p>
+            </Link>
+          </motion.div>
+
+          <motion.div variants={itemVariants} whileTap={{ scale: 0.95 }} className="col-span-2">
+            <div
+              onClick={() => window.dispatchEvent(new CustomEvent('show-pwa-prompt'))}
+              className="glass-card p-5 group cursor-pointer flex items-center justify-between relative overflow-hidden"
+            >
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="text-3xl group-hover:scale-110 transition-transform">📲</div>
+                <div>
+                  <h3 className="font-display font-bold">Instalar App</h3>
+                  <p className="text-[10px] text-slate-400 mt-1">Lleva Blow Nights en tu pantalla de inicio</p>
+                </div>
+              </div>
+              <span className="material-icons text-slate-400 group-hover:text-white transition-colors relative z-10">download</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600/10 to-indigo-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <span className="material-icons text-slate-400 group-hover:text-white transition-colors">download</span>
-          </div>
+          </motion.div>
 
-          <div 
-            onClick={() => router.push('/premium')}
-            className={`col-span-2 bg-white/5 p-5 rounded-3xl border ${profile?.premium ? 'border-yellow-500/30 bg-yellow-500/5' : 'border-white/10'} hover:bg-white/10 transition-all cursor-pointer group text-left relative overflow-hidden flex items-center justify-between`}
-          >
-            <div className="flex items-center gap-4">
-              <div className="text-3xl group-hover:scale-110 transition-transform">
-                {profile?.premium ? '👑' : '⭐'}
+          <motion.div variants={itemVariants} whileTap={{ scale: 0.95 }} className="col-span-2">
+            <div 
+              onClick={() => router.push('/premium')}
+              className={`glass-card p-5 cursor-pointer group flex items-center justify-between relative overflow-hidden ${profile?.premium ? 'border-yellow-500/30' : ''}`}
+            >
+              <div className="flex items-center gap-4 relative z-10">
+                <div className={`text-3xl group-hover:scale-110 transition-transform ${profile?.premium ? 'drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]' : ''}`}>
+                  {profile?.premium ? '👑' : '⭐'}
+                </div>
+                <div>
+                  <h3 className={`font-display font-bold ${profile?.premium ? 'text-yellow-400' : ''}`}>
+                    {profile?.premium ? 'Tu Cuenta VIP' : 'Hazte Premium'}
+                  </h3>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    {profile?.premium ? 'Disfruta de todas las ventajas' : 'Ver planes y beneficios'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold">{profile?.premium ? 'Tu Cuenta VIP' : 'Hazte Premium'}</h3>
-                <p className="text-[10px] text-slate-500 mt-1">
-                  {profile?.premium ? 'Disfruta de todas las ventajas' : 'Ver planes y beneficios'}
-                </p>
-              </div>
+              {!profile?.premium && (
+                <span className="bg-white text-black text-[9px] font-black px-4 py-2 rounded-full uppercase tracking-tighter relative z-10 shadow-[0_0_15px_rgba(255,255,255,0.3)]">Ver más</span>
+              )}
+              {profile?.premium && (
+                <div className="absolute inset-0 animate-shimmer opacity-20" />
+              )}
             </div>
-            {!profile?.premium && (
-              <span className="bg-white text-black text-[9px] font-black px-4 py-2 rounded-full uppercase tracking-tighter">Ver más</span>
-            )}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Panel de Funciones VIP (Solo si es Premium) */}
         {profile?.premium && (
@@ -200,7 +254,7 @@ export default function Home() {
                 <p className="text-[10px] text-slate-500">Más visibilidad en el mapa</p>
               </div>
               <button 
-                disabled={profile.lastBoost && profile.lastBoost.toDate() > new Date(Date.now() - 24*60*60*1000)}
+                disabled={profile.lastBoost && profile.lastBoost.toDate() > boostCooldown}
                 onClick={async () => {
                   const { setDoc, doc, serverTimestamp } = await import('firebase/firestore');
                   const { db } = await import('@/lib/firebase');
@@ -210,12 +264,12 @@ export default function Home() {
                   }, { merge: true });
                 }}
                 className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-tighter transition-all ${
-                  profile.lastBoost && profile.lastBoost.toDate() > new Date(Date.now() - 24*60*60*1000)
+                  profile.lastBoost && profile.lastBoost.toDate() > boostCooldown
                   ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
                   : 'bg-white text-black hover:scale-105'
                 }`}
               >
-                {profile.lastBoost && profile.lastBoost.toDate() > new Date(Date.now() - 24*60*60*1000) ? 'Usado' : 'Activar Boost'}
+                {profile.lastBoost && profile.lastBoost.toDate() > boostCooldown ? 'Usado' : 'Activar Boost'}
               </button>
             </div>
           </section>

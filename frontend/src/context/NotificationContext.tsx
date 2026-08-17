@@ -2,12 +2,17 @@
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
-const NotificationContext = createContext();
+interface NotificationContextType {
+  notifications: any[];
+  addNotification: (notification: any) => void;
+}
 
-export function NotificationProvider({ children }) {
-  const [notifications, setNotifications] = useState([]);
+const NotificationContext = createContext<NotificationContextType | null>(null);
 
-  const addNotification = useCallback((notification) => {
+export function NotificationProvider({ children }: { children: React.ReactNode }) {
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  const addNotification = useCallback((notification: any) => {
     const id = Date.now();
     setNotifications((prev) => [...prev, { id, ...notification }]);
     

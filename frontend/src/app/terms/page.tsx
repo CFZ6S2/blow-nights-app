@@ -22,14 +22,14 @@ export default function TermsPage() {
           <section className="space-y-4">
             <h2 className="text-xl font-black text-white uppercase tracking-wider border-b border-white/5 pb-2">1. Aceptación de los Términos</h2>
             <p>
-              Al acceder o utilizar Gay Meet, aceptas estar legalmente vinculado por estos Términos de Servicio. Si no estás de acuerdo con alguna parte de estos términos, no debes utilizar la aplicación.
+              Al acceder o utilizar Blow Nights, aceptas estar legalmente vinculado por estos Términos de Servicio. Si no estás de acuerdo con alguna parte de estos términos, no debes utilizar la aplicación.
             </p>
           </section>
 
           <section className="space-y-4">
             <h2 className="text-xl font-black text-white uppercase tracking-wider border-b border-white/5 pb-2">2. Requisitos de Edad</h2>
             <p>
-              Debes tener al menos 18 años de edad para crear una cuenta y utilizar Gay Meet. El uso de la aplicación por menores de edad está estrictamente prohibido y resultará en la eliminación inmediata de la cuenta.
+              Debes tener al menos 18 años de edad para crear una cuenta y utilizar Blow Nights. El uso de la aplicación por menores de edad está estrictamente prohibido y resultará en la eliminación inmediata de la cuenta.
             </p>
           </section>
 
@@ -49,7 +49,7 @@ export default function TermsPage() {
           <section className="space-y-4">
             <h2 className="text-xl font-black text-white uppercase tracking-wider border-b border-white/5 pb-2">4. Geolocalización y Privacidad</h2>
             <p>
-              Gay Meet es una aplicación basada en la ubicación. Al activar tu visibilidad, compartes tu ubicación aproximada con otros usuarios. Entiendes y aceptas que esta es la funcionalidad principal de la aplicación.
+              Blow Nights es una aplicación basada en la ubicación. Al activar tu visibilidad, compartes tu ubicación aproximada con otros usuarios. Entiendes y aceptas que esta es la funcionalidad principal de la aplicación.
             </p>
           </section>
 
@@ -69,7 +69,7 @@ export default function TermsPage() {
         </main>
 
         <footer className="pt-12 border-t border-white/5 text-center">
-          <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">© 2026 Gay Meet App. Todos los derechos reservados.</p>
+          <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">© 2026 Blow Nights App. Todos los derechos reservados.</p>
         </footer>
       </div>
     </div>

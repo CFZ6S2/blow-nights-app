@@ -18,21 +18,21 @@ export default function SetupProfilePage() {
   const [rol, setRol] = useState('versátil');
   const [intencion, setIntencion] = useState('conocer');
   const [bio, setBio] = useState('');
-  const [altura, setAltura] = useState(null);
-  const [peso, setPeso] = useState(null);
-  const [complexion, setComplexion] = useState(null);
-  const [intereses, setIntereses] = useState([]);
-  const [mood, setMood] = useState(null);
+  const [altura, setAltura] = useState<string | null>(null);
+  const [peso, setPeso] = useState<string | null>(null);
+  const [complexion, setComplexion] = useState<string | null>(null);
+  const [intereses, setIntereses] = useState<any[]>([]);
+  const [mood, setMood] = useState<string | null>(null);
   
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [extraPhotosFiles, setExtraPhotosFiles] = useState([]);
-  const [extraPhotosPreview, setExtraPhotosPreview] = useState([]);
-  const [privatePhotosFiles, setPrivatePhotosFiles] = useState([]);
-  const [privatePhotosPreview, setPrivatePhotosPreview] = useState([]);
+  const [imageFile, setImageFile] = useState<any>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [extraPhotosFiles, setExtraPhotosFiles] = useState<any[]>([]);
+  const [extraPhotosPreview, setExtraPhotosPreview] = useState<string[]>([]);
+  const [privatePhotosFiles, setPrivatePhotosFiles] = useState<any[]>([]);
+  const [privatePhotosPreview, setPrivatePhotosPreview] = useState<string[]>([]);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
 
@@ -50,8 +50,8 @@ export default function SetupProfilePage() {
       setRol(profile.rol || 'versátil');
       setIntencion(profile.intencion || 'conocer');
       setBio(profile.bio || '');
-      setAltura(profile.altura || null);
-      setPeso(profile.peso || null);
+      setAltura(profile.altura ? profile.altura.toString() : null);
+      setPeso(profile.peso ? profile.peso.toString() : null);
       setComplexion(profile.complexion || null);
       setIntereses(profile.intereses || []);
       setMood(profile.mood || null);
@@ -61,7 +61,7 @@ export default function SetupProfilePage() {
     }
   }, [user, profile, loading, router]);
 
-  const handleImageChange = (e) => {
+  const handleImageChange = (e: any) => {
     const file = e.target.files[0];
     if (file) {
       setImageFile(file);
@@ -69,25 +69,25 @@ export default function SetupProfilePage() {
     }
   };
 
-  const handleExtraPhotosChange = (e) => {
+  const handleExtraPhotosChange = (e: any) => {
     const files = Array.from(e.target.files);
     const newFiles = [...extraPhotosFiles, ...files].slice(0, 5);
     setExtraPhotosFiles(newFiles);
     
-    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+    const newPreviews = newFiles.map(file => URL.createObjectURL(file as any));
     setExtraPhotosPreview(newPreviews);
   };
   
-  const handlePrivatePhotosChange = (e) => {
+  const handlePrivatePhotosChange = (e: any) => {
     const files = Array.from(e.target.files);
     const newFiles = [...privatePhotosFiles, ...files].slice(0, 5);
     setPrivatePhotosFiles(newFiles);
     
-    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+    const newPreviews = newFiles.map(file => URL.createObjectURL(file as any));
     setPrivatePhotosPreview(newPreviews);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (!nick || !edad || (!imageFile && !imagePreview)) {
       setError('Por favor, rellena los datos básicos y sube una foto principal.');
@@ -105,7 +105,7 @@ export default function SetupProfilePage() {
       // 1. Subir foto principal
       let fotoUrl = imagePreview;
       if (imageFile) {
-        const storageRef = ref(storage, `profilePictures/${user.uid}/main.jpg`);
+        const storageRef = ref(storage, `profilePictures/${user?.uid}/main.jpg`);
         await uploadBytes(storageRef, imageFile);
         fotoUrl = await getDownloadURL(storageRef);
       }
@@ -114,7 +114,7 @@ export default function SetupProfilePage() {
       let extraPhotosUrls = extraPhotosPreview;
       if (extraPhotosFiles.length > 0) {
         const uploadPromises = extraPhotosFiles.map(async (file, index) => {
-          const storageRef = ref(storage, `profilePictures/${user.uid}/extra-${Date.now()}-${index}.jpg`);
+          const storageRef = ref(storage, `profilePictures/${user?.uid}/extra-${Date.now()}-${index}.jpg`);
           await uploadBytes(storageRef, file);
           return await getDownloadURL(storageRef);
         });
@@ -126,7 +126,7 @@ export default function SetupProfilePage() {
       let privatePhotosUrls = privatePhotosPreview;
       if (privatePhotosFiles.length > 0) {
         const uploadPromises = privatePhotosFiles.map(async (file, index) => {
-          const storageRef = ref(storage, `profilePictures/${user.uid}/private-${Date.now()}-${index}.jpg`);
+          const storageRef = ref(storage, `profilePictures/${user?.uid}/private-${Date.now()}-${index}.jpg`);
           await uploadBytes(storageRef, file);
           return await getDownloadURL(storageRef);
         });
@@ -146,9 +146,9 @@ export default function SetupProfilePage() {
         });
       }
 
-      await setDoc(doc(db, 'users', user.uid), {
+      await setDoc(doc(db, 'users', user?.uid as string), {
         nick: nick || '',
-        edad: parseInt(edad) || 0,
+        edad: parseInt(edad as string) || 0,
         rol: rol || 'versátil',
         intencion: intencion || 'conocer',
         bio: bio || '',
@@ -167,7 +167,7 @@ export default function SetupProfilePage() {
       }, { merge: true });
 
       router.push('/');
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error updating profile", err);
       if (err.code === 'storage/unauthorized' || err.code === 'storage/retry-limit-exceeded') {
         setError('Error de permisos en las fotos. Por favor, asegúrate de que el almacenamiento está activado.');

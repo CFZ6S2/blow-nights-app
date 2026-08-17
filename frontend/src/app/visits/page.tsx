@@ -11,12 +11,12 @@ import ProfileOverlay from '@/components/ProfileOverlay';
 
 export default function VisitsPage() {
   const { user, profile, loading: authLoading } = useAuth();
-  const [visits, setVisits] = useState([]);
+  const [visits, setVisits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProfileId, setSelectedProfileId] = useState(null);
   const router = useRouter();
 
-  const triggerHaptic = (intensity = 10) => {
+  const triggerHaptic = (intensity: number | number[] = 10) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(intensity);
     }

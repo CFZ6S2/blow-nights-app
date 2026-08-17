@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
 export default function NotificationToast() {
-  const { notifications } = useNotificationUI();
+  const { notifications } = useNotificationUI() || { notifications: [] };
   const router = useRouter();
 
   if (notifications.length === 0) return null;

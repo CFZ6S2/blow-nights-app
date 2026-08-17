@@ -8,18 +8,24 @@ import { useAuth } from "@/context/AuthContext"
 
 const defaultItems = [
   { href: "/", label: "Mapa", icon: "explore" },
+  { href: "/venues", label: "Locales", icon: "nightlife" },
+  { href: "/chills", label: "Chills", icon: "local_fire_department" },
+  { href: "/wallet", label: "Cartera", icon: "confirmation_number" },
   { href: "/chat", label: "Chats", icon: "chat" },
   { href: "/profile", label: "Perfil", icon: "person" },
-  { href: "/premium", label: "Premium", icon: "star" },
 ]
 
 export function BottomNav() {
-  const { isAdmin } = useAuth()
+  const { isAdmin, isCityAdmin, isVenueManager } = useAuth()
   const pathname = usePathname()
 
-  const items = isAdmin 
-    ? [...defaultItems, { href: "/admin", label: "Admin", icon: "admin_panel_settings" }]
-    : defaultItems
+  let items = [...defaultItems]
+  if (isVenueManager) {
+    items.push({ href: "/venue-admin", label: "Mi Local", icon: "storefront" })
+  }
+  if (isAdmin) {
+    items.push({ href: "/admin", label: "Admin", icon: "admin_panel_settings" })
+  }
 
   // Vibración háptica suave para móvil
   const triggerHaptic = () => {
