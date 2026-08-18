@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Venue } from '@/types';
 import { motion } from 'framer-motion';
@@ -9,6 +9,7 @@ export default function VenueConfigTab({ venue }: { venue: Venue }) {
   const [description, setDescription] = useState(venue.description || '');
   const [address, setAddress] = useState(venue.address || '');
   const [type, setType] = useState(venue.type || 'bar');
+  const [externalTicketUrl, setExternalTicketUrl] = useState(venue.externalTicketUrl || '');
   const [isActive, setIsActive] = useState(venue.isActive !== false);
   const [saving, setSaving] = useState(false);
 
@@ -20,6 +21,7 @@ export default function VenueConfigTab({ venue }: { venue: Venue }) {
         description,
         address,
         type,
+        externalTicketUrl,
         isActive
       });
       alert('Configuración guardada correctamente.');
@@ -28,6 +30,19 @@ export default function VenueConfigTab({ venue }: { venue: Venue }) {
       alert('Error al guardar configuración.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteVenue = async () => {
+    if (confirm('¿Seguro que quieres borrar este punto? Se eliminará permanentemente.')) {
+      try {
+        await deleteDoc(doc(db, 'venues', venue.id));
+        alert('Punto eliminado correctamente.');
+        // The parent component listens to firestore onSnapshot and will auto-remove it from the list
+      } catch (e) {
+        console.error(e);
+        alert('Error al borrar el punto.');
+      }
     }
   };
 
@@ -82,6 +97,21 @@ export default function VenueConfigTab({ venue }: { venue: Venue }) {
               className="w-full bg-black/40 border border-white/10 rounded-2xl pl-11 pr-4 py-4 text-sm text-white focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 transition-all shadow-inner"
             />
           </div>
+        </motion.div>
+
+        <motion.div whileHover={{ scale: 1.01 }} className="group">
+          <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 transition-colors group-focus-within:text-fuchsia-400">URL de Ticketera Externa (Opcional)</label>
+          <div className="relative">
+            <span className="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm">link</span>
+            <input
+              type="url"
+              value={externalTicketUrl}
+              onChange={e => setExternalTicketUrl(e.target.value)}
+              placeholder="https://fourvenues.com/..."
+              className="w-full bg-black/40 border border-white/10 rounded-2xl pl-11 pr-4 py-4 text-sm text-white focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 transition-all shadow-inner"
+            />
+          </div>
+          <p className="text-[10px] text-slate-500 mt-2 ml-1">Si rellenas este campo, los usuarios verán un botón de compra que los redirigirá aquí.</p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -140,6 +170,23 @@ export default function VenueConfigTab({ venue }: { venue: Venue }) {
             </>
           )}
         </motion.button>
+
+        {/* Zona de Peligro / Borrado Admin */}
+        <div className="mt-8 p-4 bg-red-950/20 border border-red-500/30 rounded-xl flex items-center justify-between">
+          <div>
+            <h4 className="text-sm font-bold text-red-400">Eliminar este punto</h4>
+            <p className="text-xs text-slate-400">
+              Se eliminará permanentemente de la base de datos y del mapa público.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleDeleteVenue}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-all shadow-md cursor-pointer whitespace-nowrap ml-4"
+          >
+            🗑️ Borrar Punto
+          </button>
+        </div>
       </div>
     </motion.div>
   );

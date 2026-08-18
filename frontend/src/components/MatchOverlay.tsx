@@ -58,14 +58,14 @@ export default function MatchOverlay({ matchData, onClose }: { matchData: any, o
               initial={{ scale: 0, x: 0, y: 0 }}
               animate={{ 
                 scale: [0, 1.2, 0.6, 0], 
-                x: Math.cos(i * 9 * Math.PI / 180) * (250 + Math.random() * 150), 
-                y: Math.sin(i * 9 * Math.PI / 180) * (250 + Math.random() * 150),
+                x: Math.cos(i * 9 * Math.PI / 180) * (250 + ((i * 17) % 100) / 100 * 150), 
+                y: Math.sin(i * 9 * Math.PI / 180) * (250 + ((i * 23) % 100) / 100 * 150),
                 rotate: [0, 180, 360]
               }}
               transition={{ 
                 duration: 4, 
                 repeat: Infinity, 
-                delay: Math.random() * 1,
+                delay: ((i * 11) % 100) / 100 * 1,
                 ease: "easeOut"
               }}
               className={`absolute w-1.5 h-1.5 rounded-full ${

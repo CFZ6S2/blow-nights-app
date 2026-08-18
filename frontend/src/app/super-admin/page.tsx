@@ -3,16 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { collection, doc, setDoc, updateDoc, getDocs, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc, getDocs, query, where, onSnapshot, collectionGroup } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/lib/firebase';
 import { motion } from 'framer-motion';
 
 export default function SuperAdminPage() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isSuperAdmin, loading } = useAuth();
   const router = useRouter();
   
-  const [activeTab, setActiveTab] = useState<'ciudades' | 'facturacion' | 'locales'>('ciudades');
+  const [activeTab, setActiveTab] = useState<'ciudades' | 'facturacion' | 'locales' | 'partners' | 'rrpps'>('ciudades');
 
   // --- LOCALES STATE ---
   const [venues, setVenues] = useState<any[]>([]);
@@ -41,13 +41,29 @@ export default function SuperAdminPage() {
   const [searchEmail, setSearchEmail] = useState('');
   const [emailSearchResults, setEmailSearchResults] = useState<any[]>([]);
 
-  useEffect(() => {
-    if (!loading && !user) router.push('/login');
-    if (!loading && user && !isAdmin) router.push('/');
-  }, [user, loading, isAdmin, router]);
+  // --- PARTNERS STATE ---
+  const [partners, setPartners] = useState<any[]>([]);
+  const [partnerSearch, setPartnerSearch] = useState('');
+  const [partnerSearchResults, setPartnerSearchResults] = useState<any[]>([]);
+  const [searchingPartner, setSearchingPartner] = useState(false);
+  
+  // --- APPLICATIONS STATE ---
+  const [applications, setApplications] = useState<any[]>([]);
+
+  // --- RRPP STATE ---
+  const [promoters, setPromoters] = useState<any[]>([]);
+  const [newPromoterName, setNewPromoterName] = useState('');
+  const [newPromoterVenueId, setNewPromoterVenueId] = useState('');
+  const [newPromoterEventId, setNewPromoterEventId] = useState('');
+  const [savingPromoter, setSavingPromoter] = useState(false);
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!loading && !user) router.push('/login');
+    if (!loading && user && !isSuperAdmin) router.push('/');
+  }, [user, loading, isSuperAdmin, router]);
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
     const unsubVenues = onSnapshot(collection(db, 'venues'), (snap) => {
       const v: any[] = [];
       snap.forEach(d => v.push({ id: d.id, ...d.data() }));
@@ -60,8 +76,32 @@ export default function SuperAdminPage() {
       setCities(c);
     });
 
-    return () => { unsubVenues(); unsubCities(); };
-  }, [isAdmin]);
+    const unsubPartners = onSnapshot(query(collection(db, 'users'), where('isAssociatePartner', '==', true)), (snap) => {
+      const p: any[] = [];
+      snap.forEach(d => p.push({ id: d.id, ...d.data() }));
+      setPartners(p);
+    });
+
+    const unsubApps = onSnapshot(query(collection(db, 'partner_applications'), where('status', '==', 'pending')), (snap) => {
+      const a: any[] = [];
+      snap.forEach(d => a.push({ id: d.id, ...d.data() }));
+      setApplications(a);
+    });
+
+    const unsubPromoters = onSnapshot(collectionGroup(db, 'promoters'), (snap) => {
+      const p: any[] = [];
+      snap.forEach(d => {
+        // d.ref.path: venues/VENUE_ID/events/EVENT_ID/promoters/PROMOTER_ID
+        const pathSegments = d.ref.path.split('/');
+        const venueId = pathSegments[1];
+        const eventId = pathSegments[3];
+        p.push({ id: d.id, venueId, eventId, ...d.data() });
+      });
+      setPromoters(p);
+    });
+
+    return () => { unsubVenues(); unsubCities(); unsubPartners(); unsubApps(); unsubPromoters(); };
+  }, [isSuperAdmin]);
 
   // --- LOCALES LOGIC ---
   const handleCreateVenue = async () => {
@@ -186,7 +226,96 @@ export default function SuperAdminPage() {
     }
   };
 
-  if (loading || !isAdmin) return <div className="min-h-screen bg-slate-950" />;
+  // --- PARTNERS LOGIC ---
+  const handleSearchNewPartner = async () => {
+    if (!partnerSearch.trim()) return;
+    setSearchingPartner(true);
+    try {
+      const q = query(collection(db, 'users'), where('email', '==', partnerSearch.toLowerCase()));
+      const snap = await getDocs(q);
+      const res: any[] = [];
+      snap.forEach(d => res.push({ id: d.id, ...d.data() }));
+      
+      if (res.length === 0) {
+        const end = partnerSearch.replace(/.$/, c => String.fromCharCode(c.charCodeAt(0) + 1));
+        const qNick = query(collection(db, 'users'), where('nick', '>=', partnerSearch), where('nick', '<', end));
+        const snapNick = await getDocs(qNick);
+        snapNick.forEach(d => res.push({ id: d.id, ...d.data() }));
+      }
+      
+      setPartnerSearchResults(res);
+      if (res.length === 0) alert('No se encontró ningún usuario con ese email o nick.');
+    } catch(e) {
+      console.error(e);
+      alert('Error al buscar');
+    } finally {
+      setSearchingPartner(false);
+    }
+  };
+
+  const handleAssignAssociatePartner = async (userDoc: any) => {
+    if (!confirm(`¿Convertir a ${userDoc.nick || userDoc.email} en Partner Asociado (RRPP)?`)) return;
+    try {
+      await updateDoc(doc(db, 'users', userDoc.id), { isAssociatePartner: true });
+      alert('Usuario asignado como Partner Asociado.');
+      setPartnerSearch('');
+      setPartnerSearchResults([]);
+    } catch (e) {
+      console.error(e);
+      alert('Error asignando partner');
+    }
+  };
+  
+  const handleRemoveAssociatePartner = async (userId: string, name: string) => {
+    if (!confirm(`¿Quitar rol de Partner Asociado a ${name}?`)) return;
+    try {
+      await updateDoc(doc(db, 'users', userId), { isAssociatePartner: false });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // --- RRPPs LOGIC ---
+  const handleCreatePromoter = async () => {
+    if (!newPromoterName || !newPromoterVenueId || !newPromoterEventId) return alert('Rellena todos los campos');
+    setSavingPromoter(true);
+    try {
+      // Usar pseudo-random predecible indexado por fecha para evitar problemas de pureza de React aunque aquí sea un handler
+      const token = Math.random().toString(36).substr(2, 6).toUpperCase();
+      const ref = doc(collection(db, `venues/${newPromoterVenueId}/events/${newPromoterEventId}/promoters`));
+      await setDoc(ref, {
+        name: newPromoterName,
+        code: token,
+        is_closed: false,
+        liquidated_by_rrpp: false,
+        liquidated_by_venue: false
+      });
+      setNewPromoterName('');
+      alert('Promotor creado con éxito. Token: ' + token);
+    } catch(e) {
+      console.error(e);
+      alert('Error creando promotor');
+    } finally {
+      setSavingPromoter(false);
+    }
+  };
+
+  const handleTogglePromoterStatus = async (p: any) => {
+    try {
+      await updateDoc(doc(db, `venues/${p.venueId}/events/${p.eventId}/promoters`, p.id), {
+        is_closed: !p.is_closed
+      });
+    } catch(e) {
+      alert('Error cambiando estado');
+    }
+  };
+
+  const copyPromoterLink = (token: string) => {
+    navigator.clipboard.writeText(`${window.location.origin}/rrpp?token=${token}`);
+    alert('Enlace copiado al portapapeles');
+  };
+
+  if (loading || !isSuperAdmin) return <div className="min-h-screen bg-slate-950" />;
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-6 md:p-12 pb-32">
@@ -203,8 +332,10 @@ export default function SuperAdminPage() {
 
         <div className="flex gap-2 overflow-x-auto no-scrollbar border-b border-white/10 pb-2">
           <button onClick={() => setActiveTab('ciudades')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'ciudades' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Plazas y Licencias</button>
+          <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'partners' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Partners Asociados</button>
           <button onClick={() => setActiveTab('facturacion')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'facturacion' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Facturación Central</button>
           <button onClick={() => setActiveTab('locales')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'locales' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Directorio Locales</button>
+          <button onClick={() => setActiveTab('rrpps')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'rrpps' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Red de RRPPs</button>
         </div>
       </header>
 
@@ -212,8 +343,74 @@ export default function SuperAdminPage() {
 
       {activeTab === 'ciudades' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <section className="bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4">
-            <h2 className="text-sm font-black uppercase tracking-widest text-slate-300">Activar Nueva Licencia</h2>
+          <div className="space-y-8">
+            {/* ALERTA CIUDADES CALIENTES (Franchise Trigger) */}
+            {cities.filter(c => c.readyForFranchise).length > 0 && (
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-gradient-to-r from-red-600 to-orange-500 rounded-3xl p-6 shadow-2xl border-2 border-red-400/50">
+                <div className="flex items-start gap-4">
+                  <span className="text-4xl">🚨</span>
+                  <div>
+                    <h2 className="text-xl font-black text-white tracking-tight leading-none mb-1">¡Territorios Listos para Venta!</h2>
+                    <p className="text-sm text-red-100/90 font-medium leading-tight mb-4">Estas plazas orgánicas superan los 2 locales. Es momento de contactar promotores y vender el Canon de City Manager (5.000€).</p>
+                    <div className="space-y-2">
+                      {cities.filter(c => c.readyForFranchise).map(c => (
+                        <div key={c.id} className="flex justify-between items-center bg-black/20 rounded-xl px-4 py-2 border border-black/10">
+                          <span className="font-bold text-white capitalize">{c.slug || c.id}</span>
+                          <span className="text-xs font-black bg-white text-red-600 px-2 py-1 rounded-lg">{c.activeVenuesCount || 2} locales</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ALERTA SOLICITUDES PARTNERS */}
+            {applications.length > 0 && (
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-900 border-2 border-fuchsia-500/50 rounded-3xl p-6 shadow-2xl">
+                <div className="flex items-start gap-4">
+                  <span className="text-4xl">💼</span>
+                  <div className="w-full">
+                    <h2 className="text-xl font-black text-white tracking-tight leading-none mb-1">Nuevas Solicitudes de City Manager</h2>
+                    <p className="text-sm text-slate-400 mb-4">Revisa y contacta a los candidatos para asignarles su plaza.</p>
+                    <div className="space-y-3">
+                      {applications.map(app => (
+                        <div key={app.id} className="bg-black/30 rounded-xl p-4 border border-white/10">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <p className="font-bold text-white text-lg">{app.name}</p>
+                              <p className="text-xs text-fuchsia-400 font-bold uppercase">{app.cityId === 'other' ? 'Otra Ciudad' : app.cityId}</p>
+                            </div>
+                            <span className="px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded-md text-xs font-bold uppercase">Pendiente</span>
+                          </div>
+                          <p className="text-sm text-slate-300 mb-1">📞 {app.phone} | ✉️ {app.email}</p>
+                          <p className="text-xs text-slate-500 italic border-l-2 border-fuchsia-500/30 pl-2 mt-2">{app.experience}</p>
+                          
+                          <div className="mt-4 flex gap-2">
+                            <button 
+                              onClick={async () => {
+                                if(confirm('¿Marcar como contactado/aprobado? Recuerda crear luego la plaza y asignarle el ID.')) {
+                                  await updateDoc(doc(db, 'partner_applications', app.id), { status: 'approved' });
+                                }
+                              }} 
+                              className="px-4 py-2 bg-fuchsia-600 hover:bg-fuchsia-500 rounded-lg text-xs font-bold uppercase transition-colors"
+                            >
+                              Marcar Revisada
+                            </button>
+                            <a href={`https://wa.me/${app.phone.replace(/\D/g, '')}?text=Hola%20${app.name},%20te%20escribo%20desde%20Blow%20Nights...`} target="_blank" rel="noreferrer" className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-xs font-bold uppercase transition-colors flex items-center gap-1">
+                              WhatsApp
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            <section className="bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4">
+              <h2 className="text-sm font-black uppercase tracking-widest text-slate-300">Activar Nueva Licencia</h2>
             <div className="space-y-3">
               <div className="flex gap-3">
                 <input placeholder="City Slug (ej: ibiza)" value={newCitySlug} onChange={e => setNewCitySlug(e.target.value)} className="w-1/2 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none" />
@@ -231,6 +428,7 @@ export default function SuperAdminPage() {
               </button>
             </div>
           </section>
+          </div>
 
           <section className="bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4 h-[60vh] flex flex-col">
             <h2 className="text-sm font-black uppercase tracking-widest text-slate-300">Ciudades Operativas</h2>
@@ -417,6 +615,143 @@ export default function SuperAdminPage() {
                       </div>
                     </motion.div>
                   )}
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {activeTab === 'partners' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <section className="bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4">
+            <h2 className="text-sm font-black uppercase tracking-widest text-slate-300">Dar de Alta Partner (RRPP)</h2>
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <input 
+                  placeholder="Buscar por email o nick exacto..." 
+                  value={partnerSearch} 
+                  onChange={e => setPartnerSearch(e.target.value)} 
+                  className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-3 text-sm focus:border-fuchsia-500 outline-none" 
+                />
+                <button onClick={handleSearchNewPartner} disabled={searchingPartner} className="bg-fuchsia-600 px-4 py-3 rounded-lg text-sm font-bold hover:bg-fuchsia-500 transition-colors">
+                  Buscar
+                </button>
+              </div>
+              
+              {partnerSearchResults.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {partnerSearchResults.map(u => (
+                    <div key={u.id} className="flex justify-between items-center bg-white/10 p-3 rounded-xl">
+                      <div>
+                        <p className="font-bold">{u.nick || 'Sin Nick'}</p>
+                        <p className="text-xs text-slate-400">{u.email}</p>
+                      </div>
+                      {!u.isAssociatePartner ? (
+                        <button onClick={() => handleAssignAssociatePartner(u)} className="bg-green-600 px-3 py-2 rounded-lg text-xs font-bold hover:bg-green-500">Asignar</button>
+                      ) : (
+                        <span className="text-xs text-fuchsia-400 font-bold">Ya es Partner</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4 h-[60vh] flex flex-col">
+            <h2 className="text-sm font-black uppercase tracking-widest text-slate-300">Partners Activos</h2>
+            <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
+              {partners.length === 0 && <p className="text-sm text-slate-500">No hay partners asociados activos.</p>}
+              {partners.map(p => (
+                <div key={p.id} className="bg-black/30 border border-white/5 p-4 rounded-2xl flex justify-between items-center">
+                  <div>
+                    <h3 className="font-bold">{p.nick || 'Sin Nick'}</h3>
+                    <p className="text-[11px] text-slate-400">{p.email || 'Sin email'}</p>
+                  </div>
+                  <button onClick={() => handleRemoveAssociatePartner(p.id, p.nick || p.email)} className="bg-red-900/50 text-red-400 px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-red-900 transition-colors uppercase">
+                    Revocar
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {activeTab === 'rrpps' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <section className="md:col-span-1 bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4 h-fit">
+            <h2 className="text-sm font-black uppercase tracking-widest text-slate-300">Alta de RRPP Global</h2>
+            <p className="text-xs text-slate-400 mb-4">Crea un enlace de RRPP y asígnalo a cualquier local.</p>
+            <div className="space-y-3">
+              <input 
+                placeholder="Nombre del RRPP..." 
+                value={newPromoterName} 
+                onChange={e => setNewPromoterName(e.target.value)} 
+                className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-3 text-sm focus:border-fuchsia-500 outline-none" 
+              />
+              <select
+                value={newPromoterVenueId}
+                onChange={e => setNewPromoterVenueId(e.target.value)}
+                className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-3 text-sm focus:border-fuchsia-500 outline-none"
+              >
+                <option value="">Selecciona Local...</option>
+                {venues.map(v => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </select>
+              <input 
+                placeholder="ID del Evento (ej: 2026-08-20)..." 
+                value={newPromoterEventId} 
+                onChange={e => setNewPromoterEventId(e.target.value)} 
+                className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-3 text-sm focus:border-fuchsia-500 outline-none" 
+              />
+              <button 
+                onClick={handleCreatePromoter} 
+                disabled={savingPromoter} 
+                className="w-full bg-fuchsia-600 px-4 py-3 rounded-lg text-sm font-bold hover:bg-fuchsia-500 transition-colors disabled:opacity-50"
+              >
+                {savingPromoter ? 'Generando...' : 'Generar Enlace RRPP'}
+              </button>
+            </div>
+          </section>
+
+          <section className="md:col-span-2 bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4 flex flex-col h-[75vh]">
+            <div className="flex justify-between items-center">
+              <h2 className="text-sm font-black uppercase tracking-widest text-slate-300">Auditoría de Promotores ({promoters.length})</h2>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
+              {promoters.length === 0 && <p className="text-sm text-slate-500">No hay promotores en la plataforma.</p>}
+              
+              {promoters.map(p => (
+                <div key={p.id} className="bg-black/30 border border-white/5 p-4 rounded-2xl flex justify-between items-center">
+                  <div>
+                    <h3 className="font-bold flex items-center gap-2">
+                      {p.name}
+                      <span className="text-[9px] bg-slate-800 px-2 py-0.5 rounded font-mono text-slate-300">{p.code}</span>
+                    </h3>
+                    <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-widest">
+                      Local: <span className="text-white">{p.venueId}</span> | Evento: <span className="text-white">{p.eventId}</span>
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${p.is_closed ? 'bg-red-900/50 text-red-400' : 'bg-green-900/50 text-green-400'}`}>
+                        {p.is_closed ? 'Listas Cerradas' : 'Listas Abiertas'}
+                      </span>
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${p.liquidated_by_venue ? 'bg-blue-900/50 text-blue-400' : 'bg-slate-800 text-slate-400'}`}>
+                        {p.liquidated_by_venue ? 'Liquidado' : 'Pendiente Pago'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <button onClick={() => copyPromoterLink(p.code)} className="bg-white/10 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-white/20 transition-colors uppercase">
+                      Copiar Enlace
+                    </button>
+                    <button onClick={() => handleTogglePromoterStatus(p)} className="bg-white/5 border border-white/10 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-white/10 transition-colors uppercase">
+                      {p.is_closed ? 'Reabrir Listas' : 'Bloquear Listas'}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

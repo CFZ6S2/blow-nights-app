@@ -4,15 +4,23 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 
 
 export default function PremiumPage() {
+  const { t } = useTranslation();
   const { user, profile, loading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
 
   const handleSubscribe = async (priceId: string) => {
+    if (!profile?.cityId) {
+      alert('Debes seleccionar tu ciudad antes de adquirir la membresía.');
+      router.push('/setup-profile');
+      return;
+    }
+
     setIsSubmitting(true);
     setError('');
 
@@ -27,11 +35,11 @@ export default function PremiumPage() {
       if (data?.url) {
         window.location.href = data.url;
       } else {
-        setError('No se pudo crear la sesión de pago.');
+        setError(t('premium.error_session'));
       }
     } catch (err) {
       console.error("Error creating checkout session", err);
-      setError('Hubo un error al iniciar el pago. Inténtalo de nuevo.');
+      setError(t('premium.error_payment'));
     } finally {
       setIsSubmitting(false);
     }
@@ -47,7 +55,7 @@ export default function PremiumPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-2xl font-bold">Hazte Premium</h1>
+        <h1 className="text-2xl font-bold">{t('premium.title')}</h1>
       </header>
 
       <main className="max-w-4xl mx-auto w-full space-y-12">
@@ -57,18 +65,16 @@ export default function PremiumPage() {
             animate={{ scale: 1, opacity: 1 }}
             className="inline-block bg-gradient-to-r from-fuchsia-600 to-indigo-600 px-6 py-2 rounded-full mb-4 shadow-[0_0_30px_rgba(217,70,239,0.3)]"
           >
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">🔥 Oferta de Lanzamiento</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">{t('premium.launch_offer')}</span>
           </motion.div>
           <h2 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 leading-tight">
-            Desbloquea todo el potencial
+            {t('premium.unlock_potential')}
           </h2>
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-[2rem] max-w-lg mx-auto border-dashed border-fuchsia-500/50">
             <p className="text-slate-200 text-sm font-bold">
-              ¡Estamos de celebración! 🎉
+              {t('premium.celebration')}
             </p>
-            <p className="text-slate-400 text-xs mt-2">
-              Los <span className="text-fuchsia-400 font-black">primeros 1.000 usuarios</span> que se registren obtendrán el plan <span className="text-yellow-500 font-black">PREMIUM GRATIS</span> para siempre.
-            </p>
+            <p className="text-slate-400 text-xs mt-2" dangerouslySetInnerHTML={{ __html: t('premium.free_offer').replace('1.000', '<span class="text-fuchsia-400 font-black">1.000</span>').replace('PREMIUM GRATIS', '<span class="text-yellow-500 font-black">PREMIUM GRATIS</span>') }} />
           </div>
         </div>
 
@@ -81,13 +87,13 @@ export default function PremiumPage() {
         {profile?.premium ? (
           <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 p-8 rounded-3xl text-center space-y-4">
             <div className="text-5xl">👑</div>
-            <h3 className="text-2xl font-bold text-yellow-500">¡Ya eres Premium!</h3>
-            <p className="text-slate-300">Gracias por apoyar a la comunidad. Tienes acceso a todas las funciones.</p>
+            <h3 className="text-2xl font-bold text-yellow-500">{t('premium.already_premium')}</h3>
+            <p className="text-slate-300">{t('premium.thanks_support')}</p>
             <button 
               onClick={() => router.push('/')}
               className="mt-4 bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-8 rounded-2xl transition-all"
             >
-              Volver al Mapa
+              {t('premium.back_to_map')}
             </button>
           </div>
         ) : (
@@ -98,17 +104,17 @@ export default function PremiumPage() {
               className="bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-[2.5rem] flex flex-col space-y-6 relative overflow-hidden group hover:border-fuchsia-500/50 transition-all shadow-xl"
             >
               <div className="space-y-2">
-                <h3 className="text-xl font-black uppercase tracking-widest text-slate-400">Mensual</h3>
+                <h3 className="text-xl font-black uppercase tracking-widest text-slate-400">{t('premium.monthly')}</h3>
                 <div className="flex items-baseline gap-1">
                   <span className="text-5xl font-black">9,99€</span>
-                  <span className="text-slate-500 text-xs font-black">/MES</span>
+                  <span className="text-slate-500 text-xs font-black">{t('premium.per_month')}</span>
                 </div>
               </div>
               <ul className="space-y-4 text-xs font-bold text-slate-400">
-                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> Sin publicidad</li>
-                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> Ver quién te visitó</li>
-                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> Filtros avanzados</li>
-                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> Modo incógnito</li>
+                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> {t('premium.no_ads')}</li>
+                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> {t('premium.see_visitors')}</li>
+                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> {t('premium.advanced_filters')}</li>
+                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> {t('premium.incognito')}</li>
               </ul>
               <button
                 disabled={isSubmitting}
@@ -116,7 +122,7 @@ export default function PremiumPage() {
                 onClick={() => handleSubscribe('price_monthly_placeholder')}
                 className="w-full bg-white text-black font-black py-5 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all uppercase tracking-widest text-[10px]"
               >
-                Elegir este plan
+                {t('premium.choose_plan')}
               </button>
             </motion.div>
 
@@ -126,20 +132,20 @@ export default function PremiumPage() {
               className="bg-gradient-to-br from-indigo-600/20 to-fuchsia-600/20 backdrop-blur-xl border-2 border-fuchsia-500 p-8 rounded-[2.5rem] flex flex-col space-y-6 relative overflow-hidden group shadow-[0_20px_50px_rgba(217,70,239,0.2)]"
             >
               <div className="absolute top-0 right-0 bg-fuchsia-500 text-white text-[10px] font-black px-4 py-2 rounded-bl-2xl uppercase tracking-widest">
-                Ahorra 40%
+                {t('premium.save_40')}
               </div>
               <div className="space-y-2">
-                <h3 className="text-xl font-black uppercase tracking-widest text-fuchsia-400">Anual</h3>
+                <h3 className="text-xl font-black uppercase tracking-widest text-fuchsia-400">{t('premium.yearly')}</h3>
                 <div className="flex items-baseline gap-1">
                   <span className="text-5xl font-black">69,99€</span>
-                  <span className="text-slate-500 text-xs font-black">/AÑO</span>
+                  <span className="text-slate-500 text-xs font-black">{t('premium.per_year')}</span>
                 </div>
               </div>
               <ul className="space-y-4 text-xs font-bold text-white/80">
-                <li className="flex items-center gap-3 font-black text-fuchsia-400"><span className="material-icons text-sm">stars</span> Todo lo del plan mensual</li>
-                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> 3 Boosts al mes</li>
-                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> Insignia VIP</li>
-                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> Soporte prioritario</li>
+                <li className="flex items-center gap-3 font-black text-fuchsia-400"><span className="material-icons text-sm">stars</span> {t('premium.all_monthly')}</li>
+                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> {t('premium.boosts')}</li>
+                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> {t('premium.vip_badge')}</li>
+                <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> {t('premium.priority_support')}</li>
               </ul>
               <button
                 disabled={isSubmitting}
@@ -147,7 +153,7 @@ export default function PremiumPage() {
                 onClick={() => handleSubscribe('price_yearly_placeholder')}
                 className="w-full bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white font-black py-5 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-fuchsia-500/20"
               >
-                Activar Plan Anual
+                {t('premium.activate_yearly')}
               </button>
             </motion.div>
           </div>
@@ -156,18 +162,18 @@ export default function PremiumPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center mt-12">
           <div className="p-6">
             <div className="text-3xl mb-2">🔒</div>
-            <h4 className="font-bold">Pago Seguro</h4>
-            <p className="text-xs text-slate-500 mt-1">Encriptación SSL de 256 bits procesada por Stripe.</p>
+            <h4 className="font-bold">{t('premium.secure_payment')}</h4>
+            <p className="text-xs text-slate-500 mt-1">{t('premium.secure_desc')}</p>
           </div>
           <div className="p-6">
             <div className="text-3xl mb-2">🔄</div>
-            <h4 className="font-bold">Sin Compromiso</h4>
-            <p className="text-xs text-slate-500 mt-1">Cancela tu suscripción en cualquier momento.</p>
+            <h4 className="font-bold">{t('premium.no_commitment')}</h4>
+            <p className="text-xs text-slate-500 mt-1">{t('premium.no_commitment_desc')}</p>
           </div>
           <div className="p-6">
             <div className="text-3xl mb-2">✨</div>
-            <h4 className="font-bold">Nuevas Funciones</h4>
-            <p className="text-xs text-slate-500 mt-1">Acceso inmediato a todas las futuras novedades.</p>
+            <h4 className="font-bold">{t('premium.new_features')}</h4>
+            <p className="text-xs text-slate-500 mt-1">{t('premium.new_features_desc')}</p>
           </div>
         </div>
       </main>

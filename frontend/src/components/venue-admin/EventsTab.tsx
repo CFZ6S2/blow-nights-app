@@ -102,7 +102,7 @@ function EventPromoters({ venueId, eventId }: { venueId: string; eventId: string
   };
 
   const copyLink = (token: string) => {
-    const link = `${window.location.origin}/rrpp/${token}`;
+    const link = `${window.location.origin}/rrpp?token=${token}`;
     navigator.clipboard.writeText(link);
     alert('Enlace del RRPP copiado. ¡Envíalo por WhatsApp!');
   };
@@ -316,7 +316,7 @@ export default function EventsTab({ venueId }: { venueId: string }) {
   };
 
   const copyMagicLink = (eventId: string, token: string) => {
-    const link = `${window.location.origin}/door/${venueId}/${eventId}?token=${token}`;
+    const link = `${window.location.origin}/door?venueId=${venueId}&eventId=${eventId}&token=${token}`;
     navigator.clipboard.writeText(link);
     alert('Enlace copiado al portapapeles. ¡Envíalo por WhatsApp a tus porteros!');
   };

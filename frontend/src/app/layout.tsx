@@ -10,6 +10,8 @@ import NotificationToast from "@/components/NotificationToast";
 import ViewerToast from "@/components/ViewerToast";
 import { NotificationProvider } from "@/context/NotificationContext";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import { I18nProvider } from "@/providers/I18nProvider";
+import LanguageSelector from "@/components/LanguageSelector";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -64,22 +66,25 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
       </head>
       <body className="min-h-full flex flex-col bg-slate-950 text-white">
-        <AuthProvider>
-          <CityProvider>
-          <NotificationProvider>
-            <NotificationManager />
-            <NotificationToast />
-            <ViewerToast />
-            <div className="flex-1 pb-20 overflow-x-hidden">
-              <PageTransition>
-                {children}
-              </PageTransition>
-            </div>
-            <BottomNav />
-            <PWAInstallPrompt />
-          </NotificationProvider>
-          </CityProvider>
-        </AuthProvider>
+        <I18nProvider>
+          <AuthProvider>
+            <CityProvider>
+            <NotificationProvider>
+              <LanguageSelector />
+              <NotificationManager />
+              <NotificationToast />
+              <ViewerToast />
+              <div className="flex-1 pb-20 overflow-x-hidden">
+                <PageTransition>
+                  {children}
+                </PageTransition>
+              </div>
+              <BottomNav />
+              <PWAInstallPrompt />
+            </NotificationProvider>
+            </CityProvider>
+          </AuthProvider>
+        </I18nProvider>
       </body>
     </html>
   );

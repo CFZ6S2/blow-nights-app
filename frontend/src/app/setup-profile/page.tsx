@@ -298,9 +298,11 @@ export default function SetupProfilePage() {
                       onChange={(e) => setRol(e.target.value)}
                       className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-white font-bold outline-none appearance-none"
                     >
-                      <option value="activo">Activo</option>
-                      <option value="pasivo">Pasivo</option>
-                      <option value="versátil">Versátil</option>
+                      <option value="activo">🟢 Activo</option>
+                      <option value="pasivo">🔵 Pasivo</option>
+                      <option value="versátil">🟣 Versátil</option>
+                      <option disabled>──────────</option>
+                      <option value="party_only">🍸 Solo Fiesta</option>
                     </select>
                   </div>
                   <div className="space-y-3">

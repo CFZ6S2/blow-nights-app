@@ -28,6 +28,11 @@ export interface User {
   intereses?: string[];
   nsfwBlur?: boolean;
   role?: string;
+  dailyPingsLeft?: number;
+  lastPingReset?: any;
+  isVIPNight?: boolean;
+  activePlatforms?: string[];
+  currentCity?: string;
   cityId?: string;
   cruisingMode?: boolean;
   incognito?: boolean;
@@ -38,6 +43,8 @@ export interface User {
   verificationStatus?: string;
   complexion?: string;
   needsUpdate?: boolean;
+  venueId?: string;
+  qrCredits?: number;
 }
 
 export interface Venue {
@@ -48,13 +55,20 @@ export interface Venue {
   address?: string;
   coverImage?: string;
   isActive?: boolean;
+  externalTicketUrl?: string;
   location: {
     latitude: number;
     longitude: number;
   };
   ownerId: string;
   cityId: string;
+  isClaimed?: boolean;
   currentCount: number;
+  affiliatedBy?: string;
+  hasTicketing?: boolean;
+  boostActive?: boolean;
+  subscription?: any;
+  promoBanner?: any;
   ticketPricing?: Record<string, {
     name?: string;
     description?: string;
@@ -74,6 +88,7 @@ export interface Ticket {
   qrToken: string;
   purchasedAt: any; // Firebase Timestamp
   usedAt?: any; // Firebase Timestamp
+  pin?: string;
 }
 
 export interface Checkin {
@@ -99,21 +114,34 @@ export interface Chill {
   accepted_users: string[];
   pending_users: string[];
   denied_users: string[];
-  status: 'active' | 'full' | 'ended';
+  status: 'active' | 'full' | 'ended' | 'closed' | 'purged';
   created_at: any;
   expires_at: any;
   boosted?: boolean;
   tags?: string[];
+  instructions?: string;
+  scanner_token?: string;
+  type?: ChillType;
+  stats?: any;
 }
+
+export type ChillType = 'social' | 'commercial';
+export type MonetizationType = 'in_app' | 'out_of_app';
 
 export interface ChillRequest {
   id: string;
   chill_id: string;
+  chillId?: string;
   user_uid: string;
   user_nick: string;
+  userName?: string;
   user_foto: string;
   user_edad: number | null;
   user_bio?: string;
-  status: 'pending' | 'accepted' | 'denied';
+  status: 'pending' | 'accepted' | 'denied' | 'ACCEPTED' | 'PENDING' | 'DENIED';
   created_at: any;
+  qrToken?: string;
+  qr_code?: string;
+  pin?: string;
+  checkedIn?: boolean;
 }

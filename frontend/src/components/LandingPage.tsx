@@ -25,10 +25,8 @@ export default function LandingPage({ onStart }: LandingPageProps) {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const usersQ = query(collection(db, 'users'), where('online', '==', true), limit(50));
-        const usersSnap = await getDocs(usersQ);
-        setOnlineCount(usersSnap.size);
-
+        // No consultamos la colección de usuarios aquí para evitar errores de permisos, 
+        // ya que los visitantes no están autenticados.
         const venuesQ = query(collection(db, 'venues'), where('isActive', '==', true));
         const venuesSnap = await getCountFromServer(venuesQ);
         setVenueCount(venuesSnap.data().count);

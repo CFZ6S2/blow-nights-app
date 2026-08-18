@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCity } from '@/context/CityContext';
+import { useTranslation } from 'react-i18next';
 
 export default function CitySelector({ onCityChange, currentCityId }: { onCityChange?: (cityId: string) => void, currentCityId?: string } = {}) {
   const { cities, currentCity, setCurrentCity, detectedByGPS } = useCity();
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
 
   if (!currentCity || cities.length <= 1) return null;
 
@@ -38,9 +40,9 @@ export default function CitySelector({ onCityChange, currentCityId }: { onCityCh
               className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[2.5rem] p-6 pb-[env(safe-area-inset-bottom)] space-y-4"
             >
               <div className="text-center space-y-1">
-                <h3 className="text-sm font-black uppercase tracking-widest">Elige tu ciudad</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest">{t('city.select', 'Elige tu ciudad')}</h3>
                 <p className="text-[10px] text-slate-500">
-                  {detectedByGPS ? 'Detectada por GPS' : 'Seleccionada manualmente'}
+                  {detectedByGPS ? t('city.detected', 'Detectada por GPS') : t('city.manual', 'Seleccionada manualmente')}
                 </p>
               </div>
 
@@ -78,7 +80,7 @@ export default function CitySelector({ onCityChange, currentCityId }: { onCityCh
                 onClick={() => setOpen(false)}
                 className="w-full py-4 rounded-2xl bg-white/5 text-slate-400 font-black uppercase tracking-[0.2em] text-xs hover:bg-white/10 transition-all"
               >
-                Cerrar
+                {t('city.close', 'Cerrar')}
               </button>
             </motion.div>
           </motion.div>

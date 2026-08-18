@@ -167,13 +167,18 @@ export default function VenueAdminPage() {
                 <button
                   key={v.id}
                   onClick={() => setSelectedVenue(v)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                  className={`flex-shrink-0 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border flex items-center gap-2 ${
                     selectedVenue?.id === v.id
                       ? 'bg-fuchsia-500/20 border-fuchsia-500/30 text-fuchsia-400'
                       : 'bg-white/5 border-white/10 text-slate-500'
                   }`}
                 >
                   {v.name}
+                  {v.ownerId === 'community' ? (
+                    <span className="bg-slate-700/50 text-slate-300 px-1.5 py-0.5 rounded-[4px] text-[8px]">Comunitario</span>
+                  ) : (
+                    <span className="bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-[4px] text-[8px]">Comercial PRO</span>
+                  )}
                 </button>
               ))}
             </div>
@@ -193,6 +198,39 @@ export default function VenueAdminPage() {
             </Link>
           </div>
         </header>
+
+        {selectedVenue && !selectedVenue.isVerified && selectedVenue.ownerId !== 'community' && !isAdmin && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden bg-gradient-to-r from-purple-950 via-indigo-950 to-slate-900 border-2 border-purple-500/60 rounded-2xl p-4 md:p-5 shadow-2xl">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div className="p-2.5 bg-purple-600/30 border border-purple-400/40 rounded-xl text-purple-300 shrink-0">
+                  <span className="material-icons text-sm">lock</span>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-purple-500/20 text-purple-300 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border border-purple-500/40">
+                      Modo Previsualización
+                    </span>
+                  </div>
+                  <h3 className="text-sm md:text-base font-black text-white">
+                    Activa tu Suscripción PRO para publicar cambios en vivo
+                  </h3>
+                  <p className="text-xs text-slate-300 max-w-xl">
+                    Estás explorando tu panel de control. Para habilitar el distintivo de <strong>Local Verificado</strong> en el mapa, activar el lector de puerta <code className="text-purple-300">/door</code> y emitir entradas, suscribe tu local.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => alert(`Redirigiendo a la pasarela de pago segura de Stripe para activar el Plan PRO de "${selectedVenue.name}" (89€/mes).`)}
+                className="w-full md:w-auto px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black uppercase tracking-wider rounded-xl shadow-lg transition-all shrink-0 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span className="material-icons text-sm">credit_card</span>
+                Activar Plan PRO (39€ / 89€)
+              </button>
+            </div>
+          </motion.div>
+        )}
 
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
             <button onClick={() => setTab('overview')} className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap border transition-all ${tab === 'overview' ? 'bg-fuchsia-600 border-fuchsia-500 text-white' : 'bg-white/5 border-white/5 text-slate-500'}`}>Resumen</button>

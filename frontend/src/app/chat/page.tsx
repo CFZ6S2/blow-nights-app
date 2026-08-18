@@ -7,8 +7,10 @@ import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChatSkeleton } from '@/components/Skeleton';
+import { useTranslation } from 'react-i18next';
 
 export default function ChatListPage() {
+  const { t } = useTranslation();
   const { user, loading: authLoading } = useAuth();
   const [chats, setChats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +63,7 @@ export default function ChatListPage() {
     <div className="flex flex-col min-h-screen bg-slate-950 text-white p-4">
       <header className="py-6 px-4 flex justify-between items-center opacity-40">
         <div className="w-10 h-10 rounded-full bg-white/5" />
-        <h1 className="text-2xl font-bold">Mis Mensajes</h1>
+        <h1 className="text-2xl font-bold">{t('chat.title')}</h1>
         <div className="w-10" />
       </header>
       <div className="space-y-3 max-w-2xl mx-auto w-full">
@@ -82,7 +84,7 @@ export default function ChatListPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-2xl font-bold">Mis Mensajes</h1>
+        <h1 className="text-2xl font-bold">{t('chat.title')}</h1>
         <div className="w-10"></div> {/* Spacer */}
       </header>
 
@@ -90,8 +92,7 @@ export default function ChatListPage() {
         {chats.length === 0 ? (
           <div className="text-center py-20 text-slate-500">
             <div className="text-6xl mb-4">💬</div>
-            <p>Aún no tienes conversaciones.</p>
-            <p className="text-xs mt-2">¡Ve al mapa y rompe el hielo!</p>
+            <p>{t('chat.empty_messages')}</p>
           </div>
         ) : (
           chats.map((chat) => (
@@ -116,7 +117,7 @@ export default function ChatListPage() {
                   </span>
                 </div>
                 <p className="text-sm text-slate-400 truncate mt-1">
-                  {chat.lastMessage || '¡Di hola! 👋'}
+                  {chat.lastMessage || t('chat.say_hi')}
                 </p>
               </div>
               <div className="text-slate-600">

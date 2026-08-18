@@ -195,7 +195,7 @@ export default function ChillsPage() {
                     chill={chill}
                     userLat={userLat}
                     userLng={userLng}
-                    onClick={() => router.push(`/chills/${chill.id}`)}
+                    onClick={() => router.push(`/chills/detail?id=${chill.id}`)}
                   />
                 ))}
               </AnimatePresence>
@@ -225,7 +225,7 @@ export default function ChillsPage() {
                     chill={chill}
                     userLat={userLat}
                     userLng={userLng}
-                    onClick={() => router.push(`/chills/${chill.id}`)}
+                    onClick={() => router.push(`/chills/detail?id=${chill.id}`)}
                   />
                 ))}
               </AnimatePresence>
@@ -241,7 +241,7 @@ export default function ChillsPage() {
             onClose={() => setShowCreate(false)}
             onCreated={(id) => {
               setShowCreate(false);
-              router.push(`/chills/${id}`);
+              router.push(`/chills/detail?id=${id}`);
             }}
           />
         )}

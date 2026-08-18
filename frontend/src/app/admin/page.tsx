@@ -29,6 +29,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('stats');
   const [searchQuery, setSearchQuery] = useState('');
+  const [platformSettings, setPlatformSettings] = useState<{ enableDarkNightsBridge?: boolean } | null>(null);
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -38,6 +39,14 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!isAdmin) return;
+
+    const unsubSettings = onSnapshot(doc(db, 'settings', 'platform'), (docSnap) => {
+      if (docSnap.exists()) {
+        setPlatformSettings(docSnap.data() as any);
+      } else {
+        setPlatformSettings({ enableDarkNightsBridge: false });
+      }
+    });
 
     // Real-time Stats
     const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
@@ -176,6 +185,32 @@ export default function AdminDashboard() {
         </h1>
         <p className="text-slate-400 text-sm">Bienvenido, César. Control total del sistema.</p>
       </header>
+
+      {/* Control Central de Ecosistema */}
+      <div className="bg-slate-900 border border-slate-700/50 rounded-2xl p-4 mb-8 shadow-xl">
+        <h2 className="text-lg font-black text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+          <span className="material-icons text-fuchsia-500">settings_input_component</span>
+          Ecosistema
+        </h2>
+        
+        <div className="flex items-center justify-between p-4 bg-black/50 rounded-xl border border-white/5">
+          <div>
+            <h3 className="font-bold">Puente Dark Nights</h3>
+            <p className="text-xs text-slate-400">Permite a los usuarios saltar al circuito general</p>
+          </div>
+          <button
+            onClick={async () => {
+              const newVal = !platformSettings?.enableDarkNightsBridge;
+              const { setDoc, doc } = await import('firebase/firestore');
+              const { db } = await import('@/lib/firebase');
+              await setDoc(doc(db, 'settings', 'platform'), { enableDarkNightsBridge: newVal }, { merge: true });
+            }}
+            className={`w-14 h-8 rounded-full relative transition-colors duration-300 ${platformSettings?.enableDarkNightsBridge ? 'bg-fuchsia-600' : 'bg-slate-700'}`}
+          >
+            <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform duration-300 ${platformSettings?.enableDarkNightsBridge ? 'translate-x-6' : 'translate-x-0'}`} />
+          </button>
+        </div>
+      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4 mb-8">

@@ -19,6 +19,7 @@ interface AuthContextType {
   user: FirebaseUser | null;
   profile: UserProfile | null;
   claims: Record<string, any> | null;
+  isSuperAdmin: boolean;
   isAdmin: boolean;
   isCityAdmin?: boolean;
   isVenueManager?: boolean;
@@ -35,6 +36,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   claims: null,
+  isSuperAdmin: false,
   isAdmin: false,
   hasChillAccess: false,
   loading: true,
@@ -260,17 +262,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const isAdmin = claims?.role === 'admin' || user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL || user?.email === 'cesar.herrera.rojo@gmail.com';
+  const isSuperAdmin = claims?.role === 'superadmin' || user?.email === 'cesar.herrera.rojo@gmail.com' || user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const isAdmin = isSuperAdmin || claims?.role === 'admin';
   const isCityAdmin = claims?.role === 'cityAdmin' || profile?.role === 'cityAdmin';
   const isVenueManager = isAdmin || isCityAdmin || claims?.role === 'venueOwner' || claims?.role === 'venue' || profile?.role === 'venueOwner' || profile?.role === 'venue';
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
   const hasChillAccess = isAdmin || !!claims?.premium || !!profile?.premium
-    || (typeof claims?.pass_expires === 'number' && claims.pass_expires > Date.now());
+    || (typeof claims?.pass_expires === 'number' && claims.pass_expires > now);
 
   return (
     <AuthContext.Provider value={{
       user,
       profile,
       claims,
+      isSuperAdmin,
       isAdmin,
       isCityAdmin,
       isVenueManager,

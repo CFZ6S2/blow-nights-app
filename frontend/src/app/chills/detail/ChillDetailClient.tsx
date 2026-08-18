@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { doc, onSnapshot, collection, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { useChillRequests, requestChillAccess, respondChillRequest, endChill } from '@/hooks/useChills';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Chill, ChillRequest } from '@/types';
+import { AnimatePresence } from 'framer-motion';
+import { Chill } from '@/types';
 import ProfileOverlay from '@/components/ProfileOverlay';
 import ChillPaywall from '@/components/ChillPaywall';
 
@@ -20,9 +20,7 @@ interface ChatMessage {
   created_at: any;
 }
 
-export default function ChillDetailPage() {
-  const { id } = useParams();
-  const chillId = id as string;
+export default function ChillDetailClient({ chillId }: { chillId: string }) {
   const router = useRouter();
   const { user, profile, hasChillAccess } = useAuth();
 
@@ -139,13 +137,11 @@ export default function ChillDetailPage() {
   return (
     <div className="min-h-screen bg-black text-white pb-28">
       <div className="max-w-md mx-auto px-4 pt-6">
-        {/* Back */}
         <button onClick={() => router.back()} className="flex items-center gap-1 text-slate-500 hover:text-white mb-4 transition-colors">
           <span className="material-icons text-sm">arrow_back</span>
           <span className="text-xs font-bold">Volver</span>
         </button>
 
-        {/* Header card */}
         <div className="bg-slate-900/80 border border-white/5 rounded-3xl p-6 mb-4">
           <div className="flex items-start gap-4 mb-4">
             <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-fuchsia-500/40 flex-shrink-0 cursor-pointer"
@@ -192,7 +188,6 @@ export default function ChillDetailPage() {
             </div>
           )}
 
-          {/* Address reveal */}
           {canSeeAddress ? (
             <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 flex items-start gap-3">
               <span className="material-icons text-green-400 mt-0.5">location_on</span>
@@ -212,7 +207,6 @@ export default function ChillDetailPage() {
           )}
         </div>
 
-        {/* Action buttons */}
         {chill.status !== 'ended' && !isHost && (
           <div className="mb-4">
             {isAccepted ? (
@@ -252,7 +246,6 @@ export default function ChillDetailPage() {
           </div>
         )}
 
-        {/* Host controls */}
         {isHost && chill.status !== 'ended' && (
           <button
             onClick={handleEnd}
@@ -263,7 +256,6 @@ export default function ChillDetailPage() {
           </button>
         )}
 
-        {/* Tabs for host / accepted */}
         {(isHost || isAccepted) && (
           <>
             <div className="flex gap-2 mb-4">
@@ -287,7 +279,6 @@ export default function ChillDetailPage() {
               ))}
             </div>
 
-            {/* Requests panel (host only) */}
             {tab === 'requests' && isHost && (
               <div className="space-y-3">
                 {requests.length === 0 ? (
@@ -337,7 +328,6 @@ export default function ChillDetailPage() {
               </div>
             )}
 
-            {/* Group chat */}
             {tab === 'chat' && canChat && (
               <div className="flex flex-col" style={{ height: 'calc(100vh - 420px)', minHeight: '300px' }}>
                 <div className="flex-1 overflow-y-auto space-y-2 mb-3 px-1">
@@ -403,7 +393,6 @@ export default function ChillDetailPage() {
         )}
       </div>
 
-      {/* Profile overlay */}
       {selectedProfile && (
         <ProfileOverlay
           id={selectedProfile}
@@ -411,7 +400,6 @@ export default function ChillDetailPage() {
         />
       )}
 
-      {/* Paywall */}
       <AnimatePresence>
         {showPaywall && (
           <ChillPaywall onClose={() => setShowPaywall(false)} />

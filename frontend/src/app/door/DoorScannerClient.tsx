@@ -1,45 +1,39 @@
 'use client';
 
-import { useState, useRef, useEffect, use, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, functions } from '@/lib/firebase';
 import { httpsCallable } from 'firebase/functions';
 import jsQR from 'jsqr';
 
-export default function DoorScannerPage({ params }: { params: Promise<{ venueId: string, eventId: string }> }) {
-  const router = useRouter();
+export default function DoorScannerClient({ venueId, eventId }: { venueId: string; eventId: string }) {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
-  
-  // Unwrap params using `use` hook in Next 15
-  const unwrappedParams = use(params);
-  const { venueId, eventId } = unwrappedParams;
 
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [eventData, setEventData] = useState<any>(null);
-  
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  
+
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<'idle' | 'valid' | 'invalid'>('idle');
   const [scanMessage, setScanMessage] = useState<string>('');
   const [scanPerks, setScanPerks] = useState<string>('');
-  
-  // Authentication via Token
+
   useEffect(() => {
     if (!token) {
       setAuthorized(false);
       return;
     }
-    
+
     const verifyToken = async () => {
       try {
         const docRef = doc(db, `venues/${venueId}/events`, eventId);
         const docSnap = await getDoc(docRef);
-        
+
         if (docSnap.exists() && docSnap.data().door_access_token === token) {
           setEventData(docSnap.data());
           setAuthorized(true);
@@ -51,11 +45,10 @@ export default function DoorScannerPage({ params }: { params: Promise<{ venueId:
         setAuthorized(false);
       }
     };
-    
+
     verifyToken();
   }, [venueId, eventId, token]);
 
-  // Camera Setup
   const startCamera = useCallback(async () => {
     if (!authorized) return;
     try {
@@ -93,29 +86,29 @@ export default function DoorScannerPage({ params }: { params: Promise<{ venueId:
 
   const tick = () => {
     if (!videoRef.current || !canvasRef.current || !scanning) return;
-    
+
     if (videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
       const canvas = canvasRef.current;
       const video = videoRef.current;
-      
+
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       if (ctx) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        
+
         const code = jsQR(imageData.data, imageData.width, imageData.height, {
           inversionAttempts: "dontInvert",
         });
 
         if (code && code.data) {
           handleQRCode(code.data);
-          return; // Stop ticking once we find a code
+          return;
         }
       }
     }
-    
+
     if (scanning) {
       requestAnimationFrame(tick);
     }
@@ -131,16 +124,16 @@ export default function DoorScannerPage({ params }: { params: Promise<{ venueId:
   const handleQRCode = async (qrData: string) => {
     setScanning(false);
     stopCamera();
-    
+
     try {
       const validateTicketByDoorToken = httpsCallable(functions, 'validateTicketByDoorToken');
-      const res = await validateTicketByDoorToken({ 
+      const res = await validateTicketByDoorToken({
         qrToken: qrData,
         doorAccessToken: token,
         eventId: eventId,
         venueId: venueId
       });
-      
+
       const data = res.data as any;
       if (data.valid) {
         setScanResult('valid');
@@ -159,8 +152,7 @@ export default function DoorScannerPage({ params }: { params: Promise<{ venueId:
       setScanPerks('');
       triggerHaptic('error');
     }
-    
-    // Auto-reset after 2 seconds
+
     setTimeout(() => {
       setScanResult('idle');
       setScanMessage('');
@@ -184,11 +176,10 @@ export default function DoorScannerPage({ params }: { params: Promise<{ venueId:
 
   return (
     <div className={`min-h-screen w-full relative transition-colors duration-200 ${
-      scanResult === 'valid' ? 'bg-green-500' : 
+      scanResult === 'valid' ? 'bg-green-500' :
       scanResult === 'invalid' ? 'bg-red-600' : 'bg-black'
     }`}>
-      
-      {/* HUD (Heads Up Display) */}
+
       <div className="absolute top-0 inset-x-0 z-20 p-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
         <div>
           <h2 className="text-white font-black text-xl leading-none">{eventData?.title}</h2>
@@ -201,12 +192,11 @@ export default function DoorScannerPage({ params }: { params: Promise<{ venueId:
         </div>
       </div>
 
-      {/* Camera View */}
       {scanResult === 'idle' && (
         <div className="absolute inset-0 z-10">
           <video ref={videoRef} className="w-full h-full object-cover" />
           <canvas ref={canvasRef} className="hidden" />
-          
+
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="w-64 h-64 border-2 border-white/50 rounded-3xl relative">
               <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white -mt-1 -ml-1 rounded-tl-xl" />
@@ -215,14 +205,13 @@ export default function DoorScannerPage({ params }: { params: Promise<{ venueId:
               <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white -mb-1 -mr-1 rounded-br-xl" />
             </div>
           </div>
-          
+
           <div className="absolute bottom-10 inset-x-0 text-center z-20 pointer-events-none">
             <p className="text-white/70 font-bold tracking-widest uppercase text-sm">Apuntando al QR</p>
           </div>
         </div>
       )}
 
-      {/* Result View */}
       {scanResult !== 'idle' && (
         <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 text-center text-white">
           <span className="material-icons text-9xl drop-shadow-2xl mb-6">

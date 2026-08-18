@@ -5,12 +5,14 @@ import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { collection, query, where, onSnapshot, doc, setDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, setDoc, getDoc } from 'firebase/firestore';
 import { db, analytics } from '@/lib/firebase';
 import { logEvent } from 'firebase/analytics';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 
 export default function MyProfilePage() {
+  const { t } = useTranslation();
   const { user, profile, loading, logout, deleteAccount, requestVerification } = useAuth();
   const { toggleNotifications } = useNotifications();
   const router = useRouter();
@@ -20,7 +22,22 @@ export default function MyProfilePage() {
   const [isOptimisticAvailable, setIsOptimisticAvailable] = useState<boolean | null>(null);
   const [geoError, setGeoError] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [platformSettings, setPlatformSettings] = useState<{ enableDarkNightsBridge?: boolean } | null>(null);
   const isAvailable = isOptimisticAvailable !== null ? isOptimisticAvailable : !!profile?.online;
+
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const snap = await getDoc(doc(db, 'settings', 'platform'));
+        if (snap.exists()) {
+          setPlatformSettings(snap.data() as any);
+        }
+      } catch (e) {
+        console.error("Error fetching platform settings", e);
+      }
+    }
+    fetchSettings();
+  }, []);
 
   const triggerHaptic = (intensity = 10) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -80,19 +97,24 @@ export default function MyProfilePage() {
 
     try {
       if (nextState) {
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-          const { latitude, longitude } = pos.coords;
-          setGeoError(false);
-          await setDoc(doc(db, 'users', user.uid), {
-            online: true,
-            lat: latitude,
-            lng: longitude
-          }, { merge: true });
-          setTimeout(() => setIsOptimisticAvailable(null), 1000);
-        }, (err) => {
+        if (typeof navigator !== 'undefined' && navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(async (pos) => {
+            const { latitude, longitude } = pos.coords;
+            setGeoError(false);
+            await setDoc(doc(db, 'users', user.uid), {
+              online: true,
+              lat: latitude,
+              lng: longitude
+            }, { merge: true });
+            setTimeout(() => setIsOptimisticAvailable(null), 1000);
+          }, (err) => {
+            setGeoError(true);
+            setIsOptimisticAvailable(null);
+          });
+        } else {
           setGeoError(true);
-          setIsOptimisticAvailable(false);
-        });
+          setIsOptimisticAvailable(null);
+        }
       } else {
         await setDoc(doc(db, 'users', user.uid), {
           online: false
@@ -148,7 +170,7 @@ export default function MyProfilePage() {
             <div className="flex items-center justify-center gap-2">
               <h1 className="text-3xl font-black tracking-tight">{profile.nick}, {profile.edad}</h1>
               {profile.verified && (
-                <span className="material-icons text-blue-500 text-xl" title="Perfil Verificado">verified</span>
+                <span className="material-icons text-blue-500 text-xl" title={t('profile.verified_profile')}>verified</span>
               )}
               {profile.premium && (
                 <motion.div 
@@ -156,20 +178,50 @@ export default function MyProfilePage() {
                   animate={{ rotate: 0, scale: 1, opacity: 1 }}
                   className="bg-gradient-to-r from-amber-400 to-yellow-600 px-2 py-0.5 rounded-md shadow-[0_0_15px_rgba(251,191,36,0.4)]"
                 >
-                  <span className="text-[8px] font-black text-black uppercase tracking-tighter">FOUNDER</span>
+                  <span className="text-[8px] font-black text-black uppercase tracking-tighter">{t('profile.founder')}</span>
                 </motion.div>
               )}
             </div>
-            <p className="text-slate-500 text-xs font-black uppercase tracking-[0.2em] mt-1">{profile.rol} • {profile.intencion}</p>
+            <p className="text-slate-500 text-xs font-black uppercase tracking-[0.2em] mt-1">{profile.rol === 'party_only' ? 'Solo Fiesta' : profile.rol} • {profile.intencion}</p>
           </div>
         </header>
+
+        {/* Puente de Tráfico Cruzado: Dark Nights */}
+        {platformSettings?.enableDarkNightsBridge && (
+          <div className="bg-slate-900 border border-slate-700/50 p-6 rounded-[2rem] shadow-xl text-center relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-tr from-slate-900 to-black pointer-events-none" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 blur-[50px] rounded-full pointer-events-none" />
+            
+            <div className="relative z-10 flex flex-col items-center">
+              <span className="text-3xl mb-3">🌙</span>
+              <h3 className="text-lg font-black text-white uppercase tracking-wider mb-2">¿Buscas el Circuito General?</h3>
+              <p className="text-xs text-slate-400 font-medium mb-6">Descubre quién sale hoy en Fabrik, Shôko y el resto del ocio comercial.</p>
+              
+              <button 
+                onClick={async () => {
+                  if (confirm('¡Próximamente! Activarás tu cuenta en Dark Nights con tu mismo perfil y compras.')) {
+                     const { updateDoc, doc } = await import('firebase/firestore');
+                     const { db } = await import('@/lib/firebase');
+                     await updateDoc(doc(db, 'users', user!.uid), {
+                       activePlatforms: ['blownights', 'darknights']
+                     });
+                     alert("¡Activado!");
+                  }
+                }}
+                className="w-full bg-white text-black font-black uppercase tracking-widest py-4 rounded-xl hover:bg-slate-200 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center justify-center gap-2"
+              >
+                <span>⚡ Pásate a Dark Nights</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Stats Panel */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Visitas', value: stats.visits, icon: 'visibility', color: 'text-blue-400' },
-            { label: 'Likes', value: stats.likes, icon: 'favorite', color: 'text-fuchsia-400' },
-            { label: 'Matches', value: stats.matches, icon: 'bolt', color: 'text-yellow-400' }
+            { label: t('profile.visits'), value: stats.visits, icon: 'visibility', color: 'text-blue-400' },
+            { label: t('profile.likes'), value: stats.likes, icon: 'favorite', color: 'text-fuchsia-400' },
+            { label: t('profile.matches'), value: stats.matches, icon: 'bolt', color: 'text-yellow-400' }
           ].map((stat, i) => (
             <motion.div 
               key={i}
@@ -187,8 +239,8 @@ export default function MyProfilePage() {
         <section className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-[2.5rem] space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-black uppercase tracking-widest">Estado de Visibilidad</h3>
-              <p className="text-[10px] text-slate-500 mt-1">Controla quién te ve en el mapa</p>
+              <h3 className="text-sm font-black uppercase tracking-widest">{t('profile.visibility_status')}</h3>
+              <p className="text-[10px] text-slate-500 mt-1">{t('profile.visibility_desc')}</p>
             </div>
             <motion.button
               whileTap={{ scale: 0.95 }}
@@ -200,7 +252,7 @@ export default function MyProfilePage() {
               }`}
             >
               <div className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-white animate-pulse shadow-[0_0_10px_white]' : 'bg-slate-600'}`} />
-              {isAvailable ? 'VISIBLE AHORA' : 'VOLVERME VISIBLE'}
+              {isAvailable ? t('profile.visible_now') : t('profile.make_visible')}
             </motion.button>
           </div>
           
@@ -214,7 +266,7 @@ export default function MyProfilePage() {
               >
                 <div className="flex items-center gap-3">
                   <span className="material-icons text-lg">location_off</span>
-                  <p className="text-[10px] font-black uppercase tracking-widest">GPS Bloqueado por el Navegador</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest">{t('profile.gps_blocked')}</p>
                 </div>
                 <p className="text-[9px] leading-relaxed text-slate-400 font-medium">
                   Has ignorado o bloqueado la solicitud de ubicación varias veces. Para aparecer en el mapa, sigue estos pasos:
@@ -243,10 +295,10 @@ export default function MyProfilePage() {
           <div className="flex items-center justify-between relative z-10">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-black uppercase tracking-widest">Modo Fantasma</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest">{t('profile.ghost_mode')}</h3>
                 {!profile?.premium && <span className="text-[8px] bg-yellow-500 text-black px-2 py-0.5 rounded-full font-black">VIP</span>}
               </div>
-              <p className="text-[10px] text-slate-500 mt-1">Navega sin aparecer en el mapa</p>
+              <p className="text-[10px] text-slate-500 mt-1">{t('profile.ghost_desc')}</p>
             </div>
             <button
               onClick={async () => {
@@ -270,7 +322,7 @@ export default function MyProfilePage() {
           {!profile?.premium && (
             <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] z-20 flex items-center justify-center">
               <Link href="/premium" className="text-[10px] font-black text-yellow-500 uppercase tracking-widest flex items-center gap-2 bg-slate-900 px-6 py-3 rounded-full border border-yellow-500/20 shadow-2xl">
-                <span className="material-icons text-sm">lock</span> Desbloquear Ghost Mode
+                <span className="material-icons text-sm">lock</span> {t('profile.unlock_ghost')}
               </Link>
             </div>
           )}
@@ -281,10 +333,10 @@ export default function MyProfilePage() {
           <div className="flex items-center justify-between relative z-10">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-black uppercase tracking-widest">Modo Cruising</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest">{t('profile.cruising_mode')}</h3>
                 <span className="bg-red-500/20 text-red-400 text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider">18+</span>
               </div>
-              <p className="text-[10px] text-slate-500 mt-1">Check-in anónimo, GPS difuso, foto oculta</p>
+              <p className="text-[10px] text-slate-500 mt-1">{t('profile.cruising_desc')}</p>
             </div>
             <button
               onClick={async () => {
@@ -322,8 +374,8 @@ export default function MyProfilePage() {
         <section className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-[2.5rem] relative overflow-hidden group">
           <div className="flex items-center justify-between relative z-10">
             <div>
-              <h3 className="text-sm font-black uppercase tracking-widest">Filtro NSFW</h3>
-              <p className="text-[10px] text-slate-500 mt-1">Difumina fotos explícitas en perfiles y chats</p>
+              <h3 className="text-sm font-black uppercase tracking-widest">{t('profile.nsfw_filter')}</h3>
+              <p className="text-[10px] text-slate-500 mt-1">{t('profile.nsfw_desc')}</p>
             </div>
             <button
               onClick={async () => {
@@ -350,10 +402,10 @@ export default function MyProfilePage() {
           <div className="flex items-center justify-between relative z-10">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-black uppercase tracking-widest">Notificaciones Push</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest">{t('profile.push_notifications')}</h3>
                 <span className="text-[8px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-black uppercase tracking-tighter">FCM</span>
               </div>
-              <p className="text-[10px] text-slate-500 mt-1">Recibe avisos de mensajes y likes</p>
+              <p className="text-[10px] text-slate-500 mt-1">{t('profile.push_desc')}</p>
             </div>
             <button
               onClick={async () => {
@@ -380,7 +432,7 @@ export default function MyProfilePage() {
           className="w-full bg-white text-black font-[1000] py-6 rounded-[2.5rem] shadow-2xl flex items-center justify-center gap-4 active:scale-95 transition-all uppercase tracking-[0.2em] text-[10px]"
         >
           <span className="material-icons">install_mobile</span>
-          Instalar App en este móvil
+          {t('profile.install_app')}
         </button>
 
         <button
@@ -412,19 +464,19 @@ export default function MyProfilePage() {
           className="w-full bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white font-[1000] py-6 rounded-[2.5rem] shadow-2xl flex items-center justify-center gap-4 active:scale-95 transition-all uppercase tracking-[0.2em] text-[10px]"
         >
           <span className="material-icons">share</span>
-          Invitar a un amigo
+          {t('profile.invite_friend')}
         </button>
         <p className="text-[10px] text-center text-slate-500 font-bold uppercase tracking-widest mt-4">
           {(profile?.invitesCount || 0) >= 3 
-            ? '✅ ¡Has desbloqueado Premium con tus invitaciones!' 
-            : `🎁 Invita a ${3 - (profile?.invitesCount || 0)} amigos más para conseguir Premium gratis`}
+            ? t('profile.premium_unlocked') 
+            : t('profile.invite_more', { count: 3 - (profile?.invitesCount || 0) })}
         </p>
 
         {/* Photo Grid - Estilo Instagram */}
         <section className="space-y-4">
           <div className="flex justify-between items-end">
-            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500">Mis Fotos</h3>
-            <Link href="/setup-profile" prefetch={false} className="text-[10px] font-black text-fuchsia-500 uppercase tracking-widest">Gestionar</Link>
+            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500">{t('profile.my_photos')}</h3>
+            <Link href="/setup-profile" prefetch={false} className="text-[10px] font-black text-fuchsia-500 uppercase tracking-widest">{t('profile.manage')}</Link>
           </div>
           <div className="grid grid-cols-3 gap-2">
             {allPhotos.map((photo, i) => (
@@ -444,7 +496,7 @@ export default function MyProfilePage() {
                 className="aspect-square rounded-2xl bg-white/5 border border-dashed border-white/20 flex flex-col items-center justify-center gap-1 text-slate-500 hover:bg-white/10 transition-all"
               >
                 <span className="material-icons text-xl">add_a_photo</span>
-                <span className="text-[8px] font-black uppercase tracking-tighter">Añadir</span>
+                <span className="text-[8px] font-black uppercase tracking-tighter">{t('profile.add_photo')}</span>
               </Link>
             )}
           </div>
@@ -453,9 +505,9 @@ export default function MyProfilePage() {
         {/* Action Menu */}
         <section className="space-y-3">
           {[
-            { label: 'Editar mi Perfil', icon: 'edit', href: '/setup-profile', color: 'text-slate-200' },
+            { label: t('profile.edit_profile'), icon: 'edit', href: '/setup-profile', color: 'text-slate-200' },
             { 
-              label: profile.verified ? 'Cuenta Verificada' : profile.verificationStatus === 'pending' ? 'Verificación Pendiente' : 'Verificar mi Cuenta', 
+              label: profile.verified ? t('profile.account_verified') : profile.verificationStatus === 'pending' ? t('profile.verification_pending') : t('profile.verify_account'), 
               icon: profile.verified ? 'verified' : 'new_releases', 
               href: '#', 
               color: profile.verified ? 'text-blue-500' : profile.verificationStatus === 'pending' ? 'text-amber-500' : 'text-fuchsia-500',
@@ -485,13 +537,13 @@ export default function MyProfilePage() {
                 fileInput.click();
               }
             },
-            { label: 'Visitas Recientes', icon: 'history', href: '/visits', color: 'text-blue-400' },
-            { label: 'Plan Premium', icon: 'stars', href: '/premium', color: 'text-yellow-500' },
-            { label: 'Términos de Servicio', icon: 'gavel', href: '/terms', color: 'text-slate-400' },
-            { label: 'Política de Privacidad', icon: 'admin_panel_settings', href: '/privacy', color: 'text-slate-400' },
-            { label: 'Panel de mi Local', icon: 'storefront', href: '/venue-admin', color: 'text-fuchsia-400' },
-            { label: 'Escanear Entradas', icon: 'qr_code_scanner', href: '/scanner', color: 'text-fuchsia-400' },
-            { label: 'Ajustes y Seguridad', icon: 'security', href: '#', color: 'text-slate-400' }
+            { label: t('profile.recent_visits'), icon: 'history', href: '/visits', color: 'text-blue-400' },
+            { label: t('profile.premium_plan'), icon: 'stars', href: '/premium', color: 'text-yellow-500' },
+            { label: t('profile.tos'), icon: 'gavel', href: '/terms', color: 'text-slate-400' },
+            { label: t('profile.privacy'), icon: 'admin_panel_settings', href: '/privacy', color: 'text-slate-400' },
+            { label: t('profile.venue_panel'), icon: 'storefront', href: '/venue-admin', color: 'text-fuchsia-400' },
+            { label: t('profile.scan_tickets'), icon: 'qr_code_scanner', href: '/scanner', color: 'text-fuchsia-400' },
+            { label: t('profile.settings'), icon: 'security', href: '#', color: 'text-slate-400' }
           ].map((item, i) => {
             const content = (
               <div className="flex items-center justify-between w-full">
@@ -531,7 +583,7 @@ export default function MyProfilePage() {
             className="w-full p-5 bg-red-500/10 border border-red-500/20 rounded-3xl flex items-center gap-4 text-red-500 font-bold hover:bg-red-500/20 transition-all mt-4"
           >
             <span className="material-icons">logout</span>
-            <span className="text-sm tracking-tight">Cerrar Sesión</span>
+            <span className="text-sm tracking-tight">{t('profile.logout')}</span>
           </button>
 
           <button 
@@ -540,7 +592,7 @@ export default function MyProfilePage() {
             className="w-full p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-center gap-3 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:text-red-500 hover:bg-red-500/5 transition-all mt-8"
           >
             <span className="material-icons text-sm">{isDeleting ? 'sync' : 'delete_forever'}</span>
-            {isDeleting ? 'Borrando...' : 'Borrar mi cuenta'}
+            {isDeleting ? t('profile.deleting') : t('profile.delete_account')}
           </button>
         </section>
       </main>
@@ -565,9 +617,9 @@ export default function MyProfilePage() {
               </div>
               
               <div className="space-y-2">
-                <h3 className="text-2xl font-black text-white tracking-tight">¿Dices adiós?</h3>
+                <h3 className="text-2xl font-black text-white tracking-tight">{t('profile.say_goodbye')}</h3>
                 <p className="text-sm text-slate-400 leading-relaxed">
-                  Esta acción es permanente. Borraremos tu perfil, tus fotos y todas tus conversaciones para siempre.
+                  {t('profile.delete_desc')}
                 </p>
               </div>
 
@@ -577,13 +629,13 @@ export default function MyProfilePage() {
                   disabled={isDeleting}
                   className="w-full py-5 rounded-2xl bg-red-600 text-white font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-red-600/20 active:scale-95 transition-all"
                 >
-                  {isDeleting ? 'Borrando...' : 'Sí, borrar todo'}
+                  {isDeleting ? t('profile.deleting') : t('profile.yes_delete')}
                 </button>
                 <button 
                   onClick={() => setShowDeleteModal(false)}
                   className="w-full py-5 rounded-2xl bg-white/5 text-slate-400 font-black uppercase tracking-[0.2em] text-xs hover:bg-white/10 transition-all"
                 >
-                  No, me quedo
+                  {t('profile.no_stay')}
                 </button>
               </div>
             </motion.div>

@@ -340,7 +340,7 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
             </div>
 
             <div className="flex flex-wrap gap-2 mb-8">
-              <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-bold text-slate-300 uppercase tracking-wider">{profile.rol}</div>
+              <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-bold text-slate-300 uppercase tracking-wider">{profile.rol === 'party_only' ? 'Solo Fiesta' : profile.rol}</div>
               <div className="px-4 py-2 rounded-xl bg-fuchsia-500/10 border border-fuchsia-500/10 text-[10px] font-bold text-fuchsia-400 uppercase tracking-wider">{profile.intencion}</div>
             </div>
 

@@ -13,8 +13,10 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { calculateDistance } from '@/lib/geo';
+import { useTranslation } from 'react-i18next';
 
 export default function ChatDetailPage() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const chatId = searchParams.get('id');
   const { user, profile: myProfile } = useAuth();
@@ -203,7 +205,7 @@ export default function ChatDetailPage() {
                   exit={{ opacity: 0, x: 5 }}
                   className="text-[9px] font-black uppercase tracking-widest text-fuchsia-400 animate-pulse"
                 >
-                  Escribiendo...
+                  {t('chat.typing')}
                 </motion.p>
               ) : activeUsers.includes(otherUser.id || searchParams.get('otherId')) ? (
                 <motion.p 
@@ -214,7 +216,7 @@ export default function ChatDetailPage() {
                   className="text-[9px] font-black uppercase tracking-widest text-fuchsia-500 flex items-center gap-1"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-500 animate-ping" />
-                  En el chat
+                  {t('chat.in_chat')}
                 </motion.p>
               ) : (
                 <motion.p 
@@ -224,7 +226,7 @@ export default function ChatDetailPage() {
                   exit={{ opacity: 0, x: 5 }}
                   className={`text-[9px] font-black uppercase tracking-widest ${otherUser.online ? 'text-green-500/60' : 'text-slate-500'}`}
                 >
-                  {otherUser.online ? 'En línea' : otherUser.lastSeen ? `Activo ${formatLastSeen(otherUser.lastSeen)}` : 'Desconectado'}
+                  {otherUser.online ? t('chat.online') : otherUser.lastSeen ? t('chat.active', { time: formatLastSeen(otherUser.lastSeen) }) : t('chat.offline')}
                 </motion.p>
               )}
             </AnimatePresence>
@@ -259,7 +261,7 @@ export default function ChatDetailPage() {
                 className="absolute top-24 right-6 w-56 bg-slate-900/90 backdrop-blur-2xl border border-white/10 rounded-3xl p-2 z-40 shadow-2xl"
               >
                 <button onClick={() => { triggerHaptic(10); router.push(`/profile/view?id=${otherUser.id || searchParams.get('otherId')}`); }} className="w-full p-4 flex items-center gap-3 text-sm font-bold text-slate-200 hover:bg-white/5 rounded-2xl transition-all">
-                  <span className="material-icons text-slate-400">person</span> Ver Perfil
+                  <span className="material-icons text-slate-400">person</span> {t('chat.view_profile')}
                 </button>
                 <button 
                   onClick={async () => { 
@@ -271,7 +273,7 @@ export default function ChatDetailPage() {
                   }} 
                   className="w-full p-4 flex items-center gap-3 text-sm font-bold text-yellow-500 hover:bg-yellow-500/10 rounded-2xl transition-all"
                 >
-                  <span className="material-icons">lock_open</span> Dar Acceso Privado
+                  <span className="material-icons">lock_open</span> {t('chat.grant_access')}
                 </button>
                 <div className="h-px bg-white/5 mx-2" />
                 <button 
@@ -285,7 +287,7 @@ export default function ChatDetailPage() {
                   }} 
                   className="w-full p-4 flex items-center gap-3 text-sm font-bold text-orange-400 hover:bg-orange-500/10 rounded-2xl transition-all"
                 >
-                  <span className="material-icons">flag</span> Reportar
+                  <span className="material-icons">flag</span> {t('chat.report')}
                 </button>
                 <button 
                   onClick={async () => { 
@@ -297,7 +299,7 @@ export default function ChatDetailPage() {
                   }} 
                   className="w-full p-4 flex items-center gap-3 text-sm font-bold text-red-500 hover:bg-red-500/10 rounded-2xl transition-all"
                 >
-                  <span className="material-icons">block</span> Bloquear
+                  <span className="material-icons">block</span> {t('chat.block')}
                 </button>
               </motion.div>
             </>
@@ -407,14 +409,14 @@ export default function ChatDetailPage() {
               <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-red-500/10 animate-pulse">
                 <div className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
                 <span className="text-xs font-black text-red-400 uppercase tracking-widest">
-                  Grabando {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
+                  {t('chat.recording')} {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
                 </span>
               </div>
             ) : (
               <textarea
                 value={newMessage}
                 onChange={handleInputChange}
-                placeholder="Escribe algo..."
+                placeholder={t('chat.write_something')}
                 className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-3 px-4 resize-none max-h-32 min-h-[44px]"
                 rows={1}
               />

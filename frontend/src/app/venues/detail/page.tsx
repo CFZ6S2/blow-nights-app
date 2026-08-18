@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { doc, onSnapshot, collection, query, where, Timestamp } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, Timestamp, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/lib/firebase';
+import { ShieldCheck, Sparkles, Building2 } from 'lucide-react';
 
 export default function VenueDetailPage() {
   const { user, profile, loading } = useAuth();
@@ -18,6 +19,38 @@ export default function VenueDetailPage() {
   const [checkinCount, setCheckinCount] = useState(0);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const canceled = searchParams?.get('canceled') === 'true';
+
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [showClaimModal, setShowClaimModal] = useState(false);
+
+  const handleClaimVenue = async () => {
+    if (!user) {
+      alert('Debes iniciar sesión para reclamar este local.');
+      router.push('/login');
+      return;
+    }
+    if (!venueId) return;
+
+    try {
+      setIsClaiming(true);
+      const venueRef = doc(db, 'venues', venueId);
+      
+      await updateDoc(venueRef, {
+        ownerId: user.uid,
+        isVerified: false,
+        claimedAt: serverTimestamp(),
+        claimedByEmail: user.email || null,
+      });
+
+      setShowClaimModal(false);
+      router.push('/venue-admin');
+    } catch (error) {
+      console.error('Error al reclamar local:', error);
+      alert('Hubo un error al reclamar el local. Inténtalo de nuevo.');
+    } finally {
+      setIsClaiming(false);
+    }
+  };
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
@@ -87,7 +120,7 @@ export default function VenueDetailPage() {
   }
 
   const pricing = venue.ticketPricing || {};
-  const isCommunitySpot = venue.type === 'cruising' || venue.type === 'chill';
+  const isCommunitySpot = venue.ownerId === 'community';
 
   return (
     <div className="min-h-screen bg-slate-950 text-white pb-32">
@@ -147,11 +180,67 @@ export default function VenueDetailPage() {
             <span className="material-icons text-4xl text-slate-700">forum</span>
             <p className="text-sm text-slate-400">Este es un punto comunitario</p>
             <p className="text-[10px] text-slate-500">Únete al chat de la comunidad o haz Check-in para dejar saber que estás aquí.</p>
-            {/* TODO: Add chat link or check-in button here */}
+            
+            {['club', 'bar', 'sauna', 'chiringuito'].includes(venue.type) && user && (
+              <div className="mt-8 pt-6 border-t border-white/10 text-left">
+                <div className="p-4 bg-gradient-to-br from-purple-950/60 via-slate-900 to-indigo-950/60 border border-purple-500/40 rounded-2xl shadow-xl">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="p-2 bg-purple-600/20 text-purple-400 rounded-xl border border-purple-500/30">
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">¿Eres el dueño o gerente?</h4>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        Este punto fue añadido por la comunidad. Reclámalo para gestionar la venta de entradas, publicar ofertas y acceder a métricas en tiempo real.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setShowClaimModal(true)}
+                    className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-extrabold uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Reclamar este Local & Gestionar Panel PRO
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {venue.createdBy === user?.uid && (
+              <button 
+                onClick={async () => {
+                  if(confirm('¿Seguro que quieres borrar este punto?')) {
+                    try {
+                      await deleteDoc(doc(db, 'venues', venue.id));
+                      router.push('/venues');
+                    } catch (err) {
+                      console.error(err);
+                      alert('Error al borrar el punto. Asegúrate de tener conexión.');
+                    }
+                  }
+                }}
+                className="mt-6 px-4 py-3 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl text-xs font-bold w-full active:scale-95 transition-all"
+              >
+                Borrar Punto Comunitario
+              </button>
+            )}
           </section>
         ) : (
           <>
-            {Object.keys(pricing).length > 0 && (
+            {venue.externalTicketUrl ? (
+              <section className="space-y-4 text-center mt-6">
+                <a 
+                  href={venue.externalTicketUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-4 bg-gradient-to-r from-rose-600 to-orange-500 hover:from-rose-500 hover:to-orange-400 text-white font-black text-sm uppercase tracking-widest rounded-2xl shadow-[0_10px_30px_rgba(225,29,72,0.3)] transition-all flex justify-center items-center gap-2 active:scale-95"
+                >
+                  🎟️ Comprar Entrada Oficial
+                </a>
+                <p className="text-[10px] text-slate-500">Serás redirigido a la taquilla oficial del local</p>
+              </section>
+            ) : Object.keys(pricing).length > 0 ? (
               <section className="space-y-4">
                 <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500">Entradas Disponibles</h2>
 
@@ -189,9 +278,7 @@ export default function VenueDetailPage() {
               </motion.div>
                 ))}
               </section>
-            )}
-
-            {Object.keys(pricing).length === 0 && (
+            ) : (
               <section className="bg-white/5 border border-white/10 p-8 rounded-3xl text-center space-y-3">
                 <span className="material-icons text-4xl text-slate-700">local_activity</span>
                 <p className="text-sm text-slate-500">Este local no tiene entradas a la venta</p>
@@ -199,6 +286,51 @@ export default function VenueDetailPage() {
               </section>
             )}
           </>
+        )}
+
+        {showClaimModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="bg-slate-900 border border-purple-500/40 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-purple-600/20 text-purple-400 rounded-full flex items-center justify-center mx-auto mb-2 border border-purple-500/30">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-white">Tomar control de {venue?.name}</h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Accederás de inmediato al panel de administración para configurar tu perfil y probar las herramientas de gestión.
+                </p>
+              </div>
+
+              <div className="space-y-2 text-xs text-slate-300 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-400">✓</span> Escáner de entradas web &lt;300ms
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-400">✓</span> Panel de control de RRPPs y comisiones
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-400">✓</span> Promociones destacadas en el mapa
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowClaimModal(false)}
+                  disabled={isClaiming}
+                  className="flex-1 py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleClaimVenue}
+                  disabled={isClaiming}
+                  className="flex-1 py-2.5 px-3 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl transition-all shadow-md disabled:opacity-50"
+                >
+                  {isClaiming ? 'Asignando...' : 'Confirmar y Entrar'}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </div>

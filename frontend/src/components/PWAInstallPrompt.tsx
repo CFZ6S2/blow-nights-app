@@ -19,8 +19,8 @@ export default function PWAInstallPrompt() {
                          || (window.navigator as any).standalone 
                          || document.referrer.includes('android-app://');
 
-    if (isIos) setPlatform('ios');
-    else if (isAndroid) setPlatform('android');
+    if (isIos) setTimeout(() => setPlatform('ios'), 0);
+    else if (isAndroid) setTimeout(() => setPlatform('android'), 0);
 
     if (!isStandalone) {
       // Para Android: escuchar el evento de instalación

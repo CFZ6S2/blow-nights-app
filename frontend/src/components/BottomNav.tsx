@@ -6,18 +6,21 @@ import { motion } from "framer-motion"
 
 import { useAuth } from "@/context/AuthContext"
 
-const defaultItems = [
-  { href: "/", label: "Mapa", icon: "explore" },
-  { href: "/venues", label: "Locales", icon: "nightlife" },
-  { href: "/chills", label: "Chills", icon: "local_fire_department" },
-  { href: "/wallet", label: "Cartera", icon: "confirmation_number" },
-  { href: "/chat", label: "Chats", icon: "chat" },
-  { href: "/profile", label: "Perfil", icon: "person" },
-]
+import { useTranslation } from "react-i18next"
 
 export function BottomNav() {
   const { isAdmin, isCityAdmin, isVenueManager } = useAuth()
   const pathname = usePathname()
+  const { t } = useTranslation()
+
+  const defaultItems = [
+    { href: "/", label: t('nav.map', 'Mapa'), icon: "explore" },
+    { href: "/venues", label: t('nav.venues', 'Locales'), icon: "nightlife" },
+    { href: "/chills", label: t('nav.chills', 'Chills'), icon: "local_fire_department" },
+    { href: "/wallet", label: t('nav.wallet', 'Cartera'), icon: "confirmation_number" },
+    { href: "/chat", label: t('nav.chat', 'Chats'), icon: "chat" },
+    { href: "/profile", label: t('nav.profile', 'Perfil'), icon: "person" },
+  ]
 
   let items = [...defaultItems]
   if (isVenueManager) {

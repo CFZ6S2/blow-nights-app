@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,13 +23,11 @@ interface RRPPStats {
   };
 }
 
-export default function RRPPDashboard() {
-  const { token } = useParams();
+export default function RRPPDashboardClient({ token }: { token: string }) {
   const [data, setData] = useState<RRPPStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Modal State
   const [showModal, setShowModal] = useState(false);
   const [clientName, setClientName] = useState('');
   const [tierId, setTierId] = useState('general');
@@ -58,20 +55,16 @@ export default function RRPPDashboard() {
     setGenerating(true);
     try {
       const generateDirectPromoterTicket = httpsCallable(functions, 'generateDirectPromoterTicket');
-      // Note: We need eventId. How do we get it?
-      // In the new model, promoter is nested under event: venues/{venueId}/events/{eventId}/promoters/{promoterId}
-      // getPromoterStats needs to return the eventId as well!
-      // Let's assume getPromoterStats returns `eventId` in `promoter` object (we just updated functions/index.js to do this, wait, did we return eventId? We need to verify).
       const res = await generateDirectPromoterTicket({
         promoterToken: token,
-        eventId: (data?.promoter as any).eventId || 'UNKNOWN_EVENT', 
+        eventId: (data?.promoter as any).eventId || 'UNKNOWN_EVENT',
         clientName,
         tierId
       });
       const result = res.data as any;
       if (result.success) {
         setGeneratedQR({ id: result.ticketId, token: result.qrToken, name: result.clientName });
-        fetchStats(); // Refresh numbers
+        fetchStats();
       }
     } catch (e: any) {
       alert('Error generando ticket: ' + e.message);
@@ -104,11 +97,6 @@ export default function RRPPDashboard() {
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    alert('Copiado al portapapeles');
-  };
-
   const shareWhatsApp = () => {
     if (!generatedQR) return;
     const text = `Aquí tienes tu entrada: ${window.location.origin}/ticket/${generatedQR.id}`;
@@ -123,7 +111,7 @@ export default function RRPPDashboard() {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
         <span className="material-icons text-6xl text-red-500 mb-4">error_outline</span>
-        <h1 className="text-xl font-bold mb-2">Evento Cerrado o Token Inválido</h1>
+        <h1 className="text-xl font-bold mb-2 text-white">Evento Cerrado o Token Inválido</h1>
         <p className="text-slate-400">{error}</p>
       </div>
     );
@@ -173,7 +161,7 @@ export default function RRPPDashboard() {
           <span className="material-icons text-4xl text-yellow-500 mb-2">lock</span>
           <h2 className="font-bold text-yellow-500 mb-2">Las listas están cerradas</h2>
           <p className="text-xs text-slate-400 mb-4">Ya no puedes emitir nuevas entradas para esta noche. Revisa tus números y liquida cuentas con el local.</p>
-          
+
           <button
             onClick={handleLiquidate}
             disabled={data.promoter.liquidated_by_rrpp}
@@ -185,7 +173,6 @@ export default function RRPPDashboard() {
         </div>
       )}
 
-      {/* Modal Emisión */}
       <AnimatePresence>
         {showModal && (
           <motion.div
@@ -203,23 +190,23 @@ export default function RRPPDashboard() {
               {!generatedQR ? (
                 <>
                   <h2 className="text-xl font-black mb-6">Nueva Entrada</h2>
-                  
+
                   <div className="space-y-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Invitado / Alias</label>
-                      <input 
-                        type="text" 
-                        value={clientName} 
+                      <input
+                        type="text"
+                        value={clientName}
                         onChange={e => setClientName(e.target.value)}
                         placeholder="Ej. Marcos amigo"
                         className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-fuchsia-500"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Tipo de Pase</label>
-                      <select 
-                        value={tierId} 
+                      <select
+                        value={tierId}
                         onChange={e => setTierId(e.target.value)}
                         className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-fuchsia-500 appearance-none"
                       >
@@ -248,15 +235,15 @@ export default function RRPPDashboard() {
                     <QRCode value={generatedQR.token} size={200} />
                   </div>
 
-                  <button 
+                  <button
                     onClick={shareWhatsApp}
                     className="w-full py-4 bg-[#25D366] hover:bg-[#1ebe5d] text-white rounded-xl font-black flex items-center justify-center gap-2 mb-3"
                   >
                     <span className="material-icons">share</span>
                     Compartir por WhatsApp
                   </button>
-                  
-                  <button 
+
+                  <button
                     onClick={() => { setGeneratedQR(null); setClientName(''); }}
                     className="text-slate-400 text-sm font-bold underline"
                   >

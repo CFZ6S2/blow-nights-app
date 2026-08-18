@@ -48,7 +48,7 @@ export default function VenuesPage() {
   const [activeCheckin, setActiveCheckin] = useState<any>(null);
   const [checkingIn, setCheckingIn] = useState(false);
   const [visibilityMode, setVisibilityMode] = useState<VisibilityMode>('public');
-  const [activeTab, setActiveTab] = useState<string>('previa');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -96,7 +96,7 @@ export default function VenuesPage() {
       tomorrow2pm.setDate(tomorrow2pm.getDate() + 1);
       tomorrow2pm.setHours(14, 0, 0, 0);
 
-      const isAnon = visibilityMode === 'anonymous' || profile?.cruisingMode;
+      const isAnon = visibilityMode === 'anonymous' || (profile?.cruisingMode ?? false);
       const checkinData: Record<string, any> = {
         userId: isAnon ? `anon_${user.uid}` : user.uid,
         realUserId: user.uid,
@@ -109,7 +109,7 @@ export default function VenuesPage() {
         expiresAt: Timestamp.fromDate(tomorrow2pm),
       };
 
-      if (isAnon && navigator.geolocation) {
+      if (isAnon && typeof navigator !== 'undefined' && navigator.geolocation) {
         try {
           const pos = await new Promise<GeolocationPosition>((res, rej) =>
             navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 })
@@ -146,6 +146,10 @@ export default function VenuesPage() {
   }
 
   const tabs = Object.entries(VENUE_TYPES);
+
+  const displayedVenues = selectedCategory === 'all' 
+    ? Object.values(grouped).flat() 
+    : grouped[selectedCategory as keyof typeof grouped] || [];
 
   if (venuesLoading) return <div className="min-h-screen bg-slate-950 flex justify-center items-center"><div className="w-8 h-8 border-2 border-fuchsia-500 rounded-full animate-spin border-t-transparent" /></div>;
 
@@ -239,40 +243,48 @@ export default function VenuesPage() {
           </div>
         )}
 
-        <div className="flex gap-2 overflow-x-auto no-scrollbar">
-          {tabs.map(([key, meta]: [string, any]) => (
-            <button
-              key={key}
-              onClick={() => setActiveTab(key)}
-              className={`flex-shrink-0 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border whitespace-nowrap ${
-                activeTab === key
-                  ? 'bg-white/10 border-white/20 text-white'
-                  : 'bg-white/5 border-white/5 text-slate-500'
-              }`}
-            >
-              <span className="material-icons text-sm align-middle mr-1">{meta.icon}</span>
-              {meta.label}
-            </button>
-          ))}
+        <div className="relative w-full sm:w-64">
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-xl px-3 py-2.5 appearance-none focus:outline-none focus:border-purple-500 transition-all cursor-pointer font-medium"
+          >
+            <option value="all">✨ Todas las categorías</option>
+            <optgroup label="── LOCALES COMERCIALES ──">
+              <option value="club">🪩 Discotecas & Clubs</option>
+              <option value="bar">🍸 Bares & Previas</option>
+              <option value="sauna">🧖 Saunas & Spas</option>
+              <option value="chiringuito">🏖️ Chiringuitos</option>
+            </optgroup>
+            <optgroup label="── PUNTOS COMUNITARIOS ──">
+              <option value="cruising_outdoor">🌲 Cruising Exterior & Zonas Libres</option>
+              <option value="community_point">📍 Puntos de Encuentro</option>
+            </optgroup>
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+            ▼
+          </div>
         </div>
 
-        <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">
-          {VENUE_TYPES[activeTab as keyof typeof VENUE_TYPES]?.hours}
-        </p>
+        {selectedCategory !== 'all' && (
+          <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">
+            {VENUE_TYPES[selectedCategory as keyof typeof VENUE_TYPES]?.hours}
+          </p>
+        )}
 
         <div className="space-y-3">
           {venuesLoading ? (
             Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="h-24 bg-white/5 rounded-3xl animate-pulse" />
             ))
-          ) : grouped[activeTab as keyof typeof grouped]?.length === 0 ? (
+          ) : displayedVenues.length === 0 ? (
             <div className="text-center py-16 space-y-4">
               <span className="material-icons text-5xl text-slate-700">nightlife</span>
               <p className="text-sm text-slate-500">No hay locales en esta franja todavía</p>
               <p className="text-[10px] text-slate-600">Los locales se irán sumando pronto</p>
             </div>
           ) : (
-            grouped[activeTab as keyof typeof grouped]?.map((venue: any) => (
+            displayedVenues.map((venue: any) => (
               <motion.div
                 key={venue.id}
                 initial={{ opacity: 0, y: 10 }}
@@ -296,10 +308,22 @@ export default function VenuesPage() {
                         {CRUISING_TYPES.has(venue.type) && (
                           <span className="bg-red-500/20 text-red-400 text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider">18+</span>
                         )}
+                        {venue.ownerId === 'community' ? (
+                          <span className="bg-slate-700/50 text-slate-300 text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider">👥 Añadido por la comunidad</span>
+                        ) : (
+                          <span className="bg-green-500/20 text-green-400 text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider">✓ Local Verificado</span>
+                        )}
                         <VenueCounter venueId={venue.id} />
                       </div>
                       {venue.address && (
                         <p className="text-[10px] text-slate-500 truncate">{venue.address}</p>
+                      )}
+                      
+                      {venue.promoBanner?.active && (
+                        <div className="bg-gradient-to-r from-amber-500/20 to-purple-500/20 border border-amber-500/40 px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs text-amber-300 font-medium mt-2">
+                          <span>🔥</span>
+                          <span className="truncate">{venue.promoBanner.text}</span>
+                        </div>
                       )}
                     </div>
                   </div>

@@ -61,6 +61,10 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
     online: false,
     lastSeen: admin.firestore.FieldValue.serverTimestamp(),
     premium: isPremium,
+    dailyPingsLeft: 3,
+    lastPingReset: admin.firestore.FieldValue.serverTimestamp(),
+    isVIPNight: false,
+    activePlatforms: ['blownights'],
     disponibleHasta: null,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   };
@@ -294,6 +298,59 @@ exports.sendVisitNotification = onDocumentCreated("visits/{visitId}", async (eve
     return null;
 });
 
+// ── Swipe & Vente Aquí: Ping Notification ──
+exports.sendPingNotification = onDocumentCreated("pings/{pingId}", async (event) => {
+    const pingData = event.data?.data();
+    if (!pingData) return null;
+
+    const receiverDoc = await db.collection("users").doc(pingData.toUserId).get();
+    const receiverData = receiverDoc.data();
+    if (!receiverData?.fcmToken) return null;
+
+    const senderDoc = await db.collection("users").doc(pingData.fromUserId).get();
+    const senderData = senderDoc.data();
+    
+    let notificationTitle = `🔥 ${senderData?.nick || "Alguien"} te ha dado un Toque: ¡Quiere saber de ti esta noche!`;
+    let notificationBody = "«¿Qué tal está el ambiente?»";
+    
+    if (pingData.venueId) {
+      const venueDoc = await db.collection("venues").doc(pingData.venueId).get();
+      if (venueDoc.exists) {
+        const venueName = venueDoc.data().name || "la fiesta";
+        notificationTitle = `🔥 ${senderData?.nick || "Alguien"} te ha dado un Toque desde ${venueName}`;
+        notificationBody = "«¡Vente que esto está que arde!»";
+      }
+    }
+
+    // Decrement sender's dailyPingsLeft if not VIP
+    if (senderData && !senderData.isVIPNight && senderData.dailyPingsLeft > 0) {
+      await db.collection("users").doc(pingData.fromUserId).update({
+        dailyPingsLeft: admin.firestore.FieldValue.increment(-1)
+      });
+    }
+
+    const payload = {
+      token: receiverData.fcmToken,
+      notification: {
+        title: notificationTitle,
+        body: notificationBody,
+      },
+      data: {
+        type: "ping",
+        fromUserId: pingData.fromUserId,
+        venueId: pingData.venueId || "",
+        click_action: `https://blownights.com/profile/view?id=${pingData.fromUserId}&pingVenueId=${pingData.venueId || ''}`
+      }
+    };
+
+    try {
+      await admin.messaging().send(payload);
+    } catch (error) {
+      console.error("Error FCM Ping:", error);
+    }
+    return null;
+});
+
 // ── Nightlife Hub: Checkin cleanup ──
 
 /**
@@ -341,7 +398,11 @@ exports.onCheckinCreated = onDocumentCreated("checkins/{checkinId}", async (even
  */
 /**
  * createTicketCheckout
- * Transacción atómica de bloqueo de aforo (10 min), metadata de RRPP y sesión de Stripe con Direct Charge.
+ * Venta de entradas via Stripe Connect (Direct Charges) para salas.
+ * El cliente paga: precio entrada + 1.00€ gastos de gestión.
+ * La sala recibe el 100% del precio de la entrada.
+ * Blow Nights retiene 1.00€ como application_fee.
+ * RRPP sin sala usan el sistema de QR dinámicos (créditos prepago), no pasan por aquí.
  */
 exports.createTicketCheckout = onCall(async (request) => {
   const { data, auth } = request;
@@ -352,10 +413,9 @@ exports.createTicketCheckout = onCall(async (request) => {
 
   const { venueId, eventId, ticketType, rrppId, origin } = data;
   if (!venueId || !eventId || !ticketType) {
-    throw new HttpsError("invalid-argument", "Faltan parámetros obligatorios.");
+    throw new HttpsError("invalid-argument", "venueId, eventId y ticketType son obligatorios.");
   }
 
-  // Reserva atómica de cupo
   let reservationId;
   let tierPrice = 0;
   let tierName = "";
@@ -397,10 +457,10 @@ exports.createTicketCheckout = onCall(async (request) => {
 
   const venueDoc = await db.collection("venues").doc(venueId).get();
   const stripeAccountId = venueDoc.data()?.stripeAccountId;
-  if (!stripeAccountId) throw new HttpsError("failed-precondition", "El local no tiene configurado Stripe.");
+  if (!stripeAccountId) throw new HttpsError("failed-precondition", "El local no tiene Stripe configurado.");
 
-  const totalAmountCents = Math.round(tierPrice * 100);
-  const applicationFeeAmountCents = Math.round(totalAmountCents * 0.05) + 50;
+  const ticketPriceCents = Math.round(tierPrice * 100);
+  const platformFeeCents = 100; // 1.00€ gastos de gestión
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
@@ -408,16 +468,19 @@ exports.createTicketCheckout = onCall(async (request) => {
       price_data: {
         currency: "eur",
         product_data: { name: `${eventTitle} - ${tierName}` },
-        unit_amount: totalAmountCents,
+        unit_amount: ticketPriceCents + platformFeeCents,
       },
       quantity: 1,
     }],
     mode: "payment",
     payment_intent_data: {
-      application_fee_amount: applicationFeeAmountCents,
+      application_fee_amount: platformFeeCents,
+      transfer_data: {
+        destination: stripeAccountId,
+      },
     },
     success_url: `${origin}/wallet?success=true`,
-    cancel_url: `${origin}/door/${venueId}/${eventId}?canceled=true`,
+    cancel_url: `${origin}/wallet?canceled=true`,
     metadata: {
       firebaseUID: auth.uid,
       venueId,
@@ -425,10 +488,8 @@ exports.createTicketCheckout = onCall(async (request) => {
       ticketType,
       type: "ticket",
       rrppId: rrppId || "",
-      reservationId,
+      reservationId: reservationId || "",
     },
-  }, {
-    stripeAccount: stripeAccountId
   });
 
   return { sessionId: session.id, url: session.url };
@@ -886,6 +947,116 @@ exports.createChillPassCheckout = onCall(async (request) => {
   }
 });
 
+exports.createPingCheckoutSession = onCall(async (request) => {
+  const { data, auth } = request;
+  if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
+
+  const stripe = getStripe();
+  if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
+
+  const { type, origin } = data; // type: "ping_pack" or "vip_night"
+  const uid = auth.uid;
+  const email = auth.token.email;
+
+  const subDoc = await db.collection("subscriptions").doc(uid).get();
+  let customerId = subDoc.exists ? subDoc.data()?.stripeCustomerId : null;
+
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      email: email,
+      metadata: { firebaseUID: uid },
+    });
+    customerId = customer.id;
+    await db.collection("subscriptions").doc(uid).set(
+      { stripeCustomerId: customerId, status: "incomplete" },
+      { merge: true }
+    );
+  }
+
+  try {
+    let priceData = {};
+    if (type === "ping_pack") {
+      priceData = {
+        currency: "eur",
+        product_data: { name: "Pack 3 Toques Extra" },
+        unit_amount: 199,
+      };
+    } else if (type === "vip_night") {
+      priceData = {
+        currency: "eur",
+        product_data: { name: "Pase Fuego Ilimitado (Esta Noche)" },
+        unit_amount: 399,
+      };
+    } else {
+      throw new HttpsError("invalid-argument", "Tipo de pase no válido.");
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ["card", "apple_pay", "google_pay"],
+      line_items: [{
+        price_data: priceData,
+        quantity: 1,
+      }],
+      mode: "payment",
+      success_url: `${origin}/premium?success=true`,
+      cancel_url: `${origin}/premium?canceled=true`,
+      metadata: { firebaseUID: uid, type: type, city_slug: citySlug || "" },
+    });
+    return { sessionId: session.id, url: session.url };
+  } catch (error) {
+    throw new HttpsError("internal", error.message);
+  }
+});
+
+exports.createStripeConnectAccount = onCall(async (request) => {
+  const { data, auth } = request;
+  if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
+
+  const stripe = getStripe();
+  if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
+
+  const { venueId, email } = data;
+  if (!venueId) throw new HttpsError("invalid-argument", "venueId es requerido.");
+
+  const venueRef = db.collection("venues").doc(venueId);
+  const venueSnap = await venueRef.get();
+  if (!venueSnap.exists) throw new HttpsError("not-found", "Local no encontrado.");
+
+  try {
+    let accountId = venueSnap.data().stripeAccountId;
+    if (!accountId) {
+      const account = await stripe.accounts.create({
+        type: 'express',
+        country: 'ES',
+        email: email || auth.token.email,
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true },
+        },
+      });
+      accountId = account.id;
+      await venueRef.update({ stripeAccountId: accountId });
+    }
+    return { accountId };
+  } catch (error) {
+    throw new HttpsError("internal", error.message);
+  }
+});
+
+exports.createStripeAccountLink = onCall(async (request) => {
+  const { data, auth } = request;
+  if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
+  const stripe = getStripe();
+  const accountLink = await stripe.accountLinks.create({
+    account: data.accountId,
+    refresh_url: `${data.origin}/business/stripe?refresh=true`,
+    return_url: `${data.origin}/business/stripe?return=true`,
+    type: 'account_onboarding',
+  });
+  return { url: accountLink.url };
+});
+
 /**
  * 6. stripeWebhook
  */
@@ -958,9 +1129,53 @@ exports.stripeWebhook = onRequest(async (req, res) => {
           console.error("Error en transfer 40% al socio local:", e);
         }
       }
+    } else if (session.metadata?.type === "ping_pack" || session.metadata?.type === "vip_night") {
+      const type = session.metadata.type;
+      
+      if (type === "ping_pack") {
+        await db.collection("users").doc(firebaseUID).update({
+          dailyPingsLeft: admin.firestore.FieldValue.increment(3)
+        });
+      } else {
+        await db.collection("users").doc(firebaseUID).update({
+          isVIPNight: true
+        });
+      }
+
+      // 40% partner transfer & ledger
+      const citySlug = session.metadata?.city_slug;
+      if (citySlug && session.amount_total > 0) {
+        try {
+          const cityDoc = await db.collection("cities").doc(citySlug).get();
+          const partnerStripeId = cityDoc.exists ? cityDoc.data()?.partner_stripe_account_id : null;
+          if (partnerStripeId) {
+            const partnerCutCents = Math.round(session.amount_total * 0.40);
+            const amountEur = partnerCutCents / 100;
+            
+            await stripe.transfers.create({
+              amount: partnerCutCents,
+              currency: "eur",
+              destination: partnerStripeId,
+              description: `40% ${type === 'ping_pack' ? 'Pack Toques' : 'Pase Fuego'} - ${firebaseUID}`,
+              metadata: { city: citySlug, firebaseUID, type },
+            });
+            
+            // Ledger para el panel del City Manager
+            await db.collection("cities").doc(citySlug).collection("earnings").add({
+              amount: amountEur,
+              type: type === 'ping_pack' ? 'micro_ping' : 'vip_night',
+              userId: firebaseUID,
+              timestamp: admin.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        } catch (e) {
+          console.error("Error en transfer 40% de pings al socio local:", e);
+        }
+      }
     } else if (isTicket) {
       const crypto = require("crypto");
       const qrToken = crypto.randomBytes(32).toString("hex");
+      const pinCode = Math.floor(1000 + Math.random() * 9000).toString(); // 4 dígitos
       const venueId = session.metadata.venueId;
       const eventId = session.metadata.eventId;
       const rrppId = session.metadata.rrppId;
@@ -993,6 +1208,7 @@ exports.stripeWebhook = onRequest(async (req, res) => {
         rrpp_id: rrppId || null,
         rrpp_commission: rrppCommission,
         qrToken,
+        pinCode,
         status: "valid",
         purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
         stripeSessionId: session.id,
@@ -1004,21 +1220,31 @@ exports.stripeWebhook = onRequest(async (req, res) => {
         });
       }
 
+      // 40% del fee de gestión (1€) al City Manager = 0.40€ por ticket
       if (cityId) {
-        const cityDoc = await db.collection("cities").doc(cityId).get();
-        if (cityDoc.exists && cityDoc.data().partner_stripe_account_id) {
-           const cityManagerStripe = cityDoc.data().partner_stripe_account_id;
-           const transferAmountCents = Math.round(session.amount_total * 0.04) + 25;
-           try {
-             await stripe.transfers.create({
-               amount: transferAmountCents,
-               currency: "eur",
-               destination: cityManagerStripe,
-               transfer_group: session.id
-             });
-           } catch (e) {
-             console.error("Error en Transfer al City Manager:", e);
-           }
+        try {
+          const cityDoc = await db.collection("cities").doc(cityId).get();
+          const cityManagerStripe = cityDoc.exists ? cityDoc.data()?.partner_stripe_account_id : null;
+          if (cityManagerStripe) {
+            const cityManagerCut = 40; // 0.40€ en céntimos (40% de 1€)
+            await stripe.transfers.create({
+              amount: cityManagerCut,
+              currency: "eur",
+              destination: cityManagerStripe,
+              description: `40% ticket ${eventId} - ${venueId}`,
+              transfer_group: session.id,
+            });
+            await db.collection("cities").doc(cityId).collection("earnings").add({
+              amount: 0.40,
+              type: "ticket_fee",
+              venueId,
+              eventId,
+              userId: firebaseUID,
+              timestamp: admin.firestore.FieldValue.serverTimestamp(),
+            });
+          }
+        } catch (e) {
+          console.error("Error en transfer 40% ticket al City Manager:", e);
         }
       }
     } else {
@@ -1049,8 +1275,8 @@ exports.assignRole = onCall(async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
-  // Comprobar que el llamador es admin (por claim o por email maestro)
-  const callerIsAdmin = auth.token.role === 'admin' || auth.token.email === 'cesar.herrera.rojo@gmail.com';
+  // Comprobar que el llamador es admin o superadmin
+  const callerIsAdmin = auth.token.role === 'admin' || auth.token.role === 'superadmin' || auth.token.email === 'cesar.herrera.rojo@gmail.com';
   if (!callerIsAdmin) {
     throw new HttpsError("permission-denied", "No tienes permisos de administrador.");
   }
@@ -1359,3 +1585,59 @@ exports.cleanupExpiredChills = onSchedule("every 30 minutes", async () => {
     console.log(`Marked ${expired.size} expired chills as ended.`);
   }
 });
+
+/**
+ * checkFranchiseTrigger — Disparador Automático (El Caballo de Troya)
+ */
+exports.checkFranchiseTrigger = onDocumentWritten("venues/{venueId}", async (event) => {
+  const after = event.data.after;
+  if (!after.exists) return; // Se borró
+
+  const data = after.data();
+  // Solo nos importa si está activo y tiene ciudad
+  if (!data.isActive || !data.cityId) return;
+
+  const cityId = data.cityId;
+  
+  // 1. Contar cuántos locales activos hay en esa ciudad
+  const venuesSnap = await db.collection("venues")
+    .where("cityId", "==", cityId)
+    .where("isActive", "==", true)
+    .count()
+    .get();
+  
+  const activeCount = venuesSnap.data().count;
+
+  if (activeCount >= 2) {
+    // 2. Comprobar si la ciudad tiene City Manager asignado
+    const cityRef = db.collection("cities").doc(cityId);
+    const citySnap = await cityRef.get();
+    
+    let hasManager = false;
+    if (citySnap.exists) {
+      const cData = citySnap.data();
+      if (cData.partnerId || cData.managerId) {
+        hasManager = true;
+      }
+    }
+
+    if (!hasManager) {
+      // 3. Activar el flag de "readyForFranchise"
+      await cityRef.set({
+        readyForFranchise: true,
+        activeVenuesCount: activeCount,
+        slug: cityId,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      console.log(`Franchise trigger activated for ${cityId} with ${activeCount} venues!`);
+    } else if (citySnap.exists) {
+       // Actualizar conteo si ya hay manager pero queremos tener la métrica
+       await cityRef.update({
+         activeVenuesCount: activeCount,
+         readyForFranchise: false,
+         updatedAt: admin.firestore.FieldValue.serverTimestamp()
+       });
+    }
+  }
+});
+

@@ -12,7 +12,7 @@ export function useChills(citySlug: string | null) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!citySlug) { setLoading(false); return; }
+    if (!citySlug) { setTimeout(() => setLoading(false), 0); return; }
 
     const q = query(
       collection(db, 'chills'),
@@ -38,7 +38,7 @@ export function useChillRequests(chillId: string | null) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!chillId) { setLoading(false); return; }
+    if (!chillId) { setTimeout(() => setLoading(false), 0); return; }
 
     const q = query(
       collection(db, 'chills', chillId, 'requests'),
@@ -62,7 +62,7 @@ export function useMyChills() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) { setLoading(false); return; }
+    if (!user) { setTimeout(() => setLoading(false), 0); return; }
 
     const q = query(
       collection(db, 'chills'),

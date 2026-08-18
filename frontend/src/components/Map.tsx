@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, memo } from 'react';
+import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
 import Map, { Marker, NavigationControl, MapRef } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useAuth } from '@/context/AuthContext';
@@ -12,8 +12,23 @@ import { useRouter } from 'next/navigation';
 import ProfileOverlay from './ProfileOverlay';
 import { User, Chill } from '@/types';
 import { useCity } from '@/context/CityContext';
-
+import CitySelector from './CitySelector';
 import { calculateDistance } from '@/lib/geo';
+import SwipeCards from './SwipeCards';
+import { useTranslation } from 'react-i18next';
+import { Search } from 'lucide-react';
+
+export type EntityType = 'all' | 'bar' | 'club' | 'cruising' | 'sauna' | 'chill';
+export type RadarMode = 'places' | 'users' | 'swipe';
+
+const PLACE_CATEGORIES: { id: EntityType; label: string; icon: string }[] = [
+  { id: 'all', label: 'Todo', icon: '✨' },
+  { id: 'chill', label: 'Chills & Afters', icon: '🟣' },
+  { id: 'bar', label: 'Bares', icon: '🍸' },
+  { id: 'club', label: 'Clubs / Fiestas', icon: '🪩' },
+  { id: 'cruising', label: 'Cruising', icon: '🌲' },
+  { id: 'sauna', label: 'Saunas', icon: '♨️' },
+];
 
 // Cambiamos a OpenFreeMap para mayor robustez y velocidad
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/dark";
@@ -119,7 +134,35 @@ UserMarker.displayName = 'UserMarker';
 
 // Componente de Marcador para Locales / Cruising
 const VenueMarker = memo(({ v, onClick, index }: { v: any, onClick: (id: string) => void, index: number }) => {
-  const isCruising = v.type === 'cruising';
+  const isBoosted = v.boostActive || v.subscription?.status === 'active';
+  
+  // Style mapping
+  let bgClass = 'bg-slate-900 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.4)]';
+  let iconName = 'place';
+  let gradientClass = 'bg-indigo-500/20';
+  
+  if (v.isClaimed === false) {
+    bgClass = 'bg-slate-900 border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.5)]';
+    iconName = 'storefront';
+    gradientClass = 'bg-yellow-500/20';
+  } else if (v.type === 'public_cruising' || v.type === 'cruising') {
+    bgClass = 'bg-slate-900 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.5)]';
+    iconName = 'park';
+    gradientClass = 'bg-emerald-500/20';
+  } else if (v.type === 'sauna') {
+    bgClass = 'bg-slate-900 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.5)]';
+    iconName = 'hot_tub';
+    gradientClass = 'bg-red-500/20';
+  } else if (v.type === 'cruising_bar') {
+    bgClass = 'bg-slate-900 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.5)]';
+    iconName = 'local_bar';
+    gradientClass = 'bg-orange-500/20';
+  } else if (v.type === 'club' || v.type === 'nightlife') {
+    bgClass = 'bg-slate-900 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.5)]';
+    iconName = 'nightlife';
+    gradientClass = 'bg-cyan-400/20';
+  }
+
   return (
     <Marker 
       latitude={v.location.latitude} 
@@ -133,25 +176,43 @@ const VenueMarker = memo(({ v, onClick, index }: { v: any, onClick: (id: string)
         onClick={() => onClick(v.id)}
         className="relative group cursor-pointer"
       >
+        {isBoosted && (
+          <motion.div
+            className="absolute inset-0 rounded-[1rem] bg-yellow-500/30 blur-xl -z-10"
+            animate={{ scale: [1, 1.6, 1], opacity: [0.6, 0.2, 0.6] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+        )}
+        {!isBoosted && (
+          <div className={`absolute inset-0 rounded-[1rem] ${gradientClass} blur-lg -z-10`} />
+        )}
         <div className={`w-12 h-12 rounded-[1rem] border-2 flex items-center justify-center shadow-2xl transform group-hover:scale-110 group-active:scale-95 transition-all duration-300 ${
-          isCruising 
-          ? 'bg-slate-900 border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.4)]' 
-          : 'bg-slate-900 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.4)]'
+          isBoosted ? 'bg-slate-900 border-yellow-400 shadow-[0_0_25px_rgba(250,204,21,0.6)]' : bgClass
         }`}>
           {v.coverImage ? (
-            <img src={v.coverImage} alt={v.name} className="w-full h-full object-cover rounded-xl opacity-80" />
+            <img src={v.coverImage} alt={v.name} className="w-full h-full object-cover rounded-[14px] opacity-80" />
           ) : (
             <span className="material-icons text-white text-2xl">
-              {isCruising ? 'park' : v.type === 'sauna' ? 'hot_tub' : v.type === 'chill' ? 'local_fire_department' : 'nightlife'}
+              {iconName}
             </span>
           )}
         </div>
+        
+        {(v.boostActive || v.subscription?.status === 'active') && (
+          <div className="absolute -top-2 -right-2 bg-gradient-to-br from-yellow-300 to-amber-600 border border-yellow-200 text-black p-0.5 rounded-full shadow-lg z-20 flex items-center justify-center animate-pulse">
+            <span className="material-icons text-[12px]">star</span>
+          </div>
+        )}
         
         {/* Tooltip Local */}
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 hidden group-hover:block z-50 animate-in fade-in slide-in-from-bottom-2 duration-300 pointer-events-none">
           <div className="bg-slate-900/90 backdrop-blur-xl border border-white/20 px-4 py-2 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] whitespace-nowrap flex flex-col items-center">
             <p className="font-black text-sm text-white">{v.name}</p>
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{v.type}</p>
+            {v.isClaimed === false ? (
+              <p className="text-[9px] font-bold text-yellow-400 uppercase tracking-widest mt-1">🟡 Pendiente Verificación</p>
+            ) : (
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{v.type}</p>
+            )}
           </div>
           <div className="w-3 h-3 bg-slate-900/90 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2 border-r border-b border-white/20"></div>
         </div>
@@ -164,6 +225,9 @@ VenueMarker.displayName = 'VenueMarker';
 
 const ChillMarker = memo(({ c, onClick, index }: { c: Chill, onClick: (id: string) => void, index: number }) => {
   const spots = c.max_capacity - c.accepted_users.length;
+  const isCommercial = c.type === 'commercial';
+  const colorClass = isCommercial ? 'amber' : 'fuchsia';
+  
   return (
     <Marker latitude={c.approx_lat} longitude={c.approx_lng} anchor="center">
       <motion.div
@@ -174,22 +238,24 @@ const ChillMarker = memo(({ c, onClick, index }: { c: Chill, onClick: (id: strin
         className="relative group cursor-pointer"
       >
         <motion.div
-          className="absolute inset-0 rounded-full bg-fuchsia-500/20 blur-xl -z-10"
+          className={`absolute inset-0 rounded-full ${isCommercial ? 'bg-amber-500/30' : 'bg-fuchsia-500/20'} blur-xl -z-10`}
           animate={{ scale: [1, 1.8, 1], opacity: [0.4, 0, 0.4] }}
           transition={{ duration: 3, repeat: Infinity }}
         />
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-fuchsia-600 to-purple-700 border-2 border-fuchsia-400 flex items-center justify-center shadow-[0_0_20px_rgba(192,38,211,0.5)] group-hover:scale-110 transition-transform">
-          <span className="material-icons text-white text-xl">local_fire_department</span>
+        <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${isCommercial ? 'from-amber-400 to-orange-500 border-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.5)]' : 'from-fuchsia-600 to-purple-700 border-fuchsia-400 shadow-[0_0_20px_rgba(192,38,211,0.5)]'} border-2 flex items-center justify-center group-hover:scale-110 transition-transform`}>
+          <span className="material-icons text-white text-xl">{isCommercial ? 'vpn_key' : 'local_fire_department'}</span>
         </div>
-        <div className="absolute -bottom-1 -right-1 bg-black border border-fuchsia-500/50 rounded-full px-1.5 py-0.5 text-[8px] font-black text-fuchsia-400">
+        <div className={`absolute -bottom-1 -right-1 bg-black border ${isCommercial ? 'border-amber-500/50 text-amber-400' : 'border-fuchsia-500/50 text-fuchsia-400'} rounded-full px-1.5 py-0.5 text-[8px] font-black`}>
           {spots > 0 ? spots : '0'}
         </div>
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 hidden group-hover:block z-50 pointer-events-none">
-          <div className="bg-slate-900/90 backdrop-blur-xl border border-fuchsia-500/30 px-4 py-2 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] whitespace-nowrap flex flex-col items-center">
+          <div className={`bg-slate-900/90 backdrop-blur-xl border ${isCommercial ? 'border-amber-500/30' : 'border-fuchsia-500/30'} px-4 py-2 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] whitespace-nowrap flex flex-col items-center`}>
             <p className="font-black text-sm text-white">{c.title}</p>
-            <p className="text-[9px] font-bold text-fuchsia-400">{c.host_nick} &middot; {spots > 0 ? `${spots} plazas` : 'Lleno'}</p>
+            <p className={`text-[9px] font-bold ${isCommercial ? 'text-amber-400' : 'text-fuchsia-400'}`}>
+              {isCommercial ? 'After Privado' : 'Chill Social'} &middot; {spots > 0 ? `${spots} plazas` : 'Lleno'}
+            </p>
           </div>
-          <div className="w-3 h-3 bg-slate-900/90 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2 border-r border-b border-fuchsia-500/30"></div>
+          <div className={`w-3 h-3 bg-slate-900/90 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2 border-r border-b ${isCommercial ? 'border-amber-500/30' : 'border-fuchsia-500/30'}`}></div>
         </div>
       </motion.div>
     </Marker>
@@ -200,6 +266,7 @@ ChillMarker.displayName = 'ChillMarker';
 
 export default function MainMap() {
   const { user, profile } = useAuth();
+  const { t } = useTranslation();
   const router = useRouter();
   const mapRef = useRef<MapRef>(null);
   
@@ -217,20 +284,23 @@ export default function MainMap() {
   const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [myVenueId, setMyVenueId] = useState<string | undefined>();
+  const [showCheckinPrompt, setShowCheckinPrompt] = useState(false);
   
-  // Estados para Creación de Pines
   const [isAddingPin, setIsAddingPin] = useState(false);
-  const [newPinType, setNewPinType] = useState('cruising');
+  const [newPinType, setNewPinType] = useState('public_cruising');
   const [newPinName, setNewPinName] = useState('');
   const [isSavingPin, setIsSavingPin] = useState(false);
   
-  // Estados para Modo Viaje
-  const [travelSearch, setTravelSearch] = useState('');
-  const [isTraveling, setIsTraveling] = useState(false);
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
-
-  // Determinar visibilidad (Prioridad: Optimismo local > Estado real del perfil)
+  // Filtro unificado
+  const [radarFilter, setRadarFilter] = useState({
+    mode: 'places' as RadarMode,
+    type: 'all' as EntityType,
+    query: ''
+  });
+  
+  // Estados de filtros
+  const { currentCity } = useCity();
   const isAvailable = isOptimisticAvailable !== null ? isOptimisticAvailable : !!profile?.online;
 
   // Vibración háptica
@@ -276,8 +346,9 @@ export default function MainMap() {
         const blockedUsers = profile?.blockedUsers || [];
         
         snapshot.forEach((doc) => {
-          if (!blockedUsers.includes(doc.id) && doc.id !== user?.uid) {
-            users.push({ id: doc.id, ...doc.data() } as User);
+          const uData = doc.data();
+          if (!blockedUsers.includes(doc.id) && doc.id !== user?.uid && uData.rol !== 'party_only') {
+            users.push({ id: doc.id, ...uData } as User);
           }
         });
         setUsersNearby(users);
@@ -383,68 +454,67 @@ export default function MainMap() {
     }
   };
 
-  const handleTravelSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!travelSearch.trim()) return;
-    setIsSearching(true);
-    triggerHaptic(5);
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(travelSearch)}&limit=5`);
-      const data = await res.json();
-      setSearchResults(data);
-    } catch (err) {
-      console.error("Error searching location", err);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleSelectLocation = (loc: any) => {
-    const lat = parseFloat(loc.lat);
-    const lon = parseFloat(loc.lon);
-    
-    setViewState(prev => ({
-      ...prev,
-      latitude: lat,
-      longitude: lon,
-      zoom: 14
-    }));
-
-    if (mapRef.current) {
-      mapRef.current.flyTo({
-        center: [lon, lat],
-        zoom: 14,
-        duration: 2000
-      });
-    }
-
-    setSearchResults([]);
-    setTravelSearch(loc.display_name.split(',')[0]);
-    setIsTraveling(true);
-    triggerHaptic(15);
-  };
-
   const handleViewProfile = (userId: string) => {
     triggerHaptic(15);
     setSelectedProfileId(userId);
   };
 
-  const filteredUsers = usersNearby.filter((u) => {
-    if (typeof u.lat !== 'number' || typeof u.lng !== 'number' || Number.isNaN(u.lat) || Number.isNaN(u.lng)) return false;
-    if (u.edad !== null && (u.edad < ageRange[0] || u.edad > ageRange[1])) return false;
-    if (roleFilter && u.rol !== roleFilter) return false;
-    if (intentionFilter && u.intencion !== intentionFilter) return false;
-    if (onlyPremium && !u.premium) return false;
-    if (onlyWithPhoto && !u.fotoUrl) return false;
+  const filteredUsers = useMemo(() => {
+    return usersNearby.filter((u) => {
+      if (typeof u.lat !== 'number' || typeof u.lng !== 'number' || Number.isNaN(u.lat) || Number.isNaN(u.lng)) return false;
+      if (u.edad !== null && (u.edad < ageRange[0] || u.edad > ageRange[1])) return false;
+      if (roleFilter && u.rol !== roleFilter) return false;
+      if (intentionFilter && u.intencion !== intentionFilter) return false;
+      if (onlyPremium && !u.premium) return false;
+      if (onlyWithPhoto && !u.fotoUrl) return false;
+      
+      // Filtro de distancia
+      if (profile?.lat && u.lat && userLocation) {
+        const distance = calculateDistance(userLocation[0], userLocation[1], u.lat as number, u.lng as number);
+        if (parseFloat(distance) > distanceFilter) return false;
+      }
+
+      // New unified search
+      if (radarFilter.query) {
+        const q = radarFilter.query.toLowerCase().trim();
+        if (!u.nick.toLowerCase().includes(q)) return false;
+      }
+      
+      return true;
+    });
+  }, [usersNearby, ageRange, roleFilter, intentionFilter, onlyPremium, onlyWithPhoto, distanceFilter, profile?.lat, userLocation, radarFilter.query]);
+  
+  const visibleVenues = useMemo(() => {
+    if (radarFilter.mode !== 'places') return [];
     
-    // Filtro de distancia
-    if (profile?.lat && u.lat && userLocation) {
-      const distance = calculateDistance(userLocation[0], userLocation[1], u.lat as number, u.lng as number);
-      if (parseFloat(distance) > distanceFilter) return false;
-    }
+    return venuesMap.filter(v => {
+      if (radarFilter.type !== 'all') {
+        if (radarFilter.type === 'sauna' && v.type !== 'sauna') return false;
+        if (radarFilter.type === 'club' && v.type !== 'club' && v.type !== 'nightlife') return false;
+        if (radarFilter.type === 'bar' && v.type !== 'cruising_bar') return false;
+        if (radarFilter.type === 'cruising' && v.type !== 'public_cruising' && v.type !== 'cruising') return false;
+        if (radarFilter.type === 'chill') return false; // chills are handled separately
+      }
+      if (radarFilter.query) {
+        const q = radarFilter.query.toLowerCase().trim();
+        if (!v.name?.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
+  }, [venuesMap, radarFilter]);
+
+  const visibleChills = useMemo(() => {
+    if (radarFilter.mode !== 'places') return [];
+    if (radarFilter.type !== 'all' && radarFilter.type !== 'chill') return [];
     
-    return true;
-  });
+    return chillsMap.filter(c => {
+      if (radarFilter.query) {
+        const q = radarFilter.query.toLowerCase().trim();
+        if (!c.title?.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
+  }, [chillsMap, radarFilter]);
 
   const onMapLoad = (e: any) => {
     const map = e.target;
@@ -495,7 +565,7 @@ export default function MainMap() {
       
       setIsAddingPin(false);
       setNewPinName('');
-      setNewPinType('cruising');
+      setNewPinType('cruising_outdoor');
     } catch (e) {
       console.error(e);
       alert('Error al crear el punto');
@@ -505,7 +575,8 @@ export default function MainMap() {
   };
 
   return (
-    <div className="relative w-full h-[70vh] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl bg-slate-950">
+    <div className="w-full flex flex-col gap-4">
+      <div className="relative w-full h-[65vh] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl bg-slate-950">
       <motion.div 
         animate={{ 
           filter: selectedProfileId ? 'blur(10px) brightness(0.5)' : 'blur(0px) brightness(1)',
@@ -526,6 +597,21 @@ export default function MainMap() {
           )}
         </AnimatePresence>
 
+        {radarFilter.mode === 'swipe' ? (
+          <div className="absolute inset-0 z-40 bg-slate-950">
+            <SwipeCards 
+              users={usersNearby} 
+              myVenueId={myVenueId}
+              onSwipe={(id, direction) => {
+                if (direction === 'up_no_checkin') {
+                  setShowCheckinPrompt(true);
+                  setRadarFilter(prev => ({ ...prev, mode: 'places' }));
+                }
+              }} 
+            />
+          </div>
+        ) : null}
+
         <Map
           {...viewState}
           ref={mapRef}
@@ -536,61 +622,11 @@ export default function MainMap() {
           reuseMaps
         >
           <NavigationControl position="top-left" />
+          <NavigationControl position="top-left" />
 
-          {/* Buscador Modo Viaje */}
-          <div className="absolute top-20 left-6 z-20 w-64">
-            <div className="relative">
-              <form onSubmit={handleTravelSearch} className="relative group">
-                <input 
-                  type="text" 
-                  placeholder="Modo Viaje..."
-                  value={travelSearch}
-                  onChange={(e) => setTravelSearch(e.target.value)}
-                  onFocus={() => { if(!profile?.premium) { triggerHaptic(20); router.push('/premium'); } }}
-                  className={`w-full py-3 pl-10 pr-4 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest outline-none transition-all ${
-                    !profile?.premium ? 'cursor-not-allowed' : 'focus:border-fuchsia-500 focus:bg-slate-800'
-                  }`}
-                  disabled={!profile?.premium}
-                />
-                <span className={`material-icons absolute left-3 top-1/2 -translate-y-1/2 text-sm ${!profile?.premium ? 'text-yellow-500' : 'text-slate-500'}`}>
-                  {!profile?.premium ? 'lock' : 'travel_explore'}
-                </span>
-                {isSearching && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 border-2 border-fuchsia-500 border-t-transparent rounded-full animate-spin" />
-                )}
-              </form>
-
-              {/* Resultados de búsqueda */}
-              <AnimatePresence>
-                {searchResults.length > 0 && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
-                  >
-                    {searchResults.map((loc: any, i) => (
-                      <button 
-                        key={i}
-                        onClick={() => handleSelectLocation(loc)}
-                        className="w-full p-4 text-left hover:bg-white/5 transition-all border-b border-white/5 last:border-0 flex items-center gap-3"
-                      >
-                        <span className="material-icons text-slate-500 text-sm">place</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[10px] font-black text-white truncate uppercase tracking-widest">{loc.display_name.split(',')[0]}</p>
-                          <p className="text-[8px] text-slate-500 truncate uppercase">{loc.display_name.split(',').slice(1).join(',')}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* Marcadores de usuarios filtrados */}
+          {/* Marcadores de usuarios y lugares filtrados */}
           <AnimatePresence>
-            {filteredUsers.map((u, index) => (
+            {radarFilter.mode === 'users' && filteredUsers.map((u, index) => (
               <UserMarker 
                 key={u.id} 
                 u={u} 
@@ -603,7 +639,7 @@ export default function MainMap() {
             ))}
 
             {/* Marcadores de Locales / Cruising */}
-            {venuesMap.map((v, index) => (
+            {radarFilter.mode === 'places' && visibleVenues.map((v, index) => (
               <VenueMarker
                 key={v.id}
                 v={v}
@@ -616,56 +652,19 @@ export default function MainMap() {
             ))}
 
             {/* Marcadores de Chills */}
-            {chillsMap.map((c, index) => (
+            {radarFilter.mode === 'places' && visibleChills.map((c, index) => (
               <ChillMarker
                 key={c.id}
                 c={c}
                 index={index}
                 onClick={(id) => {
                   triggerHaptic(10);
-                  router.push(`/chills/${id}`);
+                  router.push(`/chills/detail?id=${id}`);
                 }}
               />
             ))}
           </AnimatePresence>
         </Map>
-
-        {/* Botones Flotantes Superiores */}
-        <div className="absolute top-6 right-6 flex flex-col gap-4 z-20">
-          {profile?.premium && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => { triggerHaptic(10); setIsAddingPin(!isAddingPin); }}
-              className={`w-12 h-12 rounded-2xl backdrop-blur-xl text-white border flex items-center justify-center shadow-2xl transition-all ${
-                isAddingPin ? 'bg-fuchsia-600 border-fuchsia-400' : 'bg-slate-900/80 border-white/10 hover:bg-slate-800'
-              }`}
-            >
-              <span className="material-icons text-xl">{isAddingPin ? 'close' : 'add_location'}</span>
-            </motion.button>
-          )}
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={centerOnUser}
-            className="w-12 h-12 rounded-2xl bg-slate-900/80 backdrop-blur-xl text-white border border-white/10 flex items-center justify-center shadow-2xl hover:bg-slate-800 transition-all"
-          >
-            <span className="material-icons text-xl text-fuchsia-400">my_location</span>
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => { triggerHaptic(10); setFiltersOpen(true); }}
-            className="relative w-12 h-12 rounded-2xl bg-slate-900/80 backdrop-blur-xl text-white border border-white/10 flex items-center justify-center shadow-2xl hover:bg-slate-800 transition-all"
-          >
-            <span className="material-icons text-xl text-fuchsia-400">tune</span>
-            {(roleFilter || intentionFilter || onlyPremium) && (
-              <div className="absolute top-2 right-2 w-3 h-3 rounded-full bg-fuchsia-500 border-2 border-slate-900 animate-pulse shadow-[0_0_8px_#d946ef]"></div>
-            )}
-          </motion.button>
-        </div>
 
         {/* Crosshair & Pin Creation Overlay */}
         {isAddingPin && (
@@ -677,7 +676,7 @@ export default function MainMap() {
             >
               <div className="w-12 h-12 flex items-center justify-center text-fuchsia-500">
                 <span className="material-icons text-4xl shadow-2xl drop-shadow-[0_0_15px_rgba(217,70,239,0.8)]">
-                  {newPinType === 'cruising' ? 'park' : 'local_fire_department'}
+                  {newPinType === 'cruising_outdoor' ? 'park' : 'local_fire_department'}
                 </span>
               </div>
               <div className="absolute top-full left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-fuchsia-500 rounded-full shadow-[0_0_10px_#d946ef]"></div>
@@ -689,26 +688,38 @@ export default function MainMap() {
               animate={{ y: 0, opacity: 1 }}
               className="absolute bottom-8 w-[90%] max-w-sm bg-slate-900/95 backdrop-blur-2xl border border-white/10 p-5 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] pointer-events-auto"
             >
-              <h3 className="text-sm font-black text-white mb-4 tracking-tight">Crear Punto Comunitario</h3>
+              <h3 className="text-sm font-black text-white mb-4 tracking-tight">{t('map.create_pin', 'Crear Punto Comunitario')}</h3>
               <div className="space-y-3">
-                <div className="flex bg-black/40 rounded-xl p-1">
+                <div className="grid grid-cols-2 gap-2">
                   <button 
-                    onClick={() => setNewPinType('cruising')} 
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${newPinType === 'cruising' ? 'bg-fuchsia-600 text-white shadow-lg shadow-fuchsia-500/20' : 'text-slate-400'}`}
+                    onClick={() => setNewPinType('cruising_outdoor')} 
+                    className={`py-2 text-xs font-bold rounded-lg transition-all ${newPinType === 'cruising_outdoor' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'bg-black/40 text-slate-400'}`}
                   >
                     Cruising 🌲
                   </button>
                   <button 
-                    onClick={() => setNewPinType('chill')} 
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${newPinType === 'chill' ? 'bg-red-600 text-white shadow-lg shadow-red-500/20' : 'text-slate-400'}`}
+                    onClick={() => setNewPinType('sauna')} 
+                    className={`py-2 text-xs font-bold rounded-lg transition-all ${newPinType === 'sauna' ? 'bg-red-600 text-white shadow-lg shadow-red-500/20' : 'bg-black/40 text-slate-400'}`}
                   >
-                    Chill ❄️
+                    Sauna ♨️
+                  </button>
+                  <button 
+                    onClick={() => setNewPinType('bar')} 
+                    className={`py-2 text-xs font-bold rounded-lg transition-all ${newPinType === 'bar' ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20' : 'bg-black/40 text-slate-400'}`}
+                  >
+                    Bar 🍸
+                  </button>
+                  <button 
+                    onClick={() => setNewPinType('club')} 
+                    className={`py-2 text-xs font-bold rounded-lg transition-all ${newPinType === 'club' ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-500/20' : 'bg-black/40 text-slate-400'}`}
+                  >
+                    Discoteca 🪩
                   </button>
                 </div>
                 <input 
                   value={newPinName}
                   onChange={e => setNewPinName(e.target.value)}
-                  placeholder="Nombre del lugar..."
+                  placeholder={t('map.pin_name', 'Nombre del lugar...')}
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none text-white"
                 />
                 <button 
@@ -716,7 +727,7 @@ export default function MainMap() {
                   onClick={handleSavePin}
                   className="w-full bg-white text-black font-black uppercase tracking-widest text-[10px] py-3 rounded-xl disabled:opacity-50 transition-all"
                 >
-                  {isSavingPin ? 'Guardando...' : 'Fijar Aquí'}
+                  {isSavingPin ? t('map.saving', 'Guardando...') : t('map.save', 'Fijar Aquí')}
                 </button>
                 {newPinType === 'chill' && <p className="text-[9px] text-center text-slate-500 uppercase tracking-widest">Este evento desaparecerá en 24h</p>}
               </div>
@@ -738,7 +749,7 @@ export default function MainMap() {
             }`}
           >
             <div className={`w-3 h-3 rounded-full ${isAvailable ? 'bg-white shadow-[0_0_15px_white] animate-pulse' : 'bg-slate-600'}`}></div>
-            <span className="text-xs uppercase tracking-[0.2em]">{isAvailable ? 'VISIBLE AHORA' : 'VOLVERME VISIBLE'}</span>
+            <span className="text-xs uppercase tracking-[0.2em]">{isAvailable ? t('map.visible_now', 'VISIBLE AHORA') : t('map.make_visible', 'VOLVERME VISIBLE')}</span>
           </motion.button>
         </div>
         )}
@@ -756,6 +767,47 @@ export default function MainMap() {
           />
         )}
       </AnimatePresence>
+      </div>
+
+      {/* Controles del Mapa (Fuera del contenedor del mapa) */}
+      <div className="flex items-center justify-between px-2 pb-4">
+        <CitySelector />
+        <div className="flex items-center gap-3">
+          {profile?.premium && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => { triggerHaptic(10); setIsAddingPin(!isAddingPin); }}
+              className={`w-12 h-12 rounded-2xl backdrop-blur-xl text-white border flex items-center justify-center shadow-lg transition-all ${
+                isAddingPin ? 'bg-fuchsia-600 border-fuchsia-400' : 'bg-white/5 border-white/10 hover:bg-white/10'
+              }`}
+            >
+              <span className="material-icons text-xl">{isAddingPin ? 'close' : 'add_location'}</span>
+            </motion.button>
+          )}
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={centerOnUser}
+            className="w-12 h-12 rounded-2xl bg-white/5 text-white border border-white/10 flex items-center justify-center shadow-lg hover:bg-white/10 transition-all"
+          >
+            <span className="material-icons text-xl text-fuchsia-400">my_location</span>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => { triggerHaptic(10); setFiltersOpen(true); }}
+            className="relative w-12 h-12 rounded-2xl bg-white/5 text-white border border-white/10 flex items-center justify-center shadow-lg hover:bg-white/10 transition-all"
+          >
+            <span className="material-icons text-xl text-fuchsia-400">tune</span>
+            {(roleFilter || intentionFilter || onlyPremium) && (
+              <div className="absolute top-2 right-2 w-3 h-3 rounded-full bg-fuchsia-500 border-2 border-slate-900 animate-pulse shadow-[0_0_8px_#d946ef]"></div>
+            )}
+          </motion.button>
+        </div>
+      </div>
 
       {/* Drawer de Filtros Premium */}
       <AnimatePresence>
@@ -771,10 +823,10 @@ export default function MainMap() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="w-full max-w-lg bg-slate-900 rounded-[3rem] p-10 space-y-10 shadow-[0_-20px_80px_rgba(0,0,0,0.8)] border border-white/10"
+              className="w-full max-w-lg bg-slate-900 rounded-[2.5rem] p-6 space-y-6 shadow-[0_-20px_80px_rgba(0,0,0,0.8)] border border-white/10 max-h-[85vh] overflow-y-auto"
             >
-              <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-black text-white tracking-tight">Refinar Búsqueda</h3>
+              <div className="flex justify-between items-center pb-2">
+                <h3 className="text-2xl font-black text-white tracking-tight">{t('map.refine', 'Refinar Búsqueda')}</h3>
                 <button 
                   onClick={() => { triggerHaptic(5); setFiltersOpen(false); }}
                   className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all"
@@ -783,7 +835,62 @@ export default function MainMap() {
                 </button>
               </div>
 
-              <div className="space-y-6">
+              {/* Búsqueda Inteligente (Movida desde el mapa) */}
+              <div className="space-y-4">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-3 flex items-center gap-3 focus-within:border-fuchsia-500 transition-colors">
+                  <Search className="text-slate-400 w-5 h-5 ml-1" />
+                  <input 
+                    type="text" 
+                    placeholder={radarFilter.mode === 'places' ? 'Buscar local, fiesta o villa...' : 'Buscar usuarios por nombre...'}
+                    value={radarFilter.query}
+                    onChange={e => setRadarFilter(prev => ({ ...prev, query: e.target.value }))}
+                    className="bg-transparent text-white w-full outline-none text-sm placeholder-slate-500"
+                  />
+                </div>
+
+                <div className="flex bg-black/40 border border-white/10 rounded-xl p-1">
+                  <button 
+                    onClick={() => setRadarFilter(prev => ({ ...prev, mode: 'places' }))}
+                    className={`flex-1 py-2.5 rounded-lg text-[10px] uppercase font-black transition-all flex items-center justify-center gap-1 ${radarFilter.mode === 'places' ? 'bg-fuchsia-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    <span>📍</span> Lugares
+                  </button>
+                  <button 
+                    onClick={() => setRadarFilter(prev => ({ ...prev, mode: 'users' }))}
+                    className={`flex-1 py-2.5 rounded-lg text-[10px] uppercase font-black transition-all flex items-center justify-center gap-1 ${radarFilter.mode === 'users' ? 'bg-fuchsia-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    <span>👥</span> Mapa
+                  </button>
+                  <button 
+                    onClick={() => setRadarFilter(prev => ({ ...prev, mode: 'swipe' }))}
+                    className={`flex-1 py-2.5 rounded-lg text-[10px] uppercase font-black transition-all flex items-center justify-center gap-1 ${radarFilter.mode === 'swipe' ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    <span>🔥</span> Swipe
+                  </button>
+                </div>
+              </div>
+
+              {radarFilter.mode === 'places' ? (
+                // Filtros para LUGARES
+                <div className="space-y-4 py-4">
+                  <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Categoría de Sitio</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {PLACE_CATEGORIES.map(cat => (
+                      <button 
+                        key={cat.id} 
+                        onClick={() => { triggerHaptic(10); setRadarFilter(prev => ({ ...prev, type: cat.id as any })) }}
+                        className={`py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${radarFilter.type === cat.id ? "bg-fuchsia-500 text-white shadow-xl shadow-fuchsia-500/20" : "bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10"}`}
+                      >
+                        <span className="text-lg">{cat.icon}</span>
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                // Filtros para USUARIOS
+                <>
+                  <div className="space-y-6 pt-2">
                 <div className="flex justify-between items-end">
                   <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Rango de Edad</p>
                   <p className="text-fuchsia-400 font-black text-lg">{ageRange[0]} - {ageRange[1]}</p>
@@ -876,6 +983,8 @@ export default function MainMap() {
                     </button>
                   </div>
                 </div>
+                </>
+              )}
 
                 <button
                   onClick={() => setFiltersOpen(false)}

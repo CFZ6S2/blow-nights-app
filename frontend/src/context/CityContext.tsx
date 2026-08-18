@@ -34,43 +34,16 @@ export function CityProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [detectedByGPS, setDetectedByGPS] = useState(false);
 
-  useEffect(() => {
-    const q = query(collection(db, 'cities'), where('isActive', '==', true));
-    const unsub = onSnapshot(q, (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as City));
-      setCities(list);
-
-      // 1. Detectar ciudad por subdominio (ej: madrid.blownights.com)
-      if (typeof window !== 'undefined') {
-        const hostname = window.location.hostname;
-        const subdomain = hostname.split('.')[0];
-        const domainCity = list.find((c) => c.slug === subdomain);
-        
-        if (domainCity) {
-          setCurrentCityState(domainCity);
-          setLoading(false);
-          return;
-        }
-      }
-
-      // 2. Detectar por localStorage
-      const savedSlug = localStorage.getItem(CITY_STORAGE_KEY);
-      if (savedSlug) {
-        const saved = list.find((c) => c.slug === savedSlug);
-        if (saved) {
-          setCurrentCityState(saved);
-          setLoading(false);
-          return;
-        }
-      }
-
-      detectCityByGPS(list);
-    });
-    return unsub;
+  const fallbackToFirst = useCallback((cityList: City[]) => {
+    if (cityList.length > 0) {
+      setCurrentCityState(cityList[0]);
+      localStorage.setItem(CITY_STORAGE_KEY, cityList[0].slug);
+    }
+    setLoading(false);
   }, []);
 
   const detectCityByGPS = useCallback((cityList: City[]) => {
-    if (!navigator.geolocation) {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
       fallbackToFirst(cityList);
       return;
     }
@@ -105,15 +78,42 @@ export function CityProvider({ children }: { children: React.ReactNode }) {
       },
       { timeout: 5000, maximumAge: 600000 }
     );
-  }, []);
+  }, [fallbackToFirst]);
 
-  const fallbackToFirst = (cityList: City[]) => {
-    if (cityList.length > 0) {
-      setCurrentCityState(cityList[0]);
-      localStorage.setItem(CITY_STORAGE_KEY, cityList[0].slug);
-    }
-    setLoading(false);
-  };
+  useEffect(() => {
+    const q = query(collection(db, 'cities'), where('isActive', '==', true));
+    const unsub = onSnapshot(q, (snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as City));
+      setCities(list);
+
+      // 1. Detectar ciudad por subdominio (ej: madrid.blownights.com)
+      if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+        const subdomain = hostname.split('.')[0];
+        const domainCity = list.find((c) => c.slug === subdomain);
+        
+        if (domainCity) {
+          setCurrentCityState(domainCity);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 2. Detectar por localStorage
+      const savedSlug = localStorage.getItem(CITY_STORAGE_KEY);
+      if (savedSlug) {
+        const saved = list.find((c) => c.slug === savedSlug);
+        if (saved) {
+          setCurrentCityState(saved);
+          setLoading(false);
+          return;
+        }
+      }
+
+      detectCityByGPS(list);
+    });
+    return unsub;
+  }, [detectCityByGPS]);
 
   const setCurrentCity = useCallback((city: City | null) => {
     setCurrentCityState(city);

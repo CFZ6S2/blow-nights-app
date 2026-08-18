@@ -15,10 +15,12 @@ import { calculateDistance } from '@/lib/geo';
 function PublicProfileContent() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
+  const pingVenueId = searchParams.get('pingVenueId');
   const router = useRouter();
   const { user: currentUser, profile: currentProfile } = useAuth();
   
   const [profile, setProfile] = useState<any>(null);
+  const [pingVenue, setPingVenue] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activePhoto, setActivePhoto] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -61,6 +63,12 @@ function PublicProfileContent() {
             }
             const likeDoc = await getDoc(doc(db, 'likes', `${currentUser.uid}_${id}`));
             if (likeDoc.exists()) setHasLiked(true);
+          }
+          if (pingVenueId) {
+            const venueDoc = await getDoc(doc(db, 'venues', pingVenueId));
+            if (venueDoc.exists()) {
+              setPingVenue({ id: pingVenueId, ...venueDoc.data() });
+            }
           }
         }
       } catch (err) {
@@ -131,6 +139,41 @@ function PublicProfileContent() {
       </AnimatePresence>
 
       {/* Parallax Header */}
+      {pingVenue && (
+        <div className="fixed top-0 left-0 right-0 z-50 p-4 pt-8 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+          <motion.div 
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="bg-slate-900/90 backdrop-blur-md border border-orange-500/50 rounded-2xl p-4 shadow-2xl pointer-events-auto"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-3xl">🔥</span>
+              <div>
+                <p className="text-white text-xs font-bold">{profile.nick} te ha invitado a salir</p>
+                <p className="text-orange-400 text-[10px] font-black uppercase tracking-widest mt-0.5">
+                  📍 Estoy en {pingVenue.name}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <button 
+                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${pingVenue.location?.latitude},${pingVenue.location?.longitude}`, '_blank')}
+                className="flex-1 py-2.5 rounded-xl bg-white/10 text-white font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-white/20 transition-all"
+              >
+                <span className="material-icons text-sm">map</span> Cómo llegar
+              </button>
+              <button 
+                onClick={() => handleLike()}
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.5)] hover:scale-105 transition-all"
+              >
+                <span className="material-icons text-sm">chat</span> Abrir Chat
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       <motion.div 
         style={{ y: headerY, opacity: headerOpacity, scale: headerScale }}
         className="fixed top-0 left-0 right-0 h-[65vh] w-full z-0 pointer-events-none"
@@ -217,7 +260,7 @@ function PublicProfileContent() {
           </div>
 
           <div className="flex flex-wrap gap-2 mb-8">
-            <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-bold text-slate-300 uppercase tracking-wider">{profile.rol}</div>
+            <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-bold text-slate-300 uppercase tracking-wider">{profile.rol === 'party_only' ? 'Solo Fiesta' : profile.rol}</div>
             <div className="px-4 py-2 rounded-xl bg-fuchsia-500/10 border border-fuchsia-500/10 text-[10px] font-bold text-fuchsia-400 uppercase tracking-wider">{profile.intencion}</div>
             {profile.complexion && <div className="px-4 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/10 text-[10px] font-bold text-indigo-400 uppercase tracking-wider">{profile.complexion}</div>}
           </div>

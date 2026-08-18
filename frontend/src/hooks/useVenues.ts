@@ -5,12 +5,14 @@ import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestor
 import { db } from '@/lib/firebase';
 
 const VENUE_TYPES = {
-  previa: { label: 'Previas / Bares', hours: '20:00–02:00', icon: 'local_bar', cruising: false },
-  discoteca: { label: 'Discotecas / Clubes', hours: '01:00–06:00', icon: 'nightlife', cruising: false },
-  after: { label: 'Afters / Matinales', hours: '06:00–12:00', icon: 'wb_twilight', cruising: false },
-  sauna: { label: 'Saunas', hours: '12:00–03:00', icon: 'hot_tub', cruising: true },
-  cruising_bar: { label: 'Cruising Bars', hours: '22:00–06:00', icon: 'sensor_door', cruising: true },
-  outdoor_zone: { label: 'Zonas Exteriores', hours: '22:00–06:00', icon: 'park', cruising: true },
+  // Locales Comerciales
+  club: { label: 'Discotecas & Clubs', hours: '01:00–06:00', icon: 'nightlife', cruising: false, group: 'commercial' },
+  bar: { label: 'Bares & Previas', hours: '20:00–02:00', icon: 'local_bar', cruising: false, group: 'commercial' },
+  sauna: { label: 'Saunas & Spas', hours: '12:00–03:00', icon: 'hot_tub', cruising: true, group: 'commercial' },
+  chiringuito: { label: 'Chiringuitos', hours: '12:00–22:00', icon: 'beach_access', cruising: false, group: 'commercial' },
+  // Puntos Comunitarios
+  cruising_outdoor: { label: 'Cruising Exterior & Zonas Libres', hours: '22:00–06:00', icon: 'park', cruising: true, group: 'community' },
+  community_point: { label: 'Puntos de Encuentro', hours: '24h', icon: 'place', cruising: false, group: 'community' },
 };
 
 export { VENUE_TYPES };
@@ -36,7 +38,17 @@ export function useVenues(cityId: string | null) {
 
   const grouped: Record<string, any[]> = {};
   Object.keys(VENUE_TYPES).forEach((key) => {
-    grouped[key] = venues.filter((v) => v.type === key);
+    grouped[key] = venues
+      .filter((v) => v.type === key)
+      .sort((a, b) => {
+        const aBoost = a.boostActive || a.subscription?.status === 'active';
+        const bBoost = b.boostActive || b.subscription?.status === 'active';
+        
+        // Locales con boost aparecen siempre primero
+        if (aBoost && !bBoost) return -1;
+        if (!aBoost && bBoost) return 1;
+        return 0; // mantener orden por defecto si son iguales
+      });
   });
 
   return { venues, grouped, loading };
