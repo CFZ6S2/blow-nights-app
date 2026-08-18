@@ -42,18 +42,15 @@ export default function Home() {
     const role = profile?.role;
     if (!role || role === 'user') return;
 
-    // Prevenir bucles infinitos de redirección: si en Firestore dicen ser superadmin
-    // pero el token aún no tiene el claim, no los redirigimos (porque la página destino los escupiría de vuelta).
-    if (role === 'superadmin' && !isSuperAdmin) return;
-    if (role === 'admin' && !isAdmin) return;
+    // Ya NO forzamos redirección a superadmin ni admin. 
+    // Tienen un botón en la interfaz para ir a su panel si lo desean.
+    // Esto evita bloqueos de pantalla y bucles infinitos en PWA.
     if (role === 'cityAdmin' && !isCityAdmin) return;
 
     const redirects: Record<string, string> = {
       venue: '/venue-admin',
       venueOwner: '/venue-admin',
       cityAdmin: '/city-manager',
-      superadmin: '/super-admin',
-      admin: '/admin',
       door: '/door',
       ambassador: '/ambassador',
     };
