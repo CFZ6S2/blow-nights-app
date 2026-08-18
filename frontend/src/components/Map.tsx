@@ -264,6 +264,8 @@ const ChillMarker = memo(({ c, onClick, index }: { c: Chill, onClick: (id: strin
 
 ChillMarker.displayName = 'ChillMarker';
 
+const mapContainerStyle = { width: '100%', height: '100%' };
+
 const IsolatedMap = memo(({
   viewState, setViewState, mapRef, onMapLoad,
   radarFilter, filteredUsers, visibleVenues, visibleChills,
@@ -275,9 +277,8 @@ const IsolatedMap = memo(({
       ref={mapRef}
       onMove={(evt: any) => setViewState(evt.viewState)}
       mapStyle="https://tiles.openfreemap.org/styles/dark"
-      style={{ width: '100%', height: '100%' }}
+      style={mapContainerStyle}
       onLoad={onMapLoad}
-      reuseMaps
     >
       <NavigationControl position="top-left" />
 
@@ -574,7 +575,7 @@ export default function MainMap() {
     });
   }, [chillsMap, radarFilter]);
 
-  const onMapLoad = (e: any) => {
+  const onMapLoad = useCallback((e: any) => {
     const map = e.target;
     
     // Función para inyectar texturas faltantes
@@ -594,7 +595,7 @@ export default function MainMap() {
 
     // Inyectar proactivamente patrones conocidos que dan guerra
     ['wood-pattern', 'grass-pattern', 'park-pattern'].forEach(injectMissingImage);
-  };
+  }, []);
 
   const handleSavePin = async () => {
     if (!newPinName.trim() || !user) return;
