@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin() {
-      return request.auth != null && request.auth.token.role == 'admin';
+      return request.auth != null && (request.auth.token.role == 'admin' || request.auth.token.role == 'superadmin');
     }
 
     function isCityAdmin(cityId) {
@@ -11,7 +11,7 @@ service cloud.firestore {
 
     function notBanned() {
       return request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banned != true;
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('banned', false) == false;
     }
 
     function notBlocked(userId) {

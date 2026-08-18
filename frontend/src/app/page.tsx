@@ -141,13 +141,15 @@ export default function Home() {
 
       <main className="flex-1 space-y-8 max-w-4xl mx-auto w-full">
         {/* Sección del Mapa */}
-        <section className="space-y-4">
-          <div className="flex justify-between items-end">
-            <h2 className="font-display text-xl font-bold">Cerca de ti</h2>
-            <span className="text-xs text-purple-400 font-medium">Ubicación aproximada</span>
-          </div>
-          <MainMap />
-        </section>
+        {(!profile || profile.edad === null || profile.edad === undefined) ? null : (
+          <section className="space-y-4">
+            <div className="flex justify-between items-end">
+              <h2 className="font-display text-xl font-bold">Cerca de ti</h2>
+              <span className="text-xs text-purple-400 font-medium">Ubicación aproximada</span>
+            </div>
+            <MainMap />
+          </section>
+        )}
         
         {/* Acciones Rápidas */}
         <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-2 gap-4">
