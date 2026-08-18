@@ -33,6 +33,7 @@ exports.createChillPassCheckout = stripe.createChillPassCheckout;
 exports.createPingCheckoutSession = stripe.createPingCheckoutSession;
 exports.createStripeConnectAccount = stripe.createStripeConnectAccount;
 exports.createStripeAccountLink = stripe.createStripeAccountLink;
+exports.createQRPackageCheckout = stripe.createQRPackageCheckout;
 exports.stripeWebhook = stripe.stripeWebhook;
 
 // Tickets & RRPP
@@ -58,3 +59,4 @@ exports.cleanupExpiredCheckins = venues.cleanupExpiredCheckins;
 exports.onCheckinCreated = venues.onCheckinCreated;
 exports.checkFranchiseTrigger = venues.checkFranchiseTrigger;
 exports.createRRPPParty = venues.createRRPPParty;
+exports.deleteRRPPParty = venues.deleteRRPPParty;

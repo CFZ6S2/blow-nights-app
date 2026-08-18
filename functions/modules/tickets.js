@@ -275,9 +275,13 @@ exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: false }, async 
     throw new HttpsError('not-found', 'Evento no encontrado.');
   }
   const eventData = eventDoc.data();
+  
+  const venueDoc = await db.collection('venues').doc(venueId).get();
+  const venueName = venueDoc.exists ? venueDoc.data().name : venueId;
 
   const crypto = require("crypto");
   const qrToken = crypto.randomBytes(32).toString("hex");
+  const pinCode = Math.floor(1000 + Math.random() * 9000).toString();
 
   const ticketPayload = {
     userId: null,
@@ -292,6 +296,13 @@ exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: false }, async 
     promoter_name: promoter.name || 'RRPP',
     rrpp_commission: 0,
     qrToken,
+    pinCode,
+    flyerUrl: eventData.flyerUrl || null,
+    eventTitle: eventData.title || eventData.name || 'Evento RRPP',
+    venueName: venueName,
+    eventDate: eventData.date || null,
+    eventTime: eventData.time || null,
+    tierName: tierId || 'Entrada General',
     status: 'valid',
     purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
   };

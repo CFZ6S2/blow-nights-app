@@ -19,6 +19,7 @@ function DoorScannerContent() {
   const [isScanning, setIsScanning] = useState(true);
   const [scanResult, setScanResult] = useState<{ status: 'VALID' | 'USED' | 'INVALID'; name?: string; message: string } | null>(null);
   const [scannedCount, setScannedCount] = useState(0);
+  const [cameraStarted, setCameraStarted] = useState(false);
 
   // Modo Buscador
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,23 +51,39 @@ function DoorScannerContent() {
 
         // 2. Try venues events if not found
         if (!found) {
-          const eventsQuery = query(collectionGroup(db, 'events'), where('scanner_token', '==', token));
-          const eventsSnap = await getDocs(eventsQuery);
-          eventsSnap.forEach(async (d) => {
-            if (d.id === eventId) {
-              title = d.data().title || 'Evento RRPP';
+          const venueId = searchParams.get('venueId');
+          if (venueId) {
+            const eventRef = doc(db, `venues/${venueId}/events`, eventId);
+            const eventSnap = await getDoc(eventRef);
+            if (eventSnap.exists() && eventSnap.data()?.scanner_token === token) {
+              title = eventSnap.data()?.title || eventSnap.data()?.name || 'Evento RRPP';
               found = true;
               
-              // Check if parent venue is unclaimed
-              const venueRef = d.ref.parent.parent;
-              if (venueRef) {
-                const venueSnap = await getDoc(venueRef);
-                if (venueSnap.exists() && venueSnap.data()?.isClaimed === false) {
-                  isUnclaimed = true;
-                }
+              const venueRef = doc(db, 'venues', venueId);
+              const venueSnap = await getDoc(venueRef);
+              if (venueSnap.exists() && venueSnap.data()?.isClaimed === false) {
+                isUnclaimed = true;
               }
             }
-          });
+          } else {
+            // Fallback just in case (will fail without index, but backwards compatible)
+            const eventsQuery = query(collectionGroup(db, 'events'), where('scanner_token', '==', token));
+            const eventsSnap = await getDocs(eventsQuery);
+            eventsSnap.forEach(async (d) => {
+              if (d.id === eventId) {
+                title = d.data().title || 'Evento RRPP';
+                found = true;
+                
+                const venueRef = d.ref.parent.parent;
+                if (venueRef) {
+                  const venueSnap = await getDoc(venueRef);
+                  if (venueSnap.exists() && venueSnap.data()?.isClaimed === false) {
+                    isUnclaimed = true;
+                  }
+                }
+              }
+            });
+          }
         }
 
         if (found) {
@@ -86,7 +103,7 @@ function DoorScannerContent() {
 
   // 2. Iniciar cámara y loop de detección con jsQR
   useEffect(() => {
-    if (!authorized) return;
+    if (!authorized || !cameraStarted) return;
 
     let stream: MediaStream | null = null;
     let animId: number;
@@ -94,12 +111,14 @@ function DoorScannerContent() {
     async function initCamera() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
         });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           videoRef.current.setAttribute('playsinline', 'true');
-          videoRef.current.play();
+          videoRef.current.setAttribute('muted', 'true');
+          await videoRef.current.play();
         }
         requestAnimationFrame(tick);
       } catch (err) {
@@ -134,7 +153,7 @@ function DoorScannerContent() {
       if (stream) stream.getTracks().forEach(t => t.stop());
       cancelAnimationFrame(animId);
     };
-  }, [authorized, isScanning, mode]);
+  }, [authorized, isScanning, mode, cameraStarted]);
 
   // 3. Procesar QR y actualizar Firestore
   const handleScan = async (qrData: string) => {
@@ -162,9 +181,7 @@ function DoorScannerContent() {
       const reqRef = doc(db, 'chill_requests', requestId);
       const reqSnap = await getDoc(reqRef);
 
-      if (!reqSnap.exists() || reqSnap.data()?.chill_id !== eventId) { // changed chillId to chill_id based on previous definition
-        setScanResult({ status: 'INVALID', message: 'PASE NO VÁLIDO' });
-      } else {
+      if (reqSnap.exists() && reqSnap.data()?.chill_id === eventId) {
         const data = reqSnap.data();
         if (data.checkedIn) {
           setScanResult({
@@ -179,6 +196,34 @@ function DoorScannerContent() {
           });
           setScanResult({ status: 'VALID', name: data.user_nick || data.userName, message: 'ACCESO CORRECTO' });
           setScannedCount(prev => prev + 1);
+        }
+      } else {
+        // Check if it's a ticket by qrToken
+        const qTicket = query(collection(db, 'tickets'), where('qrToken', '==', qrData), where('eventId', '==', eventId));
+        const ticketSnap = await getDocs(qTicket);
+
+        if (!ticketSnap.empty) {
+          const ticketDoc = ticketSnap.docs[0];
+          const data = ticketDoc.data();
+          
+          if (data.status === 'used') {
+            setScanResult({
+              status: 'USED',
+              name: data.client_name || data.userName,
+              message: `YA USADO (${data.usedAt ? new Date(data.usedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'NA'})`
+            });
+          } else if (data.status === 'valid') {
+            await updateDoc(doc(db, 'tickets', ticketDoc.id), {
+              status: 'used',
+              usedAt: new Date().toISOString()
+            });
+            setScanResult({ status: 'VALID', name: data.client_name || data.userName, message: 'ACCESO CORRECTO' });
+            setScannedCount(prev => prev + 1);
+          } else {
+            setScanResult({ status: 'INVALID', message: 'TICKET CANCELADO' });
+          }
+        } else {
+          setScanResult({ status: 'INVALID', message: 'PASE NO VÁLIDO' });
         }
       }
     } catch {
@@ -216,7 +261,7 @@ function DoorScannerContent() {
           const snap2 = await getDocs(q2);
           snap2.forEach(d => {
             const data = d.data();
-            const generatedPin = data.pin || (parseInt(d.id.replace(/[^a-f0-9]/gi, ''), 16) % Math.pow(10, pinLength)).toString().padStart(pinLength, '0');
+            const generatedPin = data.pin || data.pinCode || (parseInt(d.id.replace(/[^a-f0-9]/gi, ''), 16) % Math.pow(10, pinLength)).toString().padStart(pinLength, '0');
             if (generatedPin === searchQuery && data.status === 'valid') {
               foundRequest = { id: d.id, ...data };
               isTicketCollection = true;
@@ -329,18 +374,36 @@ function DoorScannerContent() {
       {/* Visor de Cámara */}
       {mode === 'scanner' ? (
         <div className="relative w-full max-w-sm aspect-[3/4] bg-black rounded-2xl overflow-hidden border border-[#2b2f52] shadow-2xl flex items-center justify-center">
-          <video ref={videoRef} className="w-full h-full object-cover" />
-          <canvas ref={canvasRef} className="hidden" />
-
-          {/* Retícula de escaneo */}
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-8">
-            <div className="w-52 h-52 border-2 border-dashed border-[#a855f7]/60 rounded-2xl relative animate-pulse">
-              <div className="absolute -top-1 -left-1 w-5 h-5 border-t-4 border-l-4 border-[#c084fc]" />
-              <div className="absolute -top-1 -right-1 w-5 h-5 border-t-4 border-r-4 border-[#c084fc]" />
-              <div className="absolute -bottom-1 -left-1 w-5 h-5 border-b-4 border-l-4 border-[#c084fc]" />
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 border-b-4 border-r-4 border-[#c084fc]" />
+          {!cameraStarted ? (
+            <div className="flex flex-col items-center justify-center p-6 text-center z-10">
+              <div className="w-20 h-20 bg-fuchsia-900/30 rounded-full flex items-center justify-center mb-4 border border-fuchsia-500/50">
+                <span className="material-icons text-4xl text-fuchsia-400">photo_camera</span>
+              </div>
+              <h3 className="text-white font-bold text-lg mb-2">Permiso de Cámara</h3>
+              <p className="text-gray-400 text-xs mb-6 px-4">Toca el botón para activar la cámara de forma segura.</p>
+              <button 
+                onClick={() => setCameraStarted(true)}
+                className="bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-black text-sm uppercase px-8 py-3 rounded-xl transition-all shadow-[0_0_20px_rgba(192,132,252,0.4)] active:scale-95"
+              >
+                Activar Cámara
+              </button>
             </div>
-          </div>
+          ) : (
+            <>
+              <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+              <canvas ref={canvasRef} className="hidden" />
+
+              {/* Retícula de escaneo */}
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-8">
+                <div className="w-52 h-52 border-2 border-dashed border-[#a855f7]/60 rounded-2xl relative animate-pulse">
+                  <div className="absolute -top-1 -left-1 w-5 h-5 border-t-4 border-l-4 border-[#c084fc]" />
+                  <div className="absolute -top-1 -right-1 w-5 h-5 border-t-4 border-r-4 border-[#c084fc]" />
+                  <div className="absolute -bottom-1 -left-1 w-5 h-5 border-b-4 border-l-4 border-[#c084fc]" />
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 border-b-4 border-r-4 border-[#c084fc]" />
+                </div>
+              </div>
+            </>
+          )}
         </div>
       ) : (
         <div className="w-full max-w-sm flex flex-col items-center justify-center">

@@ -160,6 +160,8 @@ exports.createPingCheckoutSession = onCall({ enforceAppCheck: false }, async (re
 
   try {
     let priceData = {};
+    let creditsAmount = 0;
+
     if (type === "ping_pack") {
       priceData = {
         currency: "eur",
@@ -171,6 +173,20 @@ exports.createPingCheckoutSession = onCall({ enforceAppCheck: false }, async (re
         currency: "eur",
         product_data: { name: "Pase Fuego Ilimitado (Esta Noche)" },
         unit_amount: 399,
+      };
+    } else if (type === "qr_credits_pack_25") {
+      creditsAmount = 50;
+      priceData = {
+        currency: "eur",
+        product_data: { name: "Pack 50 Entradas QR" },
+        unit_amount: 2500, // 25.00 EUR
+      };
+    } else if (type === "qr_credits_pack_50") {
+      creditsAmount = 100;
+      priceData = {
+        currency: "eur",
+        product_data: { name: "Pack 100 Entradas QR" },
+        unit_amount: 5000, // 50.00 EUR
       };
     } else {
       throw new HttpsError("invalid-argument", "Tipo de pase no válido.");
@@ -184,9 +200,14 @@ exports.createPingCheckoutSession = onCall({ enforceAppCheck: false }, async (re
         quantity: 1,
       }],
       mode: "payment",
-      success_url: `${origin}/premium?success=true`,
-      cancel_url: `${origin}/premium?canceled=true`,
-      metadata: { firebaseUID: uid, type: type, city_slug: citySlug || "" },
+      success_url: type.startsWith("qr_credits") ? `${origin}/rrpp/comprar-creditos?success=true` : `${origin}/premium?success=true`,
+      cancel_url: type.startsWith("qr_credits") ? `${origin}/rrpp/comprar-creditos?canceled=true` : `${origin}/premium?canceled=true`,
+      metadata: { 
+        firebaseUID: uid, 
+        type: type.startsWith("qr_credits_pack") ? "qr_credits_pack" : type, 
+        city_slug: citySlug || "",
+        creditsAmount: creditsAmount.toString()
+      },
     });
     return { sessionId: session.id, url: session.url };
   } catch (error) {
@@ -261,7 +282,7 @@ exports.createQRPackageCheckout = onCall({}, async (request) => {
 
   const { token, quantity, origin } = data;
   const firebaseUID = request.auth?.uid;
-  if (!token || !quantity || !firebaseUID) throw new HttpsError("invalid-argument", "Parámetros inválidos o usuario no autenticado.");
+  if (!quantity || !firebaseUID) throw new HttpsError("invalid-argument", "Parámetros inválidos o usuario no autenticado.");
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -275,9 +296,9 @@ exports.createQRPackageCheckout = onCall({}, async (request) => {
         quantity: 1,
       }],
       mode: "payment",
-      success_url: `${origin}/rrpp?token=${token}&success=true`,
-      cancel_url: `${origin}/rrpp?token=${token}&canceled=true`,
-      metadata: { type: "rrpp_qr_pack", promoterToken: token, firebaseUID, quantity: quantity.toString() },
+      success_url: `${origin}/rrpp/comprar-creditos?success=true`,
+      cancel_url: `${origin}/rrpp/comprar-creditos?canceled=true`,
+      metadata: { type: "rrpp_qr_pack", promoterToken: token || "", firebaseUID, quantity: quantity.toString() },
     });
     return { url: session.url };
   } catch (error) {

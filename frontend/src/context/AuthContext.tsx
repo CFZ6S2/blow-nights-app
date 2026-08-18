@@ -55,6 +55,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   usePresence(user?.uid, profile);
 
   useEffect(() => {
+    // Failsafe: Si Firebase Auth tarda demasiado o se bloquea, forzar renderizado
+    const failsafeTimeout = setTimeout(() => {
+      setLoading(false);
+    }, 3000);
+
     // Registro de Service Worker para PWA
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -108,6 +113,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => {
+      clearTimeout(failsafeTimeout);
       unsubscribeAuth();
       if (unsubscribeProfile) unsubscribeProfile();
     };

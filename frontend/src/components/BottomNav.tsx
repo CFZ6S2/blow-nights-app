@@ -44,8 +44,8 @@ export function BottomNav() {
   };
 
   if (!user) return null;
-  const hideOnPaths = ['/login', '/setup-profile'];
-  if (hideOnPaths.includes(pathname)) return null;
+  const hideOnPaths = ['/login', '/setup-profile', '/door', '/pass', '/rrpp'];
+  if (hideOnPaths.some(p => pathname === p || pathname.startsWith(p + '/'))) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30 bg-black/80 backdrop-blur-md border-t border-white/10 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_40px_rgba(0,0,0,0.5)] translate-z-0">

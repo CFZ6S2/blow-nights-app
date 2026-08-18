@@ -122,13 +122,15 @@ exports.checkFranchiseTrigger = onDocumentWritten("venues/{venueId}", async (eve
   }
 });
 
-exports.createRRPPParty = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createRRPPParty = onCall({ enforceAppCheck: false }, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Login requerido');
 
-  const { eventName, venueName, address, lat, lng, eventDate, eventTime, ticketType } = data;
-  if (!eventName || !venueName || !address || lat === undefined || lng === undefined) {
-    throw new HttpsError('invalid-argument', 'Faltan parámetros obligatorios');
+  const { lat, lng, eventName, eventDate, eventTime, ticketType, address, flyerUrl } = data;
+  let { venueName } = data;
+
+  if (!lat || !lng || !eventName || !venueName || !address) {
+    throw new HttpsError('invalid-argument', 'Lat, lng, eventName, venueName y address son obligatorios');
   }
 
   const callerUid = auth.uid;
@@ -205,6 +207,7 @@ exports.createRRPPParty = onCall({ enforceAppCheck: true }, async (request) => {
     time: eventTime || null,
     ticketType: ticketType || 'general',
     scanner_token: scannerToken,
+    flyerUrl: flyerUrl || null,
     createdAt: admin.firestore.FieldValue.serverTimestamp()
   });
 
@@ -234,4 +237,44 @@ exports.createRRPPParty = onCall({ enforceAppCheck: true }, async (request) => {
     token,
     scannerToken
   };
+});
+
+exports.deleteRRPPParty = onCall({ enforceAppCheck: false }, async (request) => {
+  const { auth, data } = request;
+  if (!auth) throw new HttpsError('unauthenticated', 'Login requerido');
+
+  const { promoterToken } = data;
+  if (!promoterToken) throw new HttpsError('invalid-argument', 'Token requerido');
+
+  // Find the promoter doc
+  const promotersQuery = await db.collectionGroup('promoters').where('access_token', '==', promoterToken).limit(1).get();
+  if (promotersQuery.empty) throw new HttpsError('not-found', 'Fiesta no encontrada');
+
+  const promoterDoc = promotersQuery.docs[0];
+  if (promoterDoc.data().userId !== auth.uid) {
+    throw new HttpsError('permission-denied', 'No eres el dueño de esta fiesta');
+  }
+
+  const eventId = promoterDoc.ref.parent.parent.id;
+  const venueId = promoterDoc.ref.parent.parent.parent.parent.id;
+
+  // Check sales
+  const ticketsQuery = await db.collection("tickets")
+    .where("eventId", "==", eventId)
+    .where("rrpp_id", "==", promoterDoc.id)
+    .get();
+
+  let sold = 0;
+  ticketsQuery.forEach(doc => {
+    if (doc.data().status === "valid" || doc.data().status === "used") sold++;
+  });
+
+  if (sold > 0) {
+    throw new HttpsError('failed-precondition', 'No se puede borrar una fiesta con entradas vendidas');
+  }
+
+  // Delete the promoter doc (and event if it's the only one, but for simplicity just delete promoter doc)
+  await promoterDoc.ref.delete();
+  
+  return { success: true };
 });

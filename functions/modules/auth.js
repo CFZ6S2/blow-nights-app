@@ -46,6 +46,7 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
     isVIPNight: false,
     activePlatforms: ['blownights'],
     disponibleHasta: null,
+    qr_quota: 25, // Saldo inicial gratuito de 25 pases QR (Welcome Bonus)
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 

@@ -7,6 +7,7 @@ import { collectionGroup, query, where, getDocs } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/lib/firebase';
 import { motion } from 'framer-motion';
+import { useMedia } from '@/hooks/useMedia';
 import RRPPEventCard from './RRPPEventCard';
 
 function RRPPInner() {
@@ -14,6 +15,7 @@ function RRPPInner() {
   const tokenParam = searchParams.get('token');
   const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
+  const { uploadFile, uploading } = useMedia();
 
   const [promoterDocs, setPromoterDocs] = useState<any[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
@@ -25,6 +27,8 @@ function RRPPInner() {
   const [eventDate, setEventDate] = useState('');
   const [eventTime, setEventTime] = useState('');
   const [ticketType, setTicketType] = useState('general');
+  const [flyerFile, setFlyerFile] = useState<File | null>(null);
+  const [flyerPreview, setFlyerPreview] = useState<string>('');
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -53,6 +57,14 @@ function RRPPInner() {
     fetchPromoters();
   }, [user, tokenParam]);
 
+  const handleUploadFlyer = (e: any) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setFlyerFile(file);
+      setFlyerPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!eventName || !venueName || !address) return alert('Rellena los campos obligatorios');
@@ -69,8 +81,14 @@ function RRPPInner() {
       const lat = parseFloat(geocodeData[0].lat);
       const lng = parseFloat(geocodeData[0].lon);
 
+      let flyerUrl = null;
+      if (flyerFile) {
+        const path = `events/${user?.uid}_${Date.now()}_flyer`;
+        flyerUrl = await uploadFile(flyerFile, path);
+      }
+
       const createParty = httpsCallable(functions, 'createRRPPParty');
-      await createParty({ eventName, venueName, address, lat, lng, eventDate, eventTime, ticketType });
+      await createParty({ eventName, venueName, address, lat, lng, eventDate, eventTime, ticketType, flyerUrl });
 
       setEventName('');
       setVenueName('');
@@ -78,6 +96,8 @@ function RRPPInner() {
       setEventDate('');
       setEventTime('');
       setTicketType('general');
+      setFlyerFile(null);
+      setFlyerPreview('');
       setShowCreateForm(false);
 
       const q = query(collectionGroup(db, 'promoters'), where('userId', '==', user!.uid));
@@ -139,6 +159,18 @@ function RRPPInner() {
           <h1 className="text-3xl font-black mb-2">Hola, {profile?.nick || 'RRPP'}</h1>
           <p className="text-sm text-slate-400">Gestiona tus fiestas y entradas.</p>
         </header>
+
+        {((profile as any)?.qr_quota === 25 && activeEvents.length === 0) && (
+          <div className="bg-gradient-to-r from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 p-4 rounded-3xl mb-8 flex gap-4 items-start shadow-lg shadow-emerald-500/10">
+            <span className="text-3xl">🎁</span>
+            <div>
+              <h3 className="text-emerald-400 font-black text-sm mb-1">Bono de Bienvenida Activo</h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Tienes <strong>25 pases QR gratis</strong> listos para emitir y probar el escáner en tu próxima fiesta.
+              </p>
+            </div>
+          </div>
+        )}
 
         {activeEvents.length > 0 && (
           <section className="mb-8 space-y-4">
@@ -206,6 +238,28 @@ function RRPPInner() {
             </div>
 
             <form onSubmit={handleCreate} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-300 block uppercase tracking-widest">
+                  Cartel / Flyer del Evento (Opcional)
+                </label>
+                <div className="relative border-2 border-dashed border-slate-700 hover:border-fuchsia-500 rounded-2xl p-4 text-center cursor-pointer bg-slate-900/50">
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleUploadFlyer} 
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  />
+                  {flyerPreview ? (
+                    <img src={flyerPreview} alt="Preview" className="h-32 w-full object-cover rounded-xl" />
+                  ) : (
+                    <div className="text-slate-400 py-2">
+                      <span className="text-2xl block mb-1">🖼️</span>
+                      <span className="text-xs font-medium">Toca para subir el flyer de la fiesta</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Nombre de la Fiesta</label>
                 <input

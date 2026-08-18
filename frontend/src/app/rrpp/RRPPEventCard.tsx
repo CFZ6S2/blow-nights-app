@@ -107,15 +107,27 @@ export default function RRPPEventCard({ token }: { token: string }) {
     }
   };
 
+  const handleEliminarFiesta = async () => {
+    if (data?.stats.totalSold && data.stats.totalSold > 0) return;
+    if (!confirm('¿Estás seguro de que quieres borrar esta fiesta?')) return;
+    try {
+      const deleteParty = httpsCallable(functions, 'deleteRRPPParty');
+      await deleteParty({ promoterToken: token });
+      window.location.reload();
+    } catch (e: any) {
+      alert('Error: ' + e.message);
+    }
+  };
+
   const shareWhatsApp = () => {
     if (!generatedQR) return;
-    const text = `Aquí tienes tu entrada: ${window.location.origin}/ticket/${generatedQR.id}`;
+    const text = `Aquí tienes tu entrada: ${window.location.origin}/pass?id=${generatedQR.id}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
   };
 
   const shareScannerLink = () => {
     if (!data) return;
-    const url = `${window.location.origin}/door?event=${data.promoter.eventId}&token=${data.event.scannerToken}&type=venue`;
+    const url = `${window.location.origin}/door?event=${data.promoter.eventId}&venueId=${data.promoter.venueId}&token=${data.event.scannerToken}&type=venue`;
     const text = `Enlace del escáner para ${data.event.title}: ${url}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
   };
@@ -156,15 +168,33 @@ export default function RRPPEventCard({ token }: { token: string }) {
           <div className="flex items-start justify-between mb-4">
             <div>
               <h2 className="text-xl font-black leading-tight">{data.event.title || 'Sin título'}</h2>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-400 mt-1 mb-2">
                 {data.venue.name}
                 {data.event.date && <> &middot; {formatDate(data.event.date)}</>}
                 {data.event.time && <> &middot; {data.event.time}</>}
               </p>
+              
+              {data.stats.totalSold === 0 ? (
+                <button
+                  onClick={handleEliminarFiesta}
+                  className="text-rose-500 hover:bg-rose-500/10 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 border border-rose-500/20 transition-colors"
+                >
+                  🗑️ Borrar Fiesta
+                </button>
+              ) : (
+                <span 
+                  title="No se puede borrar: ya has emitido entradas para este evento"
+                  className="inline-flex text-slate-500 bg-slate-800/50 px-3 py-1.5 rounded-xl text-[10px] font-bold border border-white/5 cursor-not-allowed items-center gap-1"
+                >
+                  🔒 {data.stats.totalSold} QRs Emitidos (No borrable)
+                </span>
+              )}
             </div>
-            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${data.promoter.is_closed ? 'bg-yellow-500/20 text-yellow-500' : 'bg-green-500/20 text-green-400'}`}>
-              {data.promoter.is_closed ? 'Cerrada' : 'Activa'}
-            </span>
+            <div className="flex flex-col items-end gap-2">
+              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${data.promoter.is_closed ? 'bg-yellow-500/20 text-yellow-500' : 'bg-green-500/20 text-green-400'}`}>
+                {data.promoter.is_closed ? 'Cerrada' : 'Activa'}
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-5">

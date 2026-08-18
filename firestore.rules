@@ -63,13 +63,17 @@ service cloud.firestore {
       allow write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
     }
 
+    match /{path=**}/promoters/{promoterId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
     match /chats/{chatId} {
-      allow read, update: if isAdmin() || (request.auth != null && request.auth.uid in resource.data.users);
-      allow create: if isAdmin() || (request.auth != null && notBanned() && request.auth.uid in request.resource.data.users);
+      allow read, update: if isAdmin() || (request.auth != null && (chatId == ('support_' + request.auth.uid) || request.auth.uid in resource.data.users));
+      allow create: if isAdmin() || (request.auth != null && notBanned() && (chatId == ('support_' + request.auth.uid) || request.auth.uid in request.resource.data.users));
 
       match /messages/{messageId} {
-        allow read: if isAdmin() || (request.auth != null && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.users);
-        allow write: if isAdmin() || (request.auth != null && notBanned() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.users);
+        allow read: if isAdmin() || (request.auth != null && (chatId == ('support_' + request.auth.uid) || request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.users));
+        allow write: if isAdmin() || (request.auth != null && notBanned() && (chatId == ('support_' + request.auth.uid) || request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.users));
       }
     }
 
@@ -139,10 +143,14 @@ service cloud.firestore {
       match /events/{eventId} {
         allow read: if true;
         allow write: if isAdmin() || (request.auth != null && request.auth.uid == get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId);
-      }
 
-      match /promoters/{promoterId} {
-        allow read, write: if isAdmin() || (request.auth != null && request.auth.uid == get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId);
+        match /promoters/{promoterId} {
+          allow read: if isAdmin() || (request.auth != null && (
+            request.auth.uid == resource.data.userId || 
+            request.auth.uid == get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId
+          ));
+          allow write: if isAdmin() || (request.auth != null && request.auth.uid == get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId);
+        }
       }
     }
 
@@ -157,7 +165,8 @@ service cloud.firestore {
     }
 
     match /tickets/{ticketId} {
-      allow read: if isAdmin()
+      allow get: if true; // Public access via unguessable ticket ID
+      allow list: if isAdmin()
         || (request.auth != null && request.auth.uid == resource.data.userId)
         || (request.auth != null && resource.data.venueOwnerId == request.auth.uid);
       allow update: if isAdmin()
