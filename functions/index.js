@@ -6,6 +6,7 @@ const stripe = require("./modules/stripe");
 const tickets = require("./modules/tickets");
 const chills = require("./modules/chills");
 const venues = require("./modules/venues");
+const adminModule = require("./modules/admin");
 
 // Auth & Users
 exports.onUserCreate = auth.onUserCreate;
@@ -13,6 +14,7 @@ exports.assignRole = auth.assignRole;
 exports.processReferral = auth.processReferral;
 exports.deleteUserData = auth.deleteUserData;
 exports.banUser = auth.banUser;
+exports.getAdminAnalytics = adminModule.getAdminAnalytics;
 
 // Notifications
 exports.sendMessageNotification = notifications.sendMessageNotification;
