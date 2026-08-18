@@ -217,3 +217,59 @@ exports.banUser = onCall({ enforceAppCheck: true }, async (request) => {
 
   return { success: true, uid };
 });
+
+exports.approveRRPP = onCall({ enforceAppCheck: true }, async (request) => {
+  const { auth, data } = request;
+  if (!auth) throw new HttpsError('unauthenticated', 'Login requerido.');
+
+  const callerClaims = (await admin.auth().getUser(auth.uid)).customClaims || {};
+  if (callerClaims.role !== 'superadmin' && callerClaims.role !== 'admin') {
+    throw new HttpsError('permission-denied', 'Solo un administrador puede aprobar solicitudes RRPP.');
+  }
+
+  const { applicationId, action } = data;
+  if (!applicationId || !action) {
+    throw new HttpsError('invalid-argument', 'applicationId y action son obligatorios.');
+  }
+
+  const appDoc = await db.collection('rrpp_applications').doc(applicationId).get();
+  if (!appDoc.exists) throw new HttpsError('not-found', 'Solicitud no encontrada.');
+
+  const appData = appDoc.data();
+  if (appData.status !== 'pending') {
+    throw new HttpsError('failed-precondition', 'Esta solicitud ya fue procesada.');
+  }
+
+  if (action === 'reject') {
+    await appDoc.ref.update({
+      status: 'rejected',
+      reviewedAt: admin.firestore.FieldValue.serverTimestamp(),
+      reviewedBy: auth.uid
+    });
+    return { success: true, message: 'Solicitud rechazada.' };
+  }
+
+  if (action === 'approve') {
+    const targetUid = appData.uid;
+
+    const existingClaims = (await admin.auth().getUser(targetUid)).customClaims || {};
+    await admin.auth().setCustomUserClaims(targetUid, { ...existingClaims, role: 'rrpp' });
+
+    await db.collection('users').doc(targetUid).update({
+      role: 'rrpp',
+      qr_quota: 0,
+      phone: appData.phone,
+      city: appData.city
+    });
+
+    await appDoc.ref.update({
+      status: 'approved',
+      reviewedAt: admin.firestore.FieldValue.serverTimestamp(),
+      reviewedBy: auth.uid
+    });
+
+    return { success: true, message: 'RRPP aprobado correctamente.' };
+  }
+
+  throw new HttpsError('invalid-argument', 'Acción no válida. Usa "approve" o "reject".');
+});

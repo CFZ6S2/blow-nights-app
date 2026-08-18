@@ -39,14 +39,15 @@ export default function Home() {
       return;
     }
 
-    if (!profile || profile.edad === null || profile.edad === undefined) {
+    const role = profile?.role;
+
+    if ((!profile || profile.edad === null || profile.edad === undefined) && role !== 'rrpp') {
       router.push('/setup-profile');
       return;
     }
 
     if (hasRedirected.current) return;
 
-    const role = profile?.role;
     if (!role || role === 'user') return;
 
     // Ya NO forzamos redirección a superadmin ni admin. 
@@ -60,6 +61,7 @@ export default function Home() {
       cityAdmin: '/city-manager',
       door: '/door',
       ambassador: '/ambassador',
+      rrpp: '/rrpp',
     };
 
     if (redirects[role]) {

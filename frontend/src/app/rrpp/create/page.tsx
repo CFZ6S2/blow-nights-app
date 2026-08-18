@@ -1,20 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '@/lib/firebase';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/context/AuthContext';
 
 export default function RRPPCreateEventPage() {
   const router = useRouter();
+  const { user, profile, loading: authLoading } = useAuth();
 
   const [eventName, setEventName] = useState('');
   const [venueName, setVenueName] = useState('');
   const [address, setAddress] = useState('');
-  const [price, setPrice] = useState('20');
-  const [commission, setCommission] = useState('40'); // Percentage by default
   const [promoterName, setPromoterName] = useState('');
+
+  useEffect(() => {
+    if (profile) {
+      setPromoterName(profile.nick || '');
+    }
+  }, [profile]);
   
   const [loading, setLoading] = useState(false);
   const [generatedToken, setGeneratedToken] = useState<{token: string, scannerToken: string, eventId: string} | null>(null);
@@ -25,60 +31,37 @@ export default function RRPPCreateEventPage() {
     
     setLoading(true);
     try {
-      // 1. Create unverified venue
-      const venueRef = doc(collection(db, 'venues'));
-      const venueId = venueRef.id;
+      // Geocodificación simple usando Nominatim (OpenStreetMap)
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+      const geocodeData = await res.json();
       
-      // Basic coordinates offset for Madrid just for demo (in production use Geocoding)
-      const lat = 40.4168 + (Math.random() - 0.5) * 0.05;
-      const lng = -3.7038 + (Math.random() - 0.5) * 0.05;
+      if (!geocodeData || geocodeData.length === 0) {
+        throw new Error('No se ha podido encontrar la dirección. Por favor sé más específico.');
+      }
+      
+      const lat = parseFloat(geocodeData[0].lat);
+      const lng = parseFloat(geocodeData[0].lon);
 
-      await setDoc(venueRef, {
-        name: venueName,
+      // Llamar a la Cloud Function de creación de fiesta
+      const createParty = httpsCallable(functions, 'createRRPPParty');
+      const response: any = await createParty({
+        eventName,
+        venueName,
         address,
-        type: 'club',
-        isActive: true,
-        isClaimed: false, // Local No Reclamado
-        cityId: 'madrid',
-        ownerId: 'unclaimed',
-        currentCount: 0,
-        location: { latitude: lat, longitude: lng },
-        ticketPricing: {
-          'rrpp_fast': {
-            name: 'Entrada General RRPP',
-            amount: parseFloat(price),
-            stripePriceId: 'mock_fast'
-          }
-        }
+        lat,
+        lng
       });
 
-      // 2. Create Event ID
-      const eventId = new Date().toISOString().split('T')[0] + '-' + Math.random().toString(36).substr(2, 5);
-      const scannerToken = 'DOOR-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-
-      const eventRef = doc(db, `venues/${venueId}/events`, eventId);
-      await setDoc(eventRef, {
-        title: eventName,
-        date: new Date().toISOString().split('T')[0],
-        scanner_token: scannerToken
-      });
-
-      // 3. Create Promoter Token
-      const token = Math.random().toString(36).substr(2, 6).toUpperCase();
-      const promoterRef = doc(collection(db, `venues/${venueId}/events/${eventId}/promoters`));
-      await setDoc(promoterRef, {
-        name: promoterName,
-        code: token,
-        commission: parseFloat(commission),
-        is_closed: false,
-        liquidated_by_rrpp: false,
-        liquidated_by_venue: false
-      });
+      const { token, scannerToken, eventId } = response.data;
 
       setGeneratedToken({ token, scannerToken, eventId });
-    } catch(e) {
+    } catch(e: any) {
       console.error(e);
-      alert('Error creando evento');
+      alert(e.message || 'Error creando evento');
+      if (e.code === 'permission-denied') {
+        // Probablemente ha sido baneado por piratería
+        window.location.href = '/login';
+      }
     } finally {
       setLoading(false);
     }
@@ -127,6 +110,15 @@ export default function RRPPCreateEventPage() {
     );
   }
 
+  if (authLoading) return <div className="min-h-screen bg-black" />;
+  
+  if (!user || profile?.role !== 'rrpp') {
+    if (typeof window !== 'undefined') {
+      router.push('/rrpp/register');
+    }
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-black text-white p-6 pb-24">
       <header className="mb-8 max-w-md mx-auto pt-8">
@@ -153,20 +145,11 @@ export default function RRPPCreateEventPage() {
           <input required placeholder="Ej: Calle Mayor, 12, Madrid" value={address} onChange={e=>setAddress(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-4 text-sm focus:border-fuchsia-500 outline-none" />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Precio Entrada (€)</label>
-            <input type="number" required value={price} onChange={e=>setPrice(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-4 text-sm focus:border-fuchsia-500 outline-none" />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Tu Comisión (%)</label>
-            <input type="number" required value={commission} onChange={e=>setCommission(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-4 text-sm focus:border-fuchsia-500 outline-none" />
-          </div>
-        </div>
+
 
         <div className="space-y-2 mb-8">
           <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Tu Nombre (RRPP)</label>
-          <input required placeholder="Ej: Carlos VIP" value={promoterName} onChange={e=>setPromoterName(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-4 text-sm focus:border-fuchsia-500 outline-none" />
+          <input required readOnly placeholder="Ej: Carlos VIP" value={promoterName} className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-4 text-sm outline-none text-slate-400 cursor-not-allowed" />
         </div>
 
         <button 

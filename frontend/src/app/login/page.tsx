@@ -2,23 +2,44 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { DEFAULT_CITY } from '@/lib/routes';
+import { Suspense } from 'react';
 
-export default function LoginPage() {
-  const { user, loginWithGoogle, loginWithApple } = useAuth();
+function LoginInner() {
+  const { user, profile, loading: authLoading, loginWithGoogle, loginWithApple } = useAuth();
   const [error, setError] = useState('');
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect');
 
   useEffect(() => {
-    if (user) {
-      const savedCity = typeof window !== 'undefined' ? localStorage.getItem('blownights_city') : null;
-      router.push(`/${savedCity || DEFAULT_CITY}/`);
+    if (!user || authLoading) return;
+    if (redirect) {
+      router.push(redirect);
+      return;
     }
-  }, [user, router]);
+    const role = profile?.role;
+    if (role && role !== 'user') {
+      const roleRedirects: Record<string, string> = {
+        rrpp: '/rrpp',
+        venue: '/venue-admin',
+        venueOwner: '/venue-admin',
+        cityAdmin: '/city-manager',
+        door: '/door',
+        ambassador: '/ambassador',
+      };
+      if (roleRedirects[role]) {
+        router.push(roleRedirects[role]);
+        return;
+      }
+    }
+    const savedCity = typeof window !== 'undefined' ? localStorage.getItem('blownights_city') : null;
+    router.push(`/${savedCity || DEFAULT_CITY}/`);
+  }, [user, profile, authLoading, router, redirect]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -119,5 +140,13 @@ export default function LoginPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+      <LoginInner />
+    </Suspense>
   );
 }

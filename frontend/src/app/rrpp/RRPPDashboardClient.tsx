@@ -13,6 +13,7 @@ interface RRPPStats {
     code: string;
     venueId: string;
     is_closed: boolean;
+    qr_quota: number;
     liquidated_by_rrpp: boolean;
     liquidated_by_venue: boolean;
   };
@@ -138,15 +139,69 @@ export default function RRPPDashboardClient({ token }: { token: string }) {
         </div>
       </div>
 
+      <div className="bg-slate-900 border border-fuchsia-500/20 p-4 rounded-3xl mb-8 flex items-center justify-between">
+        <div>
+          <div className="text-[10px] text-fuchsia-400 uppercase tracking-widest font-bold">Saldo de QRs</div>
+          <div className="text-2xl font-black">{data.promoter.qr_quota} <span className="text-sm font-normal text-slate-400">disponibles</span></div>
+        </div>
+      </div>
+
       {!data.promoter.is_closed ? (
         <>
-          <button
-            onClick={() => { setGeneratedQR(null); setShowModal(true); }}
-            className="w-full py-5 bg-fuchsia-600 hover:bg-fuchsia-500 rounded-2xl font-black text-lg shadow-[0_0_40px_-10px_rgba(192,38,211,0.5)] transition-all active:scale-95 flex items-center justify-center gap-2 mb-4"
-          >
-            <span className="material-icons">qr_code</span>
-            + Emitir Entrada QR
-          </button>
+          {data.promoter.qr_quota > 0 ? (
+            <button
+              onClick={() => { setGeneratedQR(null); setShowModal(true); }}
+              className="w-full py-5 bg-fuchsia-600 hover:bg-fuchsia-500 rounded-2xl font-black text-lg shadow-[0_0_40px_-10px_rgba(192,38,211,0.5)] transition-all active:scale-95 flex items-center justify-center gap-2 mb-4"
+            >
+              <span className="material-icons">qr_code</span>
+              + Emitir Entrada QR
+            </button>
+          ) : (
+            <div className="bg-fuchsia-900/20 border border-fuchsia-500/30 p-5 rounded-3xl text-center mb-4">
+              <span className="material-icons text-4xl text-fuchsia-500 mb-2">shopping_cart</span>
+              <h2 className="font-bold text-fuchsia-400 mb-2">Sin saldo de QRs</h2>
+              <p className="text-xs text-slate-400 mb-4">Para poder seguir vendiendo entradas, necesitas recargar tu saldo de QRs (0,50€ por QR).</p>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    try {
+                      setGenerating(true);
+                      const createQRPackageCheckout = httpsCallable(functions, 'createQRPackageCheckout');
+                      const res = await createQRPackageCheckout({ token, quantity: 50, origin: window.location.origin });
+                      const { url } = res.data as { url: string };
+                      window.location.href = url;
+                    } catch(e) {
+                      alert('Error: ' + (e as any).message);
+                      setGenerating(false);
+                    }
+                  }}
+                  disabled={generating}
+                  className="flex-1 bg-white hover:bg-slate-200 text-black font-bold py-3 rounded-xl text-xs uppercase tracking-widest"
+                >
+                  50 QRs (25€)
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      setGenerating(true);
+                      const createQRPackageCheckout = httpsCallable(functions, 'createQRPackageCheckout');
+                      const res = await createQRPackageCheckout({ token, quantity: 100, origin: window.location.origin });
+                      const { url } = res.data as { url: string };
+                      window.location.href = url;
+                    } catch(e) {
+                      alert('Error: ' + (e as any).message);
+                      setGenerating(false);
+                    }
+                  }}
+                  disabled={generating}
+                  className="flex-1 bg-white hover:bg-slate-200 text-black font-bold py-3 rounded-xl text-xs uppercase tracking-widest"
+                >
+                  100 QRs (50€)
+                </button>
+              </div>
+            </div>
+          )}
 
           <button
             onClick={handleClose}

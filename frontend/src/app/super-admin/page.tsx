@@ -50,6 +50,10 @@ export default function SuperAdminPage() {
   // --- APPLICATIONS STATE ---
   const [applications, setApplications] = useState<any[]>([]);
 
+  // --- RRPP APPLICATIONS STATE ---
+  const [rrppApplications, setRrppApplications] = useState<any[]>([]);
+  const [processingRrpp, setProcessingRrpp] = useState<string | null>(null);
+
   // --- ROLES STATE ---
   const [roleSearchEmail, setRoleSearchEmail] = useState('');
   const [roleSearchResult, setRoleSearchResult] = useState<any | null>(null);
@@ -99,6 +103,12 @@ export default function SuperAdminPage() {
       setApplications(a);
     });
 
+    const unsubRrppApps = onSnapshot(query(collection(db, 'rrpp_applications'), where('status', '==', 'pending')), (snap) => {
+      const r: any[] = [];
+      snap.forEach(d => r.push({ id: d.id, ...d.data() }));
+      setRrppApplications(r);
+    });
+
     const unsubPromoters = onSnapshot(collectionGroup(db, 'promoters'), (snap) => {
       const p: any[] = [];
       snap.forEach(d => {
@@ -120,7 +130,7 @@ export default function SuperAdminPage() {
       }
     );
 
-    return () => { unsubVenues(); unsubCities(); unsubPartners(); unsubApps(); unsubPromoters(); unsubRoles(); };
+    return () => { unsubVenues(); unsubCities(); unsubPartners(); unsubApps(); unsubRrppApps(); unsubPromoters(); unsubRoles(); };
   }, [isSuperAdmin]);
 
   // --- LOCALES LOGIC ---
@@ -235,6 +245,7 @@ export default function SuperAdminPage() {
       await assignRoleFunc({ uid: targetUser.id, role: 'cityAdmin', cityId: cityId });
       
       await updateDoc(doc(db, 'cities', cityId), {
+        partnerId: targetUser.id,
         partner_email: targetUser.email,
         partner_name: targetUser.nick || targetUser.name || 'Sin nombre'
       });
@@ -335,6 +346,23 @@ export default function SuperAdminPage() {
     alert('Enlace copiado al portapapeles');
   };
 
+  // --- RRPP APPLICATIONS LOGIC ---
+  const handleRrppApplication = async (applicationId: string, action: 'approve' | 'reject') => {
+    const label = action === 'approve' ? 'aprobar' : 'rechazar';
+    if (!confirm(`¿Seguro que quieres ${label} esta solicitud RRPP?`)) return;
+    setProcessingRrpp(applicationId);
+    try {
+      const approveRRPP = httpsCallable(functions, 'approveRRPP');
+      await approveRRPP({ applicationId, action });
+      alert(action === 'approve' ? 'RRPP aprobado correctamente.' : 'Solicitud rechazada.');
+    } catch (e: any) {
+      console.error(e);
+      alert('Error: ' + (e.message || 'Error procesando solicitud'));
+    } finally {
+      setProcessingRrpp(null);
+    }
+  };
+
   // --- ROLES LOGIC ---
   const ROLE_OPTIONS = [
     { value: 'venue', label: 'Venue Manager', icon: 'storefront', color: 'text-blue-400', redirect: '/venue-admin' },
@@ -374,7 +402,14 @@ export default function SuperAdminPage() {
     try {
       const assignRoleFunc = httpsCallable(functions, 'assignRole');
       const params: any = { uid: roleSearchResult.id, role: selectedRole };
-      if (selectedRole === 'cityAdmin' && roleCityId) params.cityId = roleCityId;
+      if (selectedRole === 'cityAdmin' && roleCityId) {
+        params.cityId = roleCityId;
+        await updateDoc(doc(db, 'cities', roleCityId), {
+          partnerId: roleSearchResult.id,
+          partner_email: roleSearchResult.email,
+          partner_name: roleSearchResult.nick || roleSearchResult.name || 'Sin nombre'
+        });
+      }
       if (selectedRole === 'venue' && roleVenueId) {
         await updateDoc(doc(db, 'venues', roleVenueId), { ownerId: roleSearchResult.id });
       }
@@ -945,6 +980,52 @@ export default function SuperAdminPage() {
       )}
 
       {activeTab === 'rrpps' && (
+        <div className="space-y-8">
+          {rrppApplications.length > 0 && (
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-900 border-2 border-fuchsia-500/50 rounded-3xl p-6 shadow-2xl">
+              <div className="flex items-start gap-4">
+                <span className="text-4xl">📋</span>
+                <div className="w-full">
+                  <h2 className="text-xl font-black text-white tracking-tight leading-none mb-1">Solicitudes RRPP Pendientes ({rrppApplications.length})</h2>
+                  <p className="text-sm text-slate-400 mb-4">Revisa y aprueba o rechaza las solicitudes de RRPP independientes.</p>
+                  <div className="space-y-3">
+                    {rrppApplications.map(app => (
+                      <div key={app.id} className="bg-black/30 rounded-xl p-4 border border-white/10">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="font-bold text-white text-lg">{app.nick || 'Sin nick'}</p>
+                            <p className="text-xs text-slate-400">{app.email}</p>
+                          </div>
+                          <span className="px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded-md text-xs font-bold uppercase">Pendiente</span>
+                        </div>
+                        <p className="text-sm text-slate-300 mb-1">📞 {app.phone} | 📍 {app.city}</p>
+                        <div className="mt-4 flex gap-2">
+                          <button
+                            onClick={() => handleRrppApplication(app.id, 'approve')}
+                            disabled={processingRrpp === app.id}
+                            className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-xs font-bold uppercase transition-colors disabled:opacity-50"
+                          >
+                            {processingRrpp === app.id ? '...' : 'Aprobar'}
+                          </button>
+                          <button
+                            onClick={() => handleRrppApplication(app.id, 'reject')}
+                            disabled={processingRrpp === app.id}
+                            className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-xs font-bold uppercase transition-colors disabled:opacity-50"
+                          >
+                            Rechazar
+                          </button>
+                          <a href={`https://wa.me/${app.phone?.replace(/\D/g, '')}?text=Hola%20${app.nick || ''},%20te%20escribo%20desde%20Blow%20Nights%20sobre%20tu%20solicitud%20RRPP...`} target="_blank" rel="noreferrer" className="px-4 py-2 bg-[#25D366] hover:bg-[#1ebe5d] rounded-lg text-xs font-bold uppercase transition-colors flex items-center gap-1">
+                            WhatsApp
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <section className="md:col-span-1 bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4 h-fit">
             <h2 className="text-sm font-black uppercase tracking-widest text-slate-300">Alta de RRPP Global</h2>
@@ -1021,6 +1102,7 @@ export default function SuperAdminPage() {
               ))}
             </div>
           </section>
+        </div>
         </div>
       )}
     </div>

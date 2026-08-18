@@ -241,9 +241,24 @@ exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: true }, async (
 
   const promoterDoc = promotersQuery.docs[0];
   const promoter = promoterDoc.data();
-  const venueId = promoterDoc.ref.parent.parent.id;
+  const venueId = promoterDoc.ref.parent.parent.parent.parent.id;
 
   const maxTickets = promoter.max_tickets || 200;
+  
+  let userDocSnap = null;
+  let currentQuota = 0;
+  if (promoter.userId) {
+    userDocSnap = await db.collection("users").doc(promoter.userId).get();
+    if (userDocSnap.exists) {
+      currentQuota = userDocSnap.data().qr_quota || 0;
+    }
+  } else {
+    currentQuota = promoter.qr_quota || 0;
+  }
+
+  if (currentQuota <= 0) {
+    throw new HttpsError('resource-exhausted', 'Saldo de QRs agotado. Por favor recarga tu saldo.');
+  }
   const issuedSnap = await db.collection("tickets")
     .where("rrpp_id", "==", promoterDoc.id)
     .where("eventId", "==", eventId)
@@ -282,6 +297,16 @@ exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: true }, async (
   };
 
   const ticketRef = await db.collection("tickets").add(ticketPayload);
+
+  if (promoter.userId && userDocSnap && userDocSnap.exists) {
+    await userDocSnap.ref.update({
+      qr_quota: admin.firestore.FieldValue.increment(-1)
+    });
+  } else {
+    await promoterDoc.ref.update({
+      qr_quota: admin.firestore.FieldValue.increment(-1)
+    });
+  }
 
   return {
     success: true,
@@ -372,6 +397,14 @@ exports.getPromoterStats = onCall({ enforceAppCheck: true }, async (request) => 
     if (t.status === "used") totalEntered++;
   });
 
+  let userQuota = 0;
+  if (promoter.userId) {
+    const userDoc = await db.collection("users").doc(promoter.userId).get();
+    if (userDoc.exists) userQuota = userDoc.data().qr_quota || 0;
+  } else {
+    userQuota = promoter.qr_quota || 0;
+  }
+
   return {
     promoter: {
       id: promoterDoc.id,
@@ -380,6 +413,7 @@ exports.getPromoterStats = onCall({ enforceAppCheck: true }, async (request) => 
       venueId,
       eventId,
       is_closed: promoter.is_closed || false,
+      qr_quota: userQuota,
       liquidated_by_rrpp: promoter.liquidated_by_rrpp || false,
       liquidated_by_venue: promoter.liquidated_by_venue || false,
     },

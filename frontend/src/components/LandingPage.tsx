@@ -50,7 +50,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         <div className="absolute top-0 left-0 right-0 z-50 px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/business" className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 hover:text-fuchsia-400 transition-colors">Locales</Link>
-            <Link href="/partners/apply" className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 hover:text-fuchsia-400 transition-colors">RRPP</Link>
+            <Link href="/rrpp" className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 hover:text-fuchsia-400 transition-colors">RRPP</Link>
           </div>
         </div>
 

@@ -1,6 +1,7 @@
 const { onDocumentCreated, onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { geohashForLocation } = require("geofire-common");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { geohashForLocation, distanceBetween } = require("geofire-common");
 const { admin, db } = require("../lib/init");
 
 exports.updateGeohash = onDocumentWritten("locations/{userId}", async (event) => {
@@ -119,4 +120,116 @@ exports.checkFranchiseTrigger = onDocumentWritten("venues/{venueId}", async (eve
       });
     }
   }
+});
+
+exports.createRRPPParty = onCall({ enforceAppCheck: true }, async (request) => {
+  const { auth, data } = request;
+  if (!auth) throw new HttpsError('unauthenticated', 'Login requerido');
+
+  const { eventName, venueName, address, lat, lng } = data;
+  if (!eventName || !venueName || !address || lat === undefined || lng === undefined) {
+    throw new HttpsError('invalid-argument', 'Faltan parámetros obligatorios');
+  }
+
+  const callerUid = auth.uid;
+
+  // 1. Obtener todos los venues para comprobar distancia
+  const venuesSnap = await db.collection('venues').get();
+  
+  let collisionVenue = null;
+  for (const doc of venuesSnap.docs) {
+    const vData = doc.data();
+    if (vData.location && vData.location.latitude && vData.location.longitude) {
+      const distance = distanceBetween(
+        [lat, lng],
+        [vData.location.latitude, vData.location.longitude]
+      );
+      // Si la distancia es menor a 0.05 km (50 metros) y es un local verificado/existente
+      if (distance < 0.05 && vData.isClaimed !== false) {
+        collisionVenue = vData;
+        break;
+      }
+    }
+  }
+
+  // 2. Si hay colisión, aplicar regla Anti-Piratería (Baneo Automático)
+  if (collisionVenue) {
+    console.warn(`[ANTI-HIJACK] RRPP ${callerUid} intentó crear fiesta en un local existente (${collisionVenue.name}). Baneando...`);
+    
+    // Marcar en Firestore como baneado
+    await db.collection('users').doc(callerUid).update({
+      isBanned: true,
+      bannedAt: admin.firestore.FieldValue.serverTimestamp(),
+      bannedBy: 'system',
+      bannedReason: 'Intento de creación de fiesta en local verificado (Anti-Piratería)'
+    });
+
+    // Desactivar cuenta en Auth
+    await admin.auth().updateUser(callerUid, { disabled: true });
+    await admin.auth().revokeRefreshTokens(callerUid);
+
+    throw new HttpsError('permission-denied', 'Estás intentando crear un evento en un local que ya tiene venta oficial. Tu cuenta ha sido bloqueada.');
+  }
+
+  // 3. Si no hay colisión, proceder a crear el venue (no reclamado), el evento y el promotor
+  const callerDoc = await db.collection('users').doc(callerUid).get();
+  const callerCity = callerDoc.exists ? (callerDoc.data().cityId || callerDoc.data().city || 'other') : 'other';
+
+  const batch = db.batch();
+
+  // Create unverified venue
+  const venueRef = db.collection('venues').doc();
+  const venueId = venueRef.id;
+
+  batch.set(venueRef, {
+    name: venueName,
+    address,
+    type: 'club',
+    isActive: true,
+    isClaimed: false,
+    cityId: callerCity,
+    ownerId: 'unclaimed',
+    currentCount: 0,
+    location: { latitude: lat, longitude: lng },
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  // Create Event
+  const eventId = new Date().toISOString().split('T')[0] + '-' + Math.random().toString(36).substr(2, 5);
+  const scannerToken = 'DOOR-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+  const eventRef = db.collection(`venues/${venueId}/events`).doc(eventId);
+  
+  batch.set(eventRef, {
+    title: eventName,
+    date: new Date().toISOString().split('T')[0],
+    scanner_token: scannerToken,
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  // Create Promoter Token
+  const userDoc = await db.collection('users').doc(callerUid).get();
+  const promoterName = userDoc.exists ? userDoc.data().nick : 'RRPP';
+  
+  const token = Math.random().toString(36).substr(2, 6).toUpperCase();
+  const promoterRef = db.collection(`venues/${venueId}/events/${eventId}/promoters`).doc();
+  
+  batch.set(promoterRef, {
+    userId: callerUid,
+    name: promoterName,
+    code: token,
+    access_token: token,
+    is_closed: false,
+    liquidated_by_rrpp: false,
+    liquidated_by_venue: false
+  });
+
+  await batch.commit();
+
+  return {
+    success: true,
+    venueId,
+    eventId,
+    token,
+    scannerToken
+  };
 });

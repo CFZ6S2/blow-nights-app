@@ -254,6 +254,37 @@ exports.createStripeAccountLink = onCall({ enforceAppCheck: true }, async (reque
   return { url: accountLink.url };
 });
 
+exports.createQRPackageCheckout = onCall({}, async (request) => {
+  const { data } = request;
+  const stripe = getStripe();
+  if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
+
+  const { token, quantity, origin } = data;
+  const firebaseUID = request.auth?.uid;
+  if (!token || !quantity || !firebaseUID) throw new HttpsError("invalid-argument", "Parámetros inválidos o usuario no autenticado.");
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card", "apple_pay", "google_pay"],
+      line_items: [{
+        price_data: {
+          currency: "eur",
+          product_data: { name: `Paquete de ${quantity} QRs - Blow Nights` },
+          unit_amount: 50 * quantity, // 0.50€ por QR (50 cents)
+        },
+        quantity: 1,
+      }],
+      mode: "payment",
+      success_url: `${origin}/rrpp?token=${token}&success=true`,
+      cancel_url: `${origin}/rrpp?token=${token}&canceled=true`,
+      metadata: { type: "rrpp_qr_pack", promoterToken: token, firebaseUID, quantity: quantity.toString() },
+    });
+    return { url: session.url };
+  } catch (error) {
+    throw new HttpsError("internal", error.message);
+  }
+});
+
 exports.stripeWebhook = onRequest(async (req, res) => {
   const stripe = getStripe();
   if (!stripe) return res.status(500).send("Stripe no configurado.");
@@ -279,7 +310,16 @@ exports.stripeWebhook = onRequest(async (req, res) => {
   }
   await eventRef.set({ processedAt: admin.firestore.FieldValue.serverTimestamp(), type: event.type });
 
-  if (event.type === "checkout.session.completed" && firebaseUID) {
+  if (event.type === "checkout.session.completed") {
+    if (session.metadata?.type === "rrpp_qr_pack") {
+      const quantity = parseInt(session.metadata.quantity || "0");
+      const uid = session.metadata.firebaseUID;
+      if (uid) {
+        await db.collection("users").doc(uid).update({
+          qr_quota: admin.firestore.FieldValue.increment(quantity)
+        });
+      }
+    } else if (firebaseUID) {
     const isTicket = session.metadata?.type === "ticket";
     const isChillPass = session.metadata?.type === "chill_pass";
     const isChillVip = session.metadata?.type === "chill_vip";
@@ -480,7 +520,10 @@ exports.stripeWebhook = onRequest(async (req, res) => {
         renewalDate: admin.firestore.FieldValue.serverTimestamp()
       });
     }
-  } else if (event.type === "customer.subscription.deleted") {
+  }
+}
+  
+if (event.type === "customer.subscription.deleted") {
     const customer = await stripe.customers.retrieve(session.customer);
     const uid = customer.metadata?.firebaseUID;
     if (uid) {

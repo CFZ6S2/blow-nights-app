@@ -605,7 +605,7 @@ export default function MainMap() {
       
       setIsAddingPin(false);
       setNewPinName('');
-      setNewPinType('cruising_outdoor');
+      setNewPinType('bar');
     } catch (e) {
       console.error(e);
       alert('Error al crear el punto');
@@ -691,12 +691,7 @@ export default function MainMap() {
               <h3 className="text-sm font-black text-white mb-4 tracking-tight">{t('map.create_pin', 'Crear Punto Comunitario')}</h3>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <button 
-                    onClick={() => setNewPinType('cruising_outdoor')} 
-                    className={`py-2 text-xs font-bold rounded-lg transition-all ${newPinType === 'cruising_outdoor' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'bg-black/40 text-slate-400'}`}
-                  >
-                    Cruising 🌲
-                  </button>
+                  
                   <button 
                     onClick={() => setNewPinType('sauna')} 
                     className={`py-2 text-xs font-bold rounded-lg transition-all ${newPinType === 'sauna' ? 'bg-red-600 text-white shadow-lg shadow-red-500/20' : 'bg-black/40 text-slate-400'}`}

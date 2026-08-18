@@ -11,6 +11,7 @@ const adminModule = require("./modules/admin");
 // Auth & Users
 exports.onUserCreate = auth.onUserCreate;
 exports.assignRole = auth.assignRole;
+exports.approveRRPP = auth.approveRRPP;
 exports.processReferral = auth.processReferral;
 exports.deleteUserData = auth.deleteUserData;
 exports.banUser = auth.banUser;
@@ -54,3 +55,4 @@ exports.cleanupAvailability = venues.cleanupAvailability;
 exports.cleanupExpiredCheckins = venues.cleanupExpiredCheckins;
 exports.onCheckinCreated = venues.onCheckinCreated;
 exports.checkFranchiseTrigger = venues.checkFranchiseTrigger;
+exports.createRRPPParty = venues.createRRPPParty;

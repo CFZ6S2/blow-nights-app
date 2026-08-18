@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { DEFAULT_CITY } from '@/lib/routes';
+import { DEFAULT_CITY, CITY_SLUGS } from '@/lib/routes';
 import { doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
@@ -24,7 +24,7 @@ export default function SetupProfilePage() {
   const [complexion, setComplexion] = useState<string | null>(null);
   const [intereses, setIntereses] = useState<any[]>([]);
   const [mood, setMood] = useState<string | null>(null);
-  
+  const [city, setCity] = useState<string>(DEFAULT_CITY);
   const [imageFile, setImageFile] = useState<any>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [extraPhotosFiles, setExtraPhotosFiles] = useState<any[]>([]);
@@ -43,6 +43,7 @@ export default function SetupProfilePage() {
     } else if (profile && profile.edad !== null && !profile.needsUpdate) {
       // Si el perfil ya está completo y no forzamos actualización, vamos al home
       const savedCity = typeof window !== 'undefined' ? localStorage.getItem('blownights_city') : null;
+  setCity(savedCity || DEFAULT_CITY);
       router.push(`/${savedCity || DEFAULT_CITY}/`);
     }
     
@@ -155,24 +156,26 @@ export default function SetupProfilePage() {
       }
 
       await setDoc(doc(db, 'users', user?.uid as string), {
-        nick: nick || '',
-        edad: parseInt(edad as string) || 0,
-        rol: rol || 'versátil',
-        intencion: intencion || 'conocer',
-        bio: bio || '',
-        altura: altura ? parseInt(altura.toString()) : null,
-        peso: peso ? parseInt(peso.toString()) : null,
-        complexion: complexion || null,
-        intereses: intereses || [],
-        mood: mood || null,
-        fotoUrl: fotoUrl || null,
-        extraPhotos: extraPhotosUrls || [],
-        privatePhotos: privatePhotosUrls || [],
-        updatedAt: new Date(),
-        needsUpdate: false
-      }, { merge: true });
+          nick: nick || '',
+          edad: parseInt(edad as string) || 0,
+          rol: rol || 'versátil',
+          intencion: intencion || 'conocer',
+          bio: bio || '',
+          altura: altura ? parseInt(altura.toString()) : null,
+          peso: peso ? parseInt(peso.toString()) : null,
+          complexion: complexion || null,
+          intereses: intereses || [],
+          mood: mood || null,
+          fotoUrl: fotoUrl || null,
+          extraPhotos: extraPhotosUrls || [],
+          privatePhotos: privatePhotosUrls || [],
+          cityId: city,
+          updatedAt: new Date(),
+          needsUpdate: false
+        }, { merge: true });
 
-      const savedCity = typeof window !== 'undefined' ? localStorage.getItem('blownights_city') : null;
+      localStorage.setItem('blownights_city', city);
+      const savedCity = city;
       router.push(`/${savedCity || DEFAULT_CITY}/`);
     } catch (err: any) {
       console.error("Error updating profile", err);
@@ -297,6 +300,25 @@ export default function SetupProfilePage() {
 
             {currentStep === 2 && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Ciudad</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {CITY_SLUGS.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setCity(c)}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                          city === c
+                            ? 'bg-fuchsia-600 border-fuchsia-500 text-white shadow-lg shadow-fuchsia-500/20'
+                            : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'
+                        }`}
+                      >
+                        {c.charAt(0).toUpperCase() + c.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Tu Rol</label>
