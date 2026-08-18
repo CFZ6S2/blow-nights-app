@@ -6,7 +6,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { useAuth } from '@/context/AuthContext';
 import { collection, onSnapshot, query, where, doc, setDoc, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Skeleton from '@/components/Skeleton';
 import { useRouter } from 'next/navigation';
 import ProfileOverlay from './ProfileOverlay';
@@ -312,11 +312,6 @@ export default function MainMap() {
   const profileRef = useRef(profile);
   profileRef.current = profile;
   
-  const profileRef = useRef(profile);
-  useEffect(() => {
-    profileRef.current = profile;
-  }, [profile]);
-  
   const [viewState, setViewState] = useState({
     latitude: 40.485,
     longitude: -3.36,
@@ -390,7 +385,11 @@ export default function MainMap() {
       }
     );
 
-    const qVenues = query(collection(db, 'venues'), where('isActive', '==', true));
+    const qVenues = query(
+      collection(db, 'venues'),
+      where('isActive', '==', true),
+      where('type', 'not-in', ['cruising', 'public_cruising'])
+    );
     const unsubVenues = onSnapshot(qVenues, (snapshot) => {
       const v: any[] = [];
       const now = new Date();

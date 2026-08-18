@@ -1,7 +1,7 @@
 const admin = require("firebase-admin");
 const { setGlobalOptions } = require("firebase-functions/v2");
 
-if (!admin.apps.length) admin.initializeApp();
+if (!admin.apps.length) admin.initializeApp({ projectId: 'gay-meet-app-mvp-26' });
 
 const db = admin.firestore();
 

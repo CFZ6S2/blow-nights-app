@@ -97,9 +97,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (user) {
         setUser(user);
         
-        // Remove 'true' to prevent forcing a token refresh which can cause an infinite loop
-        // of onAuthStateChanged events in some Firebase SDK versions.
         user.getIdTokenResult().then((idTokenResult) => {
+          if (!idTokenResult.claims.role) {
+            return user.getIdTokenResult(true);
+          }
+          return idTokenResult;
+        }).then((idTokenResult) => {
           setClaims(idTokenResult.claims);
         }).catch(err => console.error("Error fetching claims", err));
         

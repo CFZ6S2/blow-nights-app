@@ -27,7 +27,7 @@ const MainMap = dynamic(() => import('@/components/Map'), {
 });
 
 export default function Home() {
-  const { user, profile, isAdmin, isSuperAdmin, loading, logout } = useAuth();
+  const { user, profile, isAdmin, isSuperAdmin, isCityAdmin, loading, logout } = useAuth();
   const router = useRouter();
   const boostCooldown = useMemo(() => new Date(Date.now() - 24*60*60*1000), []);
   const hasRedirected = useRef(false);
@@ -111,6 +111,16 @@ export default function Home() {
 
   if (!profile) return null;
 
+  const role = profile.role;
+  const redirects: Record<string, string> = {
+    venue: '/venue-admin',
+    venueOwner: '/venue-admin',
+    cityAdmin: '/city-manager',
+    door: '/door',
+    ambassador: '/ambassador',
+  };
+  const isRedirecting = role && redirects[role];
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-950 text-white p-4 md:p-8">
       <header className="flex justify-between items-center mb-8">
@@ -148,7 +158,7 @@ export default function Home() {
 
       <main className="flex-1 space-y-8 max-w-4xl mx-auto w-full">
         {/* Sección del Mapa */}
-        {(!profile || profile.edad === null || profile.edad === undefined) ? null : (
+        {(!profile || profile.edad === null || profile.edad === undefined || isRedirecting) ? null : (
           <section className="space-y-4">
             <div className="flex justify-between items-end">
               <h2 className="font-display text-xl font-bold">Cerca de ti</h2>
