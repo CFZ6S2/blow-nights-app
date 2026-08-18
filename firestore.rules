@@ -190,6 +190,13 @@ service cloud.firestore {
       allow delete: if isAdmin()
         || (request.auth != null && request.auth.uid == resource.data.host_uid);
 
+      match /private/{docId} {
+        allow read: if request.auth != null
+          && (request.auth.uid == get(/databases/$(database)/documents/chills/$(chillId)).data.host_uid
+              || request.auth.uid in get(/databases/$(database)/documents/chills/$(chillId)).data.accepted_users);
+        allow write: if false;
+      }
+
       match /requests/{requestId} {
         allow read: if request.auth != null
           && (request.auth.uid == resource.data.user_uid

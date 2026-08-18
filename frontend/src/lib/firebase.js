@@ -5,6 +5,7 @@ import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
 import { getMessaging } from "firebase/messaging";
 import { getAnalytics, isSupported } from "firebase/analytics";
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -17,6 +18,17 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
+if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
+  if (process.env.NODE_ENV === 'development') {
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  }
+  initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY),
+    isTokenAutoRefreshEnabled: true,
+  });
+}
+
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);

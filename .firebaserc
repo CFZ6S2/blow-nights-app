@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "gay-meet-app-mvp-26"
+    "default": "gay-meet-app-mvp-26",
+    "staging": "blow-nights-staging"
   }
 }

@@ -5,9 +5,8 @@ import {
   onAuthStateChanged, 
   GoogleAuthProvider, 
   OAuthProvider,
-  signInWithPopup, 
-  signOut,
-  deleteUser
+  signInWithPopup,
+  signOut
 } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -173,49 +172,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const deleteAccount = async () => {
     if (!user) return;
     try {
-      const { deleteDoc, doc, collection, query, where, getDocs } = await import('firebase/firestore');
-      const { ref, listAll, deleteObject } = await import('firebase/storage');
-      const { storage } = await import('@/lib/firebase');
-      const uid = user.uid;
-
-      const deleteMatchingDocs = async (col: string, field: string) => {
-        const q = query(collection(db, col), where(field, '==', uid));
-        const snap = await getDocs(q);
-        await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
-      };
-
-      await Promise.all([
-        deleteMatchingDocs('likes', 'fromId'),
-        deleteMatchingDocs('likes', 'toId'),
-        deleteMatchingDocs('visits', 'visitorId'),
-        deleteMatchingDocs('visits', 'visitedId'),
-        deleteMatchingDocs('pings', 'fromUserId'),
-        deleteMatchingDocs('pings', 'toUserId'),
-        deleteMatchingDocs('checkins', 'userId'),
-        deleteMatchingDocs('tickets', 'userId'),
-        deleteMatchingDocs('chill_requests', 'user_uid'),
-        deleteDoc(doc(db, 'locations', uid)),
-        deleteDoc(doc(db, 'verifications', uid)),
-        deleteDoc(doc(db, 'subscriptions', uid)),
-      ]);
-
-      // Bloqueos: viven en la subcolección users/{uid}/blocks, no en una colección raíz.
-      const ownBlocksSnap = await getDocs(collection(db, 'users', uid, 'blocks'));
-      await Promise.all(ownBlocksSnap.docs.map(d => deleteDoc(d.ref)));
-
-      try {
-        const storageRef = ref(storage, `profilePictures/${uid}`);
-        const fileList = await listAll(storageRef);
-        await Promise.all(fileList.items.map(item => deleteObject(item)));
-      } catch {}
-
-      await deleteDoc(doc(db, 'users', uid));
-      await deleteUser(user);
+      const { httpsCallable } = await import('firebase/functions');
+      const { functions } = await import('@/lib/firebase');
+      const deleteUserData = httpsCallable(functions, 'deleteUserData');
+      await deleteUserData();
     } catch (error: any) {
       console.error("Error deleting account:", error);
-      if (error.code === 'auth/requires-recent-login') {
-        alert("Por seguridad, debes haber iniciado sesión recientemente para borrar tu cuenta. Por favor, cierra sesión e inicia de nuevo.");
-      }
       throw error;
     }
   };

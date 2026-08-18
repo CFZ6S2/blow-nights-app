@@ -19,6 +19,7 @@ function TicketContent() {
   const [chill, setChill] = useState<Chill | null>(null);
   const [loading, setLoading] = useState(true);
   const [qrToken, setQrToken] = useState('');
+  const [exactAddress, setExactAddress] = useState<string | null>(null);
 
   const isAcceptedStatus = request?.status === 'ACCEPTED' || request?.status === 'accepted';
   const isCheckedInStatus = request?.checkedIn;
@@ -63,6 +64,23 @@ function TicketContent() {
     return () => unsubscribe();
   }, [id, chill]);
 
+  useEffect(() => {
+    if (!chill) return;
+    const chillId = chill.id;
+    const privateRef = doc(db, 'chills', chillId, 'private', 'info');
+    getDoc(privateRef).then((snap) => {
+      if (snap.exists()) {
+        setExactAddress(snap.data().exact_address || null);
+      } else if ((chill as any).exact_address) {
+        setExactAddress((chill as any).exact_address);
+      }
+    }).catch(() => {
+      if ((chill as any).exact_address) {
+        setExactAddress((chill as any).exact_address);
+      }
+    });
+  }, [chill]);
+
   if (loading) {
     return <div className="min-h-screen bg-black flex items-center justify-center text-white text-xs font-mono">Generando pase seguro...</div>;
   }
@@ -88,7 +106,7 @@ function TicketContent() {
     );
   }
 
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${chill.exact_address ? encodeURIComponent(chill.exact_address) : `${chill.approx_lat},${chill.approx_lng}`}`;
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${exactAddress ? encodeURIComponent(exactAddress) : `${chill.approx_lat},${chill.approx_lng}`}`;
 
   return (
     <div className="min-h-screen bg-black text-white p-4 flex flex-col items-center">
@@ -151,7 +169,7 @@ function TicketContent() {
 
             <div className="pt-4 border-t border-[#23273f]">
               <span className="text-[9px] text-emerald-400 font-bold uppercase tracking-wider block mb-1">Ubicación Desbloqueada</span>
-              <p className="text-sm font-medium text-gray-200">{chill.exact_address}</p>
+              <p className="text-sm font-medium text-gray-200">{exactAddress || 'Cargando dirección...'}</p>
               
               <a 
                 href={mapsUrl}

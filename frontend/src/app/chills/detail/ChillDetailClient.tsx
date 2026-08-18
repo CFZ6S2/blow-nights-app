@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { doc, onSnapshot, collection, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, orderBy, addDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { useChillRequests, requestChillAccess, respondChillRequest, endChill } from '@/hooks/useChills';
@@ -35,6 +35,7 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [tab, setTab] = useState<'info' | 'requests' | 'chat'>('info');
+  const [exactAddress, setExactAddress] = useState<string | null>(null);
 
   const isHost = chill?.host_uid === user?.uid;
   const isAccepted = chill?.accepted_users?.includes(user?.uid || '');
@@ -55,6 +56,18 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
     });
     return unsub;
   }, [chillId]);
+
+  useEffect(() => {
+    if (!chillId || !canSeeAddress) return;
+    getDoc(doc(db, 'chills', chillId, 'private', 'info')).then((snap) => {
+      if (snap.exists()) {
+        setExactAddress(snap.data().exact_address || null);
+      }
+    }).catch(() => {
+      // Fallback: read from chill doc itself (legacy data before migration)
+      if (chill?.exact_address) setExactAddress(chill.exact_address);
+    });
+  }, [chillId, canSeeAddress, chill?.exact_address]);
 
   useEffect(() => {
     if (!chillId || !canChat) return;
@@ -193,7 +206,7 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
               <span className="material-icons text-green-400 mt-0.5">location_on</span>
               <div>
                 <p className="text-xs font-bold text-green-400 mb-1 uppercase tracking-widest">Direccion</p>
-                <p className="text-sm text-white font-bold">{chill.exact_address}</p>
+                <p className="text-sm text-white font-bold">{exactAddress || 'Cargando...'}</p>
               </div>
             </div>
           ) : (

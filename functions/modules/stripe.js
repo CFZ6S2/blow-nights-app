@@ -1,0 +1,493 @@
+const { onCall, HttpsError, onRequest } = require("firebase-functions/v2/https");
+const { admin, db, getStripe } = require("../lib/init");
+
+exports.createCheckoutSession = onCall({ enforceAppCheck: true }, async (request) => {
+  const { data, auth } = request;
+  if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
+
+  const stripe = getStripe();
+  if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
+
+  const { priceId, origin } = data;
+  const uid = auth.uid;
+  const email = auth.token.email;
+
+  try {
+    const subDoc = await db.collection("subscriptions").doc(uid).get();
+    let customerId = subDoc.exists ? subDoc.data().stripeCustomerId : null;
+
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: email,
+        metadata: { firebaseUID: uid }
+      });
+      customerId = customer.id;
+      await db.collection("subscriptions").doc(uid).set({ stripeCustomerId: customerId, status: "incomplete" }, { merge: true });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ["card"],
+      line_items: [{ price: priceId, quantity: 1 }],
+      mode: "subscription",
+      success_url: `${origin}/premium?success=true`,
+      cancel_url: `${origin}/premium?canceled=true`,
+      metadata: { firebaseUID: uid }
+    });
+
+    return { sessionId: session.id, url: session.url };
+  } catch (error) {
+    throw new HttpsError("internal", error.message);
+  }
+});
+
+exports.createChillPassCheckout = onCall({ enforceAppCheck: true }, async (request) => {
+  const { data, auth } = request;
+  if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
+
+  const stripe = getStripe();
+  if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
+
+  const { passType, origin, citySlug } = data;
+  const uid = auth.uid;
+  const email = auth.token.email;
+
+  const subDoc = await db.collection("subscriptions").doc(uid).get();
+  let customerId = subDoc.exists ? subDoc.data()?.stripeCustomerId : null;
+
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      email: email,
+      metadata: { firebaseUID: uid },
+    });
+    customerId = customer.id;
+    await db.collection("subscriptions").doc(uid).set(
+      { stripeCustomerId: customerId, status: "incomplete" },
+      { merge: true }
+    );
+  }
+
+  try {
+    if (passType === "weekend") {
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ["card"],
+        line_items: [{
+          price_data: {
+            currency: "eur",
+            product_data: { name: "Pase Fin de Semana (48h) — Blow Nights" },
+            unit_amount: 999,
+          },
+          quantity: 1,
+        }],
+        mode: "payment",
+        success_url: `${origin}/chills?pass=ok`,
+        cancel_url: `${origin}/chills?pass=cancel`,
+        metadata: { firebaseUID: uid, type: "chill_pass", duration: "48h", city_slug: citySlug || "" },
+      });
+      return { sessionId: session.id, url: session.url };
+    } else if (passType === "monthly") {
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ["card"],
+        line_items: [{
+          price_data: {
+            currency: "eur",
+            product_data: { name: "Blow VIP Mensual" },
+            unit_amount: 1999,
+            recurring: { interval: "month" },
+          },
+          quantity: 1,
+        }],
+        mode: "subscription",
+        success_url: `${origin}/chills?vip=ok`,
+        cancel_url: `${origin}/chills?vip=cancel`,
+        metadata: { firebaseUID: uid, type: "chill_vip", city_slug: citySlug || "" },
+      });
+      return { sessionId: session.id, url: session.url };
+    } else if (passType === "quarterly") {
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ["card"],
+        line_items: [{
+          price_data: {
+            currency: "eur",
+            product_data: { name: "Blow VIP Trimestral" },
+            unit_amount: 4999,
+            recurring: { interval: "month", interval_count: 3 },
+          },
+          quantity: 1,
+        }],
+        mode: "subscription",
+        success_url: `${origin}/chills?vip=ok`,
+        cancel_url: `${origin}/chills?vip=cancel`,
+        metadata: { firebaseUID: uid, type: "chill_vip", city_slug: citySlug || "" },
+      });
+      return { sessionId: session.id, url: session.url };
+    } else {
+      throw new HttpsError("invalid-argument", "passType debe ser weekend, monthly o quarterly.");
+    }
+  } catch (error) {
+    throw new HttpsError("internal", error.message);
+  }
+});
+
+exports.createPingCheckoutSession = onCall({ enforceAppCheck: true }, async (request) => {
+  const { data, auth } = request;
+  if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
+
+  const stripe = getStripe();
+  if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
+
+  const { type, origin, citySlug } = data;
+  const uid = auth.uid;
+  const email = auth.token.email;
+
+  const subDoc = await db.collection("subscriptions").doc(uid).get();
+  let customerId = subDoc.exists ? subDoc.data()?.stripeCustomerId : null;
+
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      email: email,
+      metadata: { firebaseUID: uid },
+    });
+    customerId = customer.id;
+    await db.collection("subscriptions").doc(uid).set(
+      { stripeCustomerId: customerId, status: "incomplete" },
+      { merge: true }
+    );
+  }
+
+  try {
+    let priceData = {};
+    if (type === "ping_pack") {
+      priceData = {
+        currency: "eur",
+        product_data: { name: "Pack 3 Toques Extra" },
+        unit_amount: 199,
+      };
+    } else if (type === "vip_night") {
+      priceData = {
+        currency: "eur",
+        product_data: { name: "Pase Fuego Ilimitado (Esta Noche)" },
+        unit_amount: 399,
+      };
+    } else {
+      throw new HttpsError("invalid-argument", "Tipo de pase no válido.");
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ["card", "apple_pay", "google_pay"],
+      line_items: [{
+        price_data: priceData,
+        quantity: 1,
+      }],
+      mode: "payment",
+      success_url: `${origin}/premium?success=true`,
+      cancel_url: `${origin}/premium?canceled=true`,
+      metadata: { firebaseUID: uid, type: type, city_slug: citySlug || "" },
+    });
+    return { sessionId: session.id, url: session.url };
+  } catch (error) {
+    throw new HttpsError("internal", error.message);
+  }
+});
+
+exports.createStripeConnectAccount = onCall({ enforceAppCheck: true }, async (request) => {
+  const { data, auth } = request;
+  if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
+
+  const stripe = getStripe();
+  if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
+
+  const { venueId, email } = data;
+  if (!venueId) throw new HttpsError("invalid-argument", "venueId es requerido.");
+
+  const venueRef = db.collection("venues").doc(venueId);
+  const venueSnap = await venueRef.get();
+  if (!venueSnap.exists) throw new HttpsError("not-found", "Local no encontrado.");
+
+  try {
+    let accountId = venueSnap.data().stripeAccountId;
+    if (!accountId) {
+      const account = await stripe.accounts.create({
+        type: 'express',
+        country: 'ES',
+        email: email || auth.token.email,
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true },
+        },
+      });
+      accountId = account.id;
+      await venueRef.update({ stripeAccountId: accountId });
+    }
+    return { accountId };
+  } catch (error) {
+    throw new HttpsError("internal", error.message);
+  }
+});
+
+exports.createStripeAccountLink = onCall({ enforceAppCheck: true }, async (request) => {
+  const { data, auth } = request;
+  if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
+
+  if (!data.venueId) throw new HttpsError("invalid-argument", "venueId es obligatorio.");
+  const venueSnap = await db.collection("venues").doc(data.venueId).get();
+  if (!venueSnap.exists) throw new HttpsError("not-found", "Venue no encontrado.");
+  const venue = venueSnap.data();
+  if (venue.ownerId !== auth.uid) {
+    throw new HttpsError("permission-denied", "No eres el propietario de este venue.");
+  }
+  if (!venue.stripeAccountId) {
+    throw new HttpsError("failed-precondition", "Este venue no tiene cuenta Stripe.");
+  }
+
+  const stripe = getStripe();
+  const accountLink = await stripe.accountLinks.create({
+    account: venue.stripeAccountId,
+    refresh_url: `${data.origin}/business/stripe?refresh=true`,
+    return_url: `${data.origin}/business/stripe?return=true`,
+    type: 'account_onboarding',
+  });
+  return { url: accountLink.url };
+});
+
+exports.stripeWebhook = onRequest(async (req, res) => {
+  const stripe = getStripe();
+  if (!stripe) return res.status(500).send("Stripe no configurado.");
+
+  const sig = req.headers["stripe-signature"];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!endpointSecret) return res.status(500).send("Stripe webhook secret no configurado.");
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
+  } catch (err) {
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  const session = event.data.object;
+  const firebaseUID = session.metadata?.firebaseUID;
+
+  const eventRef = db.collection("processed_stripe_events").doc(event.id);
+  const eventDoc = await eventRef.get();
+  if (eventDoc.exists) {
+    return res.json({ received: true, duplicate: true });
+  }
+  await eventRef.set({ processedAt: admin.firestore.FieldValue.serverTimestamp(), type: event.type });
+
+  if (event.type === "checkout.session.completed" && firebaseUID) {
+    const isTicket = session.metadata?.type === "ticket";
+    const isChillPass = session.metadata?.type === "chill_pass";
+    const isChillVip = session.metadata?.type === "chill_vip";
+
+    if (isChillPass || isChillVip) {
+      if (isChillPass) {
+        const passExpires = Date.now() + 48 * 60 * 60 * 1000;
+        const existingClaims = (await admin.auth().getUser(firebaseUID)).customClaims || {};
+        await admin.auth().setCustomUserClaims(firebaseUID, {
+          ...existingClaims,
+          pass_expires: passExpires,
+        });
+        await db.collection("users").doc(firebaseUID).update({
+          pass_expires: admin.firestore.Timestamp.fromMillis(passExpires),
+        });
+      } else {
+        const existingClaims = (await admin.auth().getUser(firebaseUID)).customClaims || {};
+        await admin.auth().setCustomUserClaims(firebaseUID, {
+          ...existingClaims,
+          premium: true,
+        });
+        await db.collection("users").doc(firebaseUID).update({ premium: true });
+        await db.collection("subscriptions").doc(firebaseUID).update({
+          status: "active",
+          subscriptionId: session.subscription,
+          renewalDate: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+
+      const citySlug = session.metadata?.city_slug;
+      if (citySlug && session.amount_total > 0) {
+        try {
+          const cityDoc = await db.collection("cities").doc(citySlug).get();
+          const partnerStripeId = cityDoc.exists ? cityDoc.data()?.partner_stripe_account_id : null;
+          if (partnerStripeId) {
+            const partnerCutCents = Math.round(session.amount_total * 0.40);
+            await stripe.transfers.create({
+              amount: partnerCutCents,
+              currency: "eur",
+              destination: partnerStripeId,
+              description: `40% suscripcion VIP - ${session.customer_email || firebaseUID}`,
+              metadata: { city: citySlug, firebaseUID },
+            });
+          }
+        } catch (e) {
+          console.error("Error en transfer 40% al socio local:", e);
+        }
+      }
+    } else if (session.metadata?.type === "ping_pack" || session.metadata?.type === "vip_night") {
+      const type = session.metadata.type;
+
+      if (type === "ping_pack") {
+        await db.collection("users").doc(firebaseUID).update({
+          dailyPingsLeft: admin.firestore.FieldValue.increment(3)
+        });
+      } else {
+        await db.collection("users").doc(firebaseUID).update({
+          isVIPNight: true
+        });
+      }
+
+      const citySlug = session.metadata?.city_slug;
+      if (citySlug && session.amount_total > 0) {
+        try {
+          const cityDoc = await db.collection("cities").doc(citySlug).get();
+          const partnerStripeId = cityDoc.exists ? cityDoc.data()?.partner_stripe_account_id : null;
+          if (partnerStripeId) {
+            const partnerCutCents = Math.round(session.amount_total * 0.40);
+            const amountEur = partnerCutCents / 100;
+
+            await stripe.transfers.create({
+              amount: partnerCutCents,
+              currency: "eur",
+              destination: partnerStripeId,
+              description: `40% ${type === 'ping_pack' ? 'Pack Toques' : 'Pase Fuego'} - ${firebaseUID}`,
+              metadata: { city: citySlug, firebaseUID, type },
+            });
+
+            await db.collection("cities").doc(citySlug).collection("earnings").add({
+              amount: amountEur,
+              type: type === 'ping_pack' ? 'micro_ping' : 'vip_night',
+              userId: firebaseUID,
+              timestamp: admin.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        } catch (e) {
+          console.error("Error en transfer 40% de pings al socio local:", e);
+        }
+      }
+    } else if (isTicket) {
+      const crypto = require("crypto");
+      const qrToken = crypto.randomBytes(32).toString("hex");
+      const pinCode = Math.floor(1000 + Math.random() * 9000).toString();
+      const venueId = session.metadata.venueId;
+      const eventId = session.metadata.eventId;
+      const rrppId = session.metadata.rrppId;
+      const reservationId = session.metadata.reservationId;
+
+      const venueDoc = await db.collection("venues").doc(venueId).get();
+      const venueOwnerId = venueDoc.exists ? venueDoc.data().ownerId : null;
+      const cityId = venueDoc.exists ? venueDoc.data().cityId || "" : "";
+
+      let rrppCommission = 0;
+      if (rrppId) {
+        const rrppDoc = await db.collection("venues").doc(venueId).collection("promoters").doc(rrppId).get();
+        if (rrppDoc.exists && rrppDoc.data().is_active) {
+          const rrppData = rrppDoc.data();
+          if (rrppData.commission_type === 'fixed') {
+            rrppCommission = rrppData.commission_value || 0;
+          } else {
+            rrppCommission = (session.amount_total / 100) * (rrppData.commission_value / 100);
+          }
+        }
+      }
+
+      await db.collection("tickets").add({
+        userId: firebaseUID,
+        venueId,
+        eventId,
+        venueOwnerId: venueOwnerId || "",
+        cityId,
+        ticketType: session.metadata.ticketType || "general",
+        rrpp_id: rrppId || null,
+        rrpp_commission: rrppCommission,
+        qrToken,
+        pinCode,
+        status: "valid",
+        purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
+        stripeSessionId: session.id,
+      });
+
+      if (reservationId) {
+        await db.collection("venues").doc(venueId).collection("events").doc(eventId).collection("reservations").doc(reservationId).update({
+          status: "completed"
+        });
+      }
+
+      const CITY_MANAGER_CENTS = 30;
+      const AMBASSADOR_CENTS = 25;
+
+      if (cityId) {
+        try {
+          const cityDoc = await db.collection("cities").doc(cityId).get();
+          const cityManagerStripe = cityDoc.exists ? cityDoc.data()?.partner_stripe_account_id : null;
+          if (cityManagerStripe) {
+            await stripe.transfers.create({
+              amount: CITY_MANAGER_CENTS,
+              currency: "eur",
+              destination: cityManagerStripe,
+              description: `CityManager ${cityId} ticket ${eventId}`,
+              transfer_group: session.id,
+            });
+            await db.collection("cities").doc(cityId).collection("earnings").add({
+              amount: CITY_MANAGER_CENTS / 100,
+              type: "ticket_fee",
+              venueId,
+              eventId,
+              userId: firebaseUID,
+              timestamp: admin.firestore.FieldValue.serverTimestamp(),
+            });
+          }
+        } catch (e) {
+          console.error("Error en transfer City Manager:", e);
+        }
+      }
+
+      const ambassadorId = venueDoc.exists ? venueDoc.data()?.ambassadorId : null;
+      if (ambassadorId) {
+        try {
+          const ambassadorDoc = await db.collection("users").doc(ambassadorId).get();
+          const ambassadorStripe = ambassadorDoc.exists ? ambassadorDoc.data()?.stripeAccountId : null;
+          if (ambassadorStripe) {
+            await stripe.transfers.create({
+              amount: AMBASSADOR_CENTS,
+              currency: "eur",
+              destination: ambassadorStripe,
+              description: `Ambassador ticket ${eventId} - ${venueId}`,
+              transfer_group: session.id,
+            });
+            await db.collection("users").doc(ambassadorId).collection("earnings").add({
+              amount: AMBASSADOR_CENTS / 100,
+              type: "ticket_fee",
+              venueId,
+              eventId,
+              userId: firebaseUID,
+              timestamp: admin.firestore.FieldValue.serverTimestamp(),
+            });
+          }
+        } catch (e) {
+          console.error("Error en transfer Ambassador:", e);
+        }
+      }
+    } else {
+      await db.collection("users").doc(firebaseUID).update({ premium: true });
+      await db.collection("subscriptions").doc(firebaseUID).update({
+        status: "active",
+        subscriptionId: session.subscription,
+        renewalDate: admin.firestore.FieldValue.serverTimestamp()
+      });
+    }
+  } else if (event.type === "customer.subscription.deleted") {
+    const customer = await stripe.customers.retrieve(session.customer);
+    const uid = customer.metadata?.firebaseUID;
+    if (uid) {
+      await db.collection("users").doc(uid).update({ premium: false });
+      await db.collection("subscriptions").doc(uid).update({ status: "canceled" });
+    }
+  }
+
+  res.json({ received: true });
+});
