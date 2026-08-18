@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, limit, getCountFromServer } from 'firebase/firestore';
-import { db, analytics } from '@/lib/firebase';
-import { logEvent } from 'firebase/analytics';
+import { db } from '@/lib/firebase';
+import { getAnalytics, logEvent } from 'firebase/analytics';
+import app from '@/lib/firebase';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
@@ -36,7 +37,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
   }, []);
 
   const handleStart = () => {
-    analytics?.then(a => a && logEvent(a, 'landing_start_click'));
+    try { logEvent(getAnalytics(app), 'landing_start_click'); } catch {}
     onStart();
   };
 

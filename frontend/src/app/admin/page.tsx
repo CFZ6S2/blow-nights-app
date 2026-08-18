@@ -3,15 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { db } from '@/lib/firebase';
-import { 
-  collection, 
-  query, 
+import { db, functions } from '@/lib/firebase';
+import {
+  collection,
+  query,
   onSnapshot,
-  updateDoc, 
-  doc, 
+  updateDoc,
+  doc,
   orderBy
 } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AdminDashboard() {
@@ -30,6 +31,9 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('stats');
   const [searchQuery, setSearchQuery] = useState('');
   const [platformSettings, setPlatformSettings] = useState<{ enableDarkNightsBridge?: boolean } | null>(null);
+  const [banTarget, setBanTarget] = useState<{ uid: string; nick: string } | null>(null);
+  const [banReason, setBanReason] = useState('');
+  const [banning, setBanning] = useState(false);
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -120,6 +124,22 @@ export default function AdminDashboard() {
       });
     } catch (error) {
       console.error("Error handling verification:", error);
+    }
+  };
+
+  const handleBan = async () => {
+    if (!banTarget) return;
+    setBanning(true);
+    try {
+      const banUserFn = httpsCallable(functions, 'banUser');
+      await banUserFn({ uid: banTarget.uid, reason: banReason || undefined });
+      setBanTarget(null);
+      setBanReason('');
+    } catch (error: any) {
+      console.error("Error banning user:", error);
+      alert('Error al banear: ' + (error.message || 'Error desconocido'));
+    } finally {
+      setBanning(false);
     }
   };
 
@@ -368,17 +388,28 @@ export default function AdminDashboard() {
                       <p className="text-[10px] text-slate-500 font-mono">{u.id.substring(0, 8)}...</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button 
+                  <div className="flex gap-2 items-center">
+                    {u.banned && (
+                      <span className="text-[9px] bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-full font-black">BANNED</span>
+                    )}
+                    <button
                       onClick={() => togglePremium(u.id, u.premium)}
                       className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all ${
-                        u.premium 
-                          ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30' 
+                        u.premium
+                          ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30'
                           : 'bg-white/5 text-slate-400 border border-white/10 hover:border-amber-500/30'
                       }`}
                     >
                       {u.premium ? 'PREMIUM' : 'HACER PREMIUM'}
                     </button>
+                    {!u.banned && (
+                      <button
+                        onClick={() => setBanTarget({ uid: u.id, nick: u.nick || u.id.substring(0, 8) })}
+                        className="px-3 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all"
+                      >
+                        BAN
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -419,12 +450,24 @@ export default function AdminDashboard() {
                       ID Reportado: <span className="font-mono">{report.reportedId}</span>
                     </div>
                     {report.status === 'pending' ? (
-                      <button 
-                        onClick={() => resolveReport(report.id)}
-                        className="bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 px-3 py-1 rounded-full text-[10px] font-bold"
-                      >
-                        RESOLVER
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            const reported = users.find(u => u.id === report.reportedId);
+                            setBanTarget({ uid: report.reportedId, nick: reported?.nick || report.reportedId.substring(0, 8) });
+                            setBanReason(report.reason || '');
+                          }}
+                          className="bg-rose-500/20 text-rose-400 border border-rose-500/30 px-3 py-1 rounded-full text-[10px] font-bold"
+                        >
+                          BAN
+                        </button>
+                        <button
+                          onClick={() => resolveReport(report.id)}
+                          className="bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 px-3 py-1 rounded-full text-[10px] font-bold"
+                        >
+                          RESOLVER
+                        </button>
+                      </div>
                     ) : (
                       <span className="text-emerald-500 text-[10px] font-bold flex items-center gap-1">
                         <span className="material-icons text-xs">done_all</span> RESUELTO
@@ -495,6 +538,61 @@ export default function AdminDashboard() {
                 </div>
               ))
             )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Ban Confirmation Modal */}
+      <AnimatePresence>
+        {banTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            onClick={() => { setBanTarget(null); setBanReason(''); }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-slate-900 border border-rose-500/30 rounded-2xl p-6 w-full max-w-sm space-y-4"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center">
+                  <span className="material-icons text-rose-500">gavel</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">Banear usuario</h3>
+                  <p className="text-xs text-slate-400">{banTarget.nick}</p>
+                </div>
+              </div>
+              <p className="text-sm text-slate-300">
+                Se revocará su sesión, se deshabilitará su cuenta y no podrá escribir datos.
+              </p>
+              <textarea
+                value={banReason}
+                onChange={(e) => setBanReason(e.target.value)}
+                placeholder="Motivo del ban (opcional)..."
+                className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-rose-500/50 resize-none h-20"
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setBanTarget(null); setBanReason(''); }}
+                  className="flex-1 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider border border-white/15 text-slate-400 hover:bg-white/5 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleBan}
+                  disabled={banning}
+                  className="flex-1 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-rose-600 text-white hover:bg-rose-700 transition-all disabled:opacity-50"
+                >
+                  {banning ? 'Baneando...' : 'Confirmar ban'}
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

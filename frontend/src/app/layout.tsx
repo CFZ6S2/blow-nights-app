@@ -10,6 +10,7 @@ import NotificationToast from "@/components/NotificationToast";
 import ViewerToast from "@/components/ViewerToast";
 import { NotificationProvider } from "@/context/NotificationContext";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import CookieBanner from "@/components/CookieBanner";
 import { I18nProvider } from "@/providers/I18nProvider";
 import LanguageSelector from "@/components/LanguageSelector";
 
@@ -81,6 +82,7 @@ export default function RootLayout({
               </div>
               <BottomNav />
               <PWAInstallPrompt />
+              <CookieBanner />
             </NotificationProvider>
             </CityProvider>
           </AuthProvider>

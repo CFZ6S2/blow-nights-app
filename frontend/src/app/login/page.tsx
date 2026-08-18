@@ -9,6 +9,7 @@ import Link from 'next/link';
 export default function LoginPage() {
   const { user, loginWithGoogle, loginWithApple } = useAuth();
   const [error, setError] = useState('');
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -69,9 +70,24 @@ export default function LoginPage() {
         )}
 
         <div className="space-y-6">
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={ageConfirmed}
+              onChange={(e) => setAgeConfirmed(e.target.checked)}
+              className="mt-0.5 w-5 h-5 rounded-md border-2 border-white/20 bg-white/5 accent-fuchsia-500 cursor-pointer flex-shrink-0"
+            />
+            <span className="text-[10px] text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors">
+              Confirmo que tengo <span className="text-white font-bold">+18 años</span> y acepto los{' '}
+              <Link href="/terms" className="text-fuchsia-400 underline">Términos</Link> y la{' '}
+              <Link href="/privacy" className="text-fuchsia-400 underline">Política de Privacidad</Link>.
+            </span>
+          </label>
+
           <button
             onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-4 bg-white text-black font-[1000] py-6 rounded-2xl hover:bg-slate-200 transition-all duration-300 shadow-xl text-[10px] uppercase tracking-[0.2em]"
+            disabled={!ageConfirmed}
+            className="w-full flex items-center justify-center gap-4 bg-white text-black font-[1000] py-6 rounded-2xl hover:bg-slate-200 transition-all duration-300 shadow-xl text-[10px] uppercase tracking-[0.2em] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white"
           >
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
             Entrar con Google
@@ -79,7 +95,8 @@ export default function LoginPage() {
 
           <button
             onClick={handleAppleLogin}
-            className="w-full flex items-center justify-center gap-4 bg-black text-white border border-white/20 font-[1000] py-6 rounded-2xl hover:bg-slate-900 transition-all duration-300 shadow-xl text-[10px] uppercase tracking-[0.2em]"
+            disabled={!ageConfirmed}
+            className="w-full flex items-center justify-center gap-4 bg-black text-white border border-white/20 font-[1000] py-6 rounded-2xl hover:bg-slate-900 transition-all duration-300 shadow-xl text-[10px] uppercase tracking-[0.2em] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-black"
           >
             <span className="material-icons text-xl">apple</span>
             Entrar con Apple
@@ -98,10 +115,6 @@ export default function LoginPage() {
             ))}
           </div>
         </div>
-
-        <p className="text-center text-[9px] text-slate-600 uppercase tracking-widest leading-relaxed px-4">
-          Al continuar, aceptas nuestros <Link href="/terms" className="text-slate-400 underline">Términos</Link> y <Link href="/privacy" className="text-slate-400 underline">Privacidad</Link>.
-        </p>
       </motion.div>
     </div>
   );

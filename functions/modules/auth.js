@@ -188,3 +188,32 @@ exports.deleteUserData = onCall({ enforceAppCheck: true }, async (request) => {
 
   return { success: true };
 });
+
+exports.banUser = onCall({ enforceAppCheck: true }, async (request) => {
+  const { auth: caller } = request;
+  if (!caller) throw new HttpsError("unauthenticated", "Login required");
+
+  const callerDoc = await db.collection("users").doc(caller.uid).get();
+  if (!callerDoc.exists || callerDoc.data().role !== "admin") {
+    throw new HttpsError("permission-denied", "Admin only");
+  }
+
+  const { uid, reason } = request.data;
+  if (!uid) throw new HttpsError("invalid-argument", "uid is required");
+  if (uid === caller.uid) throw new HttpsError("invalid-argument", "Cannot ban yourself");
+
+  const targetDoc = await db.collection("users").doc(uid).get();
+  if (!targetDoc.exists) throw new HttpsError("not-found", "User not found");
+
+  await admin.auth().revokeRefreshTokens(uid);
+  await admin.auth().updateUser(uid, { disabled: true });
+
+  await db.collection("users").doc(uid).update({
+    banned: true,
+    bannedAt: admin.firestore.FieldValue.serverTimestamp(),
+    bannedBy: caller.uid,
+    bannedReason: reason || null,
+  });
+
+  return { success: true, uid };
+});

@@ -94,7 +94,17 @@ export default function SetupProfilePage() {
       return;
     }
     if (parseInt(edad) < 18) {
-      setError('Debes ser mayor de 18 años para usar la aplicación.');
+      setError('Debes ser mayor de 18 años. Tu cuenta será eliminada.');
+      try {
+        const { httpsCallable } = await import('firebase/functions');
+        const { functions } = await import('@/lib/firebase');
+        const { signOut } = await import('firebase/auth');
+        const { auth } = await import('@/lib/firebase');
+        const deleteUserData = httpsCallable(functions, 'deleteUserData');
+        await deleteUserData();
+        await signOut(auth);
+      } catch {}
+      router.push('/login');
       return;
     }
 
@@ -134,10 +144,6 @@ export default function SetupProfilePage() {
         privatePhotosUrls = [...privatePhotosPreview.filter(url => !url.startsWith('blob:')), ...newUrls];
       }
 
-      const isUserAdmin = user?.email === (process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'cesar.herrera.rojo@gmail.com');
-      const isPremium = isUserAdmin || !!profile?.premium;
-
-
       if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then((registrations) => {
           for (const registration of registrations) {
@@ -161,9 +167,7 @@ export default function SetupProfilePage() {
         extraPhotos: extraPhotosUrls || [],
         privatePhotos: privatePhotosUrls || [],
         updatedAt: new Date(),
-        needsUpdate: false,
-        isAdmin: isUserAdmin,
-        premium: isPremium
+        needsUpdate: false
       }, { merge: true });
 
       router.push('/');

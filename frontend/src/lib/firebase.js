@@ -4,7 +4,6 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
 import { getMessaging } from "firebase/messaging";
-import { getAnalytics, isSupported } from "firebase/analytics";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 const firebaseConfig = {
@@ -45,9 +44,5 @@ if (typeof window !== 'undefined') {
   }
 }
 export const messaging = messagingInstance;
-
-export const analytics = typeof window !== 'undefined' ? 
-  isSupported().then(supported => supported ? getAnalytics(app) : null) : 
-  null;
 
 export default app;

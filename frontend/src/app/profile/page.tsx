@@ -6,8 +6,9 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { collection, query, where, onSnapshot, doc, setDoc, getDoc } from 'firebase/firestore';
-import { db, analytics } from '@/lib/firebase';
-import { logEvent } from 'firebase/analytics';
+import { db } from '@/lib/firebase';
+import app from '@/lib/firebase';
+import { getAnalytics, logEvent } from 'firebase/analytics';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
@@ -437,12 +438,7 @@ export default function MyProfilePage() {
 
         <button
           onClick={async () => {
-            if (analytics) {
-              try {
-                const a = await analytics;
-                if (a) logEvent(a, 'share_app_click');
-              } catch(e) {}
-            }
+            try { logEvent(getAnalytics(app), 'share_app_click'); } catch {}
             const shareUrl = `${window.location.origin}?ref=${user?.uid || ''}`;
             try {
               if (navigator.share) {

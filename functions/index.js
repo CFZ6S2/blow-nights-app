@@ -12,6 +12,7 @@ exports.onUserCreate = auth.onUserCreate;
 exports.assignRole = auth.assignRole;
 exports.processReferral = auth.processReferral;
 exports.deleteUserData = auth.deleteUserData;
+exports.banUser = auth.banUser;
 
 // Notifications
 exports.sendMessageNotification = notifications.sendMessageNotification;
