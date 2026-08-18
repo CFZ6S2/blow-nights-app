@@ -8,11 +8,12 @@ import { useAuth } from '@/context/AuthContext';
 import { Chill, ChillRequest } from '@/types';
 
 export function useChills(citySlug: string | null) {
+  const { user, loading: authLoading } = useAuth();
   const [chills, setChills] = useState<Chill[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!citySlug) { setTimeout(() => setLoading(false), 0); return; }
+    if (authLoading || !user || !citySlug) { setTimeout(() => setLoading(false), 0); return; }
 
     const q = query(
       collection(db, 'chills'),
@@ -34,11 +35,12 @@ export function useChills(citySlug: string | null) {
 }
 
 export function useChillRequests(chillId: string | null) {
+  const { user, loading: authLoading } = useAuth();
   const [requests, setRequests] = useState<ChillRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!chillId) { setTimeout(() => setLoading(false), 0); return; }
+    if (authLoading || !user || !chillId) { setTimeout(() => setLoading(false), 0); return; }
 
     const q = query(
       collection(db, 'chills', chillId, 'requests'),
@@ -57,12 +59,12 @@ export function useChillRequests(chillId: string | null) {
 }
 
 export function useMyChills() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [myChills, setMyChills] = useState<Chill[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) { setTimeout(() => setLoading(false), 0); return; }
+    if (authLoading || !user) { setTimeout(() => setLoading(false), 0); return; }
 
     const q = query(
       collection(db, 'chills'),
