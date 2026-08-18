@@ -118,28 +118,37 @@ exports.validateTicket = onCall({ enforceAppCheck: true }, async (request) => {
     throw new HttpsError("permission-denied", "No tienes permiso para validar entradas de este local.");
   }
 
-  if (ticket.status === "used") {
-    return { valid: false, reason: "already_used", message: "Esta entrada ya ha sido utilizada." };
-  }
-  if (ticket.status === "cancelled") {
-    return { valid: false, reason: "cancelled", message: "Esta entrada ha sido cancelada." };
-  }
+  const result = await db.runTransaction(async (transaction) => {
+    const freshDoc = await transaction.get(ticketDoc.ref);
+    const freshTicket = freshDoc.data();
 
-  await ticketDoc.ref.update({
-    status: "used",
-    usedAt: admin.firestore.FieldValue.serverTimestamp(),
-    validatedBy: auth.uid,
+    if (freshTicket.status === "used") {
+      return { valid: false, reason: "already_used", message: "Esta entrada ya ha sido utilizada." };
+    }
+    if (freshTicket.status === "cancelled") {
+      return { valid: false, reason: "cancelled", message: "Esta entrada ha sido cancelada." };
+    }
+
+    transaction.update(ticketDoc.ref, {
+      status: "used",
+      usedAt: admin.firestore.FieldValue.serverTimestamp(),
+      validatedBy: auth.uid,
+    });
+
+    return { valid: true, ticketId: ticketDoc.id, ticketType: freshTicket.ticketType, userId: freshTicket.userId };
   });
 
-  const userDoc = await db.collection("users").doc(ticket.userId).get();
+  if (!result.valid) return result;
+
+  const userDoc = await db.collection("users").doc(result.userId).get();
   const userData = userDoc.data();
 
   return {
     valid: true,
     message: "Entrada válida. Acceso permitido.",
     ticket: {
-      id: ticketDoc.id,
-      ticketType: ticket.ticketType,
+      id: result.ticketId,
+      ticketType: result.ticketType,
       userName: userData?.nick || "Usuario",
       userPhoto: userData?.fotoUrl || "",
     },
