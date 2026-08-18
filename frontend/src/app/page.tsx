@@ -42,6 +42,12 @@ export default function Home() {
     const role = profile?.role;
     if (!role || role === 'user') return;
 
+    // Prevenir bucles infinitos de redirección: si en Firestore dicen ser superadmin
+    // pero el token aún no tiene el claim, no los redirigimos (porque la página destino los escupiría de vuelta).
+    if (role === 'superadmin' && !isSuperAdmin) return;
+    if (role === 'admin' && !isAdmin) return;
+    if (role === 'cityAdmin' && !isCityAdmin) return;
+
     const redirects: Record<string, string> = {
       venue: '/venue-admin',
       venueOwner: '/venue-admin',
@@ -55,7 +61,7 @@ export default function Home() {
     if (redirects[role]) {
       router.replace(redirects[role]);
     }
-  }, [user, profile, loading, router]);
+  }, [user, profile, loading, router, isSuperAdmin, isAdmin, isCityAdmin]);
 
   if (loading) {
     return (
