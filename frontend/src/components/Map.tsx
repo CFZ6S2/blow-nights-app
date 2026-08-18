@@ -269,6 +269,8 @@ export default function MainMap() {
   const { t } = useTranslation();
   const router = useRouter();
   const mapRef = useRef<MapRef>(null);
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
   
   const [viewState, setViewState] = useState({
     latitude: 40.485,
@@ -340,11 +342,11 @@ export default function MainMap() {
     }
 
     const q = query(collection(db, 'users'), where('online', '==', true));
-    const unsubscribe = onSnapshot(q, 
+    const unsubscribe = onSnapshot(q,
       (snapshot) => {
         const users: User[] = [];
-        const blockedUsers = profile?.blockedUsers || [];
-        
+        const blockedUsers = profileRef.current?.blockedUsers || [];
+
         snapshot.forEach((doc) => {
           const uData = doc.data();
           if (!blockedUsers.includes(doc.id) && doc.id !== user?.uid && uData.rol !== 'party_only') {
@@ -394,7 +396,7 @@ export default function MainMap() {
       unsubVenues();
       unsubChills();
     };
-  }, [user, profile, citySlug]);
+  }, [user?.uid, citySlug]);
 
   const centerOnUser = () => {
     if (!mapRef.current) return;

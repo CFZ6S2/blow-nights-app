@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +19,8 @@ import EventsTab from '@/components/venue-admin/EventsTab';
 export default function VenueAdminPage() {
   const { user, profile, loading, isAdmin } = useAuth();
   const router = useRouter();
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
 
   const [myVenues, setMyVenues] = useState<any[]>([]);
   const [selectedVenue, setSelectedVenue] = useState<any>(null);
@@ -39,11 +41,12 @@ export default function VenueAdminPage() {
   useEffect(() => {
     if (!user) return;
     let q;
-    const isCityAdmin = profile?.role === 'cityAdmin';
+    const p = profileRef.current;
+    const isCityAdmin = p?.role === 'cityAdmin';
     if (isAdmin) {
       q = query(collection(db, 'venues'), where('isActive', '==', true));
-    } else if (isCityAdmin && profile?.cityId) {
-      q = query(collection(db, 'venues'), where('cityId', '==', profile.cityId), where('isActive', '==', true));
+    } else if (isCityAdmin && p?.cityId) {
+      q = query(collection(db, 'venues'), where('cityId', '==', p.cityId), where('isActive', '==', true));
     } else {
       q = query(collection(db, 'venues'), where('ownerId', '==', user.uid));
     }
@@ -54,7 +57,7 @@ export default function VenueAdminPage() {
       if (list.length > 0 && !selectedVenue) setSelectedVenue(list[0]);
     });
     return unsub;
-  }, [user, isAdmin, profile]);
+  }, [user?.uid, isAdmin]);
 
   useEffect(() => {
     if (!selectedVenue) return;
