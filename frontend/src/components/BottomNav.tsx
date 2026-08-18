@@ -9,11 +9,11 @@ import { useAuth } from "@/context/AuthContext"
 import { useTranslation } from "react-i18next"
 
 export function BottomNav() {
-  const { user, isAdmin, isCityAdmin, isVenueManager } = useAuth()
+  const { user, isAdmin, isSuperAdmin, isCityAdmin, isVenueManager } = useAuth()
   const pathname = usePathname()
   const { t } = useTranslation()
 
-  const defaultItems = [
+  const allItems = [
     { href: "/", label: t('nav.map', 'Mapa'), icon: "explore" },
     { href: "/venues", label: t('nav.venues', 'Locales'), icon: "nightlife" },
     { href: "/chills", label: t('nav.chills', 'Chills'), icon: "local_fire_department" },
@@ -22,7 +22,10 @@ export function BottomNav() {
     { href: "/profile", label: t('nav.profile', 'Perfil'), icon: "person" },
   ]
 
-  let items = [...defaultItems]
+  const superAdminHidden = ['/chills', '/wallet', '/profile'];
+  let items = isSuperAdmin
+    ? allItems.filter(item => !superAdminHidden.includes(item.href))
+    : [...allItems]
   if (isVenueManager) {
     items.push({ href: "/venue-admin", label: "Mi Local", icon: "storefront" })
   }

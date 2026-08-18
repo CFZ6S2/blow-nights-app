@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 
 export default function ChatListPage() {
   const { t } = useTranslation();
-  const { user, loading: authLoading } = useAuth();
+  const { user, isSuperAdmin, loading: authLoading } = useAuth();
   const [chats, setChats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -85,7 +85,13 @@ export default function ChatListPage() {
           </svg>
         </button>
         <h1 className="text-2xl font-bold">{t('chat.title')}</h1>
-        <div className="w-10"></div> {/* Spacer */}
+        {isSuperAdmin ? (
+          <Link href="/profile" className="p-2 hover:bg-white/10 rounded-full transition-all">
+            <span className="material-icons text-2xl text-slate-400">person</span>
+          </Link>
+        ) : (
+          <div className="w-10" />
+        )}
       </header>
 
       <div className="space-y-2 max-w-2xl mx-auto w-full">
