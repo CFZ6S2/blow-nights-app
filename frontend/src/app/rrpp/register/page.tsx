@@ -66,22 +66,19 @@ export default function RRPPRegisterPage() {
       <p className="text-slate-400 text-sm mb-6">
         Tu solicitud para ser RRPP independiente está pendiente de aprobación. Recibirás acceso cuando un administrador la revise.
       </p>
-      <button
-        onClick={() => router.push('/')}
-        className="w-full bg-white/5 border border-white/10 text-white font-bold py-3 rounded-xl text-sm hover:bg-white/10 transition-colors"
-      >
-        Volver al Inicio
-      </button>
+      <p className="text-xs text-slate-500">Te notificaremos cuando tu solicitud sea revisada.</p>
     </motion.div>
   );
 
   return (
     <div className="min-h-screen bg-black text-white p-6 font-sans">
       <div className="max-w-2xl mx-auto pt-12">
-        <button onClick={() => router.push('/')} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 text-sm font-bold uppercase tracking-wider">
-          <ArrowLeft className="w-4 h-4" />
-          Volver
-        </button>
+        {!submitted && !alreadyPending && (
+          <button onClick={() => router.back()} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 text-sm font-bold uppercase tracking-wider">
+            <ArrowLeft className="w-4 h-4" />
+            Volver
+          </button>
+        )}
 
         {(submitted || alreadyPending) ? pendingView : (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl">
