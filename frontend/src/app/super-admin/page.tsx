@@ -12,7 +12,7 @@ export default function SuperAdminPage() {
   const { user, isSuperAdmin, loading } = useAuth();
   const router = useRouter();
   
-  const [activeTab, setActiveTab] = useState<'ciudades' | 'facturacion' | 'locales' | 'partners' | 'rrpps'>('ciudades');
+  const [activeTab, setActiveTab] = useState<'roles' | 'ciudades' | 'facturacion' | 'locales' | 'partners' | 'rrpps'>('roles');
 
   // --- LOCALES STATE ---
   const [venues, setVenues] = useState<any[]>([]);
@@ -49,6 +49,16 @@ export default function SuperAdminPage() {
   
   // --- APPLICATIONS STATE ---
   const [applications, setApplications] = useState<any[]>([]);
+
+  // --- ROLES STATE ---
+  const [roleSearchEmail, setRoleSearchEmail] = useState('');
+  const [roleSearchResult, setRoleSearchResult] = useState<any | null>(null);
+  const [roleSearching, setRoleSearching] = useState(false);
+  const [selectedRole, setSelectedRole] = useState('');
+  const [roleCityId, setRoleCityId] = useState('');
+  const [roleVenueId, setRoleVenueId] = useState('');
+  const [assigningRole, setAssigningRole] = useState(false);
+  const [recentAssignments, setRecentAssignments] = useState<any[]>([]);
 
   // --- RRPP STATE ---
   const [promoters, setPromoters] = useState<any[]>([]);
@@ -100,7 +110,16 @@ export default function SuperAdminPage() {
       setPromoters(p);
     });
 
-    return () => { unsubVenues(); unsubCities(); unsubPartners(); unsubApps(); unsubPromoters(); };
+    const unsubRoles = onSnapshot(
+      query(collection(db, 'users'), where('role', 'in', ['venue', 'cityAdmin', 'admin', 'superadmin', 'rrpp', 'door'])),
+      (snap) => {
+        const r: any[] = [];
+        snap.forEach(d => r.push({ id: d.id, ...d.data() }));
+        setRecentAssignments(r);
+      }
+    );
+
+    return () => { unsubVenues(); unsubCities(); unsubPartners(); unsubApps(); unsubPromoters(); unsubRoles(); };
   }, [isSuperAdmin]);
 
   // --- LOCALES LOGIC ---
@@ -315,6 +334,71 @@ export default function SuperAdminPage() {
     alert('Enlace copiado al portapapeles');
   };
 
+  // --- ROLES LOGIC ---
+  const ROLE_OPTIONS = [
+    { value: 'venue', label: 'Venue Manager', icon: 'storefront', color: 'text-blue-400', redirect: '/venue-admin' },
+    { value: 'cityAdmin', label: 'City Manager', icon: 'location_city', color: 'text-green-400', redirect: '/city-manager' },
+    { value: 'admin', label: 'Admin', icon: 'admin_panel_settings', color: 'text-purple-400', redirect: '/admin' },
+    { value: 'superadmin', label: 'Super Admin', icon: 'shield', color: 'text-fuchsia-400', redirect: '/super-admin' },
+    { value: 'door', label: 'Portero', icon: 'sensor_door', color: 'text-orange-400', redirect: '/door' },
+  ];
+
+  const handleRoleSearch = async () => {
+    if (!roleSearchEmail.trim()) return;
+    setRoleSearching(true);
+    setRoleSearchResult(null);
+    try {
+      const q = query(collection(db, 'users'), where('email', '==', roleSearchEmail.toLowerCase().trim()));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        alert('No se encontró ningún usuario con ese email. El usuario debe haberse registrado primero.');
+        setRoleSearching(false);
+        return;
+      }
+      const userDoc = snap.docs[0];
+      setRoleSearchResult({ id: userDoc.id, ...userDoc.data() });
+      setSelectedRole(userDoc.data().role || '');
+    } catch (e) {
+      console.error(e);
+      alert('Error al buscar');
+    } finally {
+      setRoleSearching(false);
+    }
+  };
+
+  const handleAssignRole = async () => {
+    if (!roleSearchResult || !selectedRole) return;
+    setAssigningRole(true);
+    try {
+      const assignRoleFunc = httpsCallable(functions, 'assignRole');
+      const params: any = { uid: roleSearchResult.id, role: selectedRole };
+      if (selectedRole === 'cityAdmin' && roleCityId) params.cityId = roleCityId;
+      if (selectedRole === 'venue' && roleVenueId) {
+        await updateDoc(doc(db, 'venues', roleVenueId), { ownerId: roleSearchResult.id });
+      }
+      await assignRoleFunc(params);
+      alert(`Rol "${selectedRole}" asignado a ${roleSearchResult.email}. El cambio será efectivo en su próximo login.`);
+      setRoleSearchResult({ ...roleSearchResult, role: selectedRole });
+    } catch (e) {
+      console.error(e);
+      alert('Error al asignar rol');
+    } finally {
+      setAssigningRole(false);
+    }
+  };
+
+  const handleRevokeRole = async (userId: string, userEmail: string) => {
+    if (!confirm(`¿Revocar el rol de ${userEmail}? Volverá a ser usuario normal.`)) return;
+    try {
+      const assignRoleFunc = httpsCallable(functions, 'assignRole');
+      await assignRoleFunc({ uid: userId, role: 'user' });
+      alert('Rol revocado. El usuario verá la app normal en su próximo login.');
+    } catch (e) {
+      console.error(e);
+      alert('Error al revocar rol');
+    }
+  };
+
   if (loading || !isSuperAdmin) return <div className="min-h-screen bg-slate-950" />;
 
   return (
@@ -331,6 +415,7 @@ export default function SuperAdminPage() {
         </div>
 
         <div className="flex gap-2 overflow-x-auto no-scrollbar border-b border-white/10 pb-2">
+          <button onClick={() => setActiveTab('roles')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'roles' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Gestionar Roles</button>
           <button onClick={() => setActiveTab('ciudades')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'ciudades' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Plazas y Licencias</button>
           <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'partners' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Partners Asociados</button>
           <button onClick={() => setActiveTab('facturacion')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'facturacion' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Facturación Central</button>
@@ -340,6 +425,152 @@ export default function SuperAdminPage() {
       </header>
 
       {/* TABS CONTENT */}
+
+      {activeTab === 'roles' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <section className="bg-white/5 border border-white/10 p-6 rounded-3xl space-y-6">
+            <h2 className="text-sm font-black uppercase tracking-widest text-slate-300">Asignar Rol por Email</h2>
+
+            <div className="flex gap-2">
+              <input
+                placeholder="Email del usuario..."
+                type="email"
+                value={roleSearchEmail}
+                onChange={e => setRoleSearchEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleRoleSearch()}
+                className="flex-1 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none"
+              />
+              <button onClick={handleRoleSearch} disabled={roleSearching} className="bg-fuchsia-600 px-5 py-3 rounded-xl text-sm font-bold hover:bg-fuchsia-500 transition-colors disabled:opacity-50">
+                {roleSearching ? '...' : 'Buscar'}
+              </button>
+            </div>
+
+            {roleSearchResult && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                <div className="bg-black/30 border border-white/10 p-4 rounded-2xl">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-full bg-fuchsia-500/20 flex items-center justify-center">
+                      <span className="material-icons text-fuchsia-400">person</span>
+                    </div>
+                    <div>
+                      <p className="font-bold text-lg">{roleSearchResult.nick || 'Sin nick'}</p>
+                      <p className="text-xs text-slate-400">{roleSearchResult.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-slate-500">Rol actual:</span>
+                    <span className={`px-2 py-1 rounded-lg font-bold uppercase tracking-wider ${
+                      roleSearchResult.role && roleSearchResult.role !== 'user'
+                        ? 'bg-fuchsia-500/20 text-fuchsia-400'
+                        : 'bg-white/5 text-slate-500'
+                    }`}>
+                      {roleSearchResult.role || 'usuario'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-xs font-bold uppercase tracking-widest text-slate-500 block">Nuevo rol</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {ROLE_OPTIONS.map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setSelectedRole(opt.value)}
+                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                          selectedRole === opt.value
+                            ? 'bg-fuchsia-500/10 border-fuchsia-500/50'
+                            : 'bg-white/5 border-white/5 hover:border-white/20'
+                        }`}
+                      >
+                        <span className={`material-icons ${opt.color}`}>{opt.icon}</span>
+                        <div>
+                          <p className="font-bold text-sm">{opt.label}</p>
+                          <p className="text-[10px] text-slate-500">Redirige a {opt.redirect}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {selectedRole === 'cityAdmin' && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500 block">Ciudad asignada</label>
+                    <select
+                      value={roleCityId}
+                      onChange={e => setRoleCityId(e.target.value)}
+                      className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-green-500 outline-none"
+                    >
+                      <option value="">Selecciona ciudad...</option>
+                      {cities.map(c => (
+                        <option key={c.id} value={c.id}>{c.name} ({c.id})</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {selectedRole === 'venue' && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500 block">Local asignado</label>
+                    <select
+                      value={roleVenueId}
+                      onChange={e => setRoleVenueId(e.target.value)}
+                      className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none"
+                    >
+                      <option value="">Selecciona local...</option>
+                      {venues.map(v => (
+                        <option key={v.id} value={v.id}>{v.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleAssignRole}
+                  disabled={assigningRole || !selectedRole}
+                  className="w-full bg-white hover:bg-slate-200 text-black font-black py-3 rounded-xl transition-all uppercase tracking-widest text-xs disabled:opacity-50"
+                >
+                  {assigningRole ? 'Asignando...' : `Asignar rol "${selectedRole}"`}
+                </button>
+              </motion.div>
+            )}
+          </section>
+
+          <section className="bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4 h-[70vh] flex flex-col">
+            <h2 className="text-sm font-black uppercase tracking-widest text-slate-300">Usuarios con Rol Asignado ({recentAssignments.length})</h2>
+            <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
+              {recentAssignments.length === 0 && <p className="text-sm text-slate-500">No hay usuarios con roles especiales.</p>}
+              {recentAssignments.map(u => {
+                const roleInfo = ROLE_OPTIONS.find(r => r.value === u.role);
+                return (
+                  <div key={u.id} className="bg-black/30 border border-white/5 p-4 rounded-2xl">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        <span className={`material-icons ${roleInfo?.color || 'text-slate-400'}`}>{roleInfo?.icon || 'person'}</span>
+                        <div>
+                          <p className="font-bold text-sm">{u.nick || 'Sin nick'}</p>
+                          <p className="text-[10px] text-slate-400">{u.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${roleInfo?.color || 'text-slate-400'} bg-white/5`}>
+                          {roleInfo?.label || u.role}
+                        </span>
+                        <button
+                          onClick={() => handleRevokeRole(u.id, u.email || u.nick)}
+                          className="bg-red-900/30 text-red-400 px-2 py-1 rounded-lg text-[10px] font-bold hover:bg-red-900/60 transition-colors"
+                        >
+                          Revocar
+                        </button>
+                      </div>
+                    </div>
+                    {u.cityId && <p className="text-[10px] text-green-400 mt-1 ml-9">Ciudad: {u.cityId}</p>}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+      )}
 
       {activeTab === 'ciudades' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

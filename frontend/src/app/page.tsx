@@ -27,13 +27,32 @@ const MainMap = dynamic(() => import('@/components/Map'), {
 });
 
 export default function Home() {
-  const { user, profile, isAdmin, loading, logout } = useAuth();
+  const { user, profile, isAdmin, isSuperAdmin, loading, logout } = useAuth();
   const router = useRouter();
   const boostCooldown = useMemo(() => new Date(Date.now() - 24*60*60*1000), []);
 
   useEffect(() => {
-    if (!loading && user && (!profile || profile.edad === null || profile.edad === undefined)) {
+    if (loading || !user) return;
+
+    if (!profile || profile.edad === null || profile.edad === undefined) {
       router.push('/setup-profile');
+      return;
+    }
+
+    const role = profile?.role;
+    if (!role || role === 'user') return;
+
+    const redirects: Record<string, string> = {
+      venue: '/venue-admin',
+      venueOwner: '/venue-admin',
+      cityAdmin: '/city-manager',
+      superadmin: '/super-admin',
+      admin: '/admin',
+      door: '/door',
+    };
+
+    if (redirects[role]) {
+      router.replace(redirects[role]);
     }
   }, [user, profile, loading, router]);
 
