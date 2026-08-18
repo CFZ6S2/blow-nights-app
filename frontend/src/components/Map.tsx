@@ -264,6 +264,66 @@ const ChillMarker = memo(({ c, onClick, index }: { c: Chill, onClick: (id: strin
 
 ChillMarker.displayName = 'ChillMarker';
 
+const IsolatedMap = memo(({
+  viewState, setViewState, mapRef, onMapLoad,
+  radarFilter, filteredUsers, visibleVenues, visibleChills,
+  handleViewProfile, handleVenueClick, handleChillClick
+}: any) => {
+  return (
+    <Map
+      {...viewState}
+      ref={mapRef}
+      onMove={(evt: any) => setViewState(evt.viewState)}
+      mapStyle="https://tiles.openfreemap.org/styles/dark"
+      style={{ width: '100%', height: '100%' }}
+      onLoad={onMapLoad}
+      reuseMaps
+    >
+      <NavigationControl position="top-left" />
+
+      <AnimatePresence>
+        {radarFilter.mode === 'users' && filteredUsers.map((u: any, index: number) => (
+          <UserMarker 
+            key={u.id} 
+            u={u} 
+            index={index}
+            onClick={handleViewProfile} 
+          />
+        ))}
+
+        {radarFilter.mode === 'places' && visibleVenues.map((v: any, index: number) => (
+          <VenueMarker
+            key={v.id}
+            v={v}
+            index={index}
+            onClick={handleVenueClick}
+          />
+        ))}
+
+        {radarFilter.mode === 'places' && visibleChills.map((c: any, index: number) => (
+          <ChillMarker
+            key={c.id}
+            c={c}
+            index={index}
+            onClick={handleChillClick}
+          />
+        ))}
+      </AnimatePresence>
+    </Map>
+  );
+}, (prev: any, next: any) => {
+  return prev.radarFilter === next.radarFilter &&
+         prev.filteredUsers === next.filteredUsers &&
+         prev.visibleVenues === next.visibleVenues &&
+         prev.visibleChills === next.visibleChills &&
+         prev.viewState.latitude === next.viewState.latitude &&
+         prev.viewState.longitude === next.viewState.longitude &&
+         prev.viewState.zoom === next.viewState.zoom;
+});
+
+IsolatedMap.displayName = 'IsolatedMap';
+
+
 export default function MainMap() {
   const { user, profile } = useAuth();
   const { t } = useTranslation();
@@ -627,50 +687,19 @@ export default function MainMap() {
           </div>
         ) : null}
 
-        <Map
-          {...viewState}
-          ref={mapRef}
-          onMove={evt => setViewState(evt.viewState)}
-          mapStyle={MAP_STYLE}
-          style={{ width: '100%', height: '100%' }}
-          onLoad={onMapLoad}
-          reuseMaps
-        >
-          <NavigationControl position="top-left" />
-          <NavigationControl position="top-left" />
-
-          {/* Marcadores de usuarios y lugares filtrados */}
-          <AnimatePresence>
-            {radarFilter.mode === 'users' && filteredUsers.map((u, index) => (
-              <UserMarker 
-                key={u.id} 
-                u={u} 
-                index={index}
-                onClick={handleViewProfile} 
-              />
-            ))}
-
-            {/* Marcadores de Locales / Cruising */}
-            {radarFilter.mode === 'places' && visibleVenues.map((v, index) => (
-              <VenueMarker
-                key={v.id}
-                v={v}
-                index={index}
-                onClick={handleVenueClick}
-              />
-            ))}
-
-            {/* Marcadores de Chills */}
-            {radarFilter.mode === 'places' && visibleChills.map((c, index) => (
-              <ChillMarker
-                key={c.id}
-                c={c}
-                index={index}
-                onClick={handleChillClick}
-              />
-            ))}
-          </AnimatePresence>
-        </Map>
+        <IsolatedMap
+          viewState={viewState}
+          setViewState={setViewState}
+          mapRef={mapRef}
+          onMapLoad={onMapLoad}
+          radarFilter={radarFilter}
+          filteredUsers={filteredUsers}
+          visibleVenues={visibleVenues}
+          visibleChills={visibleChills}
+          handleViewProfile={handleViewProfile}
+          handleVenueClick={handleVenueClick}
+          handleChillClick={handleChillClick}
+        />
 
         {/* Crosshair & Pin Creation Overlay */}
         {isAddingPin && (
