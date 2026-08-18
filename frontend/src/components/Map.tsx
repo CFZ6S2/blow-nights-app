@@ -459,10 +459,20 @@ export default function MainMap() {
     }
   };
 
-  const handleViewProfile = (userId: string) => {
+  const handleViewProfile = useCallback((userId: string) => {
     triggerHaptic(15);
     setSelectedProfileId(userId);
-  };
+  }, []);
+
+  const handleVenueClick = useCallback((id: string) => {
+    triggerHaptic(10);
+    router.push(`/venues/detail?id=${id}`);
+  }, [router]);
+
+  const handleChillClick = useCallback((id: string) => {
+    triggerHaptic(10);
+    router.push(`/chills/detail?id=${id}`);
+  }, [router]);
 
   const filteredUsers = useMemo(() => {
     return usersNearby.filter((u) => {
@@ -636,10 +646,7 @@ export default function MainMap() {
                 key={u.id} 
                 u={u} 
                 index={index}
-                onClick={(id) => {
-                  triggerHaptic(10);
-                  setSelectedProfileId(id);
-                }} 
+                onClick={handleViewProfile} 
               />
             ))}
 
@@ -649,10 +656,7 @@ export default function MainMap() {
                 key={v.id}
                 v={v}
                 index={index}
-                onClick={(id) => {
-                  triggerHaptic(10);
-                  router.push(`/venues/detail?id=${id}`);
-                }}
+                onClick={handleVenueClick}
               />
             ))}
 
@@ -662,10 +666,7 @@ export default function MainMap() {
                 key={c.id}
                 c={c}
                 index={index}
-                onClick={(id) => {
-                  triggerHaptic(10);
-                  router.push(`/chills/detail?id=${id}`);
-                }}
+                onClick={handleChillClick}
               />
             ))}
           </AnimatePresence>
