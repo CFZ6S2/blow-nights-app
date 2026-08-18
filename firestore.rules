@@ -237,6 +237,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /rrpp_applications/{appId} {
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.uid;
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == resource.data.uid);
+      allow update, delete: if isAdmin();
+    }
+
     match /partner_applications/{appId} {
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
       allow read: if isAdmin() || (request.auth != null && request.auth.uid == resource.data.userId);
