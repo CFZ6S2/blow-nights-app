@@ -576,7 +576,7 @@ export default function MainMap() {
 
   return (
     <div className="w-full flex flex-col gap-4">
-      <div className="relative w-full h-[65vh] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl bg-slate-950">
+      <div className="relative w-full h-[65svh] md:h-[65vh] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl bg-slate-950">
       <motion.div 
         animate={{ 
           filter: selectedProfileId ? 'blur(10px) brightness(0.5)' : 'blur(0px) brightness(1)',
@@ -819,11 +819,11 @@ export default function MainMap() {
             className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-end justify-center px-4 pb-4"
           >
             <motion.div 
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="w-full max-w-lg bg-slate-900 rounded-[2.5rem] p-6 space-y-6 shadow-[0_-20px_80px_rgba(0,0,0,0.8)] border border-white/10 max-h-[85vh] overflow-y-auto"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="w-full max-w-lg bg-slate-900 rounded-[2.5rem] p-6 space-y-6 shadow-[0_-20px_80px_rgba(0,0,0,0.8)] border border-white/10 max-h-[85svh] overflow-y-auto"
+              onClick={e => e.stopPropagation()}
             >
               <div className="flex justify-between items-center pb-2">
                 <h3 className="text-2xl font-black text-white tracking-tight">{t('map.refine', 'Refinar Búsqueda')}</h3>

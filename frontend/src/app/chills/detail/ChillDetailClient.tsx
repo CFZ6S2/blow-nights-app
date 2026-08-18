@@ -342,7 +342,7 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
             )}
 
             {tab === 'chat' && canChat && (
-              <div className="flex flex-col" style={{ height: 'calc(100vh - 420px)', minHeight: '300px' }}>
+              <div className="flex flex-col" style={{ height: 'calc(100dvh - 420px)', minHeight: '300px' }}>
                 <div className="flex-1 overflow-y-auto space-y-2 mb-3 px-1">
                   {messages.length === 0 ? (
                     <div className="text-center py-8">
