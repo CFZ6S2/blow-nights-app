@@ -133,30 +133,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const refId = urlParams.get('ref');
 
       if (refId && refId !== user.uid) {
-        const { getDoc, doc, updateDoc, increment, setDoc, serverTimestamp } = await import('firebase/firestore');
-        
-        // Comprobar si este usuario ya ha sido referido o es nuevo
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        
-        if (!userDoc.exists()) {
-          // Es un usuario nuevo, procesar la invitación
-          const inviterRef = doc(db, 'users', refId);
-          const inviterDoc = await getDoc(inviterRef);
-          
-          if (inviterDoc.exists()) {
-            await updateDoc(inviterRef, {
-              invitesCount: increment(1)
-            });
-
-            // Si llega a 3, darle Premium (ejemplo simple)
-            const newCount = (inviterDoc.data().invitesCount || 0) + 1;
-            if (newCount >= 3) {
-              await updateDoc(inviterRef, {
-                premium: true,
-                premiumUntil: serverTimestamp() // Podríamos sumar días, pero para MVP es directo
-              });
-            }
-          }
+        try {
+          const { httpsCallable } = await import('firebase/functions');
+          const { functions } = await import('@/lib/firebase');
+          const processReferral = httpsCallable(functions, 'processReferral');
+          await processReferral({ referrerId: refId });
+        } catch (e) {
+          console.error("Error processing referral:", e);
         }
       }
     } catch (error) {
@@ -206,8 +189,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         deleteMatchingDocs('likes', 'toId'),
         deleteMatchingDocs('visits', 'visitorId'),
         deleteMatchingDocs('visits', 'visitedId'),
+        deleteMatchingDocs('pings', 'fromUserId'),
+        deleteMatchingDocs('pings', 'toUserId'),
+        deleteMatchingDocs('checkins', 'userId'),
+        deleteMatchingDocs('tickets', 'userId'),
+        deleteMatchingDocs('chill_requests', 'user_uid'),
         deleteDoc(doc(db, 'locations', uid)),
         deleteDoc(doc(db, 'verifications', uid)),
+        deleteDoc(doc(db, 'subscriptions', uid)),
       ]);
 
       // Bloqueos: viven en la subcolección users/{uid}/blocks, no en una colección raíz.
@@ -262,10 +251,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const isSuperAdmin = claims?.role === 'superadmin' || user?.email === 'cesar.herrera.rojo@gmail.com' || user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const isSuperAdmin = claims?.role === 'superadmin';
   const isAdmin = isSuperAdmin || claims?.role === 'admin';
-  const isCityAdmin = claims?.role === 'cityAdmin' || profile?.role === 'cityAdmin';
-  const isVenueManager = isAdmin || isCityAdmin || claims?.role === 'venueOwner' || claims?.role === 'venue' || profile?.role === 'venueOwner' || profile?.role === 'venue';
+  const isCityAdmin = claims?.role === 'cityAdmin';
+  const isVenueManager = isAdmin || isCityAdmin || claims?.role === 'venueOwner' || claims?.role === 'venue';
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   const hasChillAccess = isAdmin || !!claims?.premium || !!profile?.premium

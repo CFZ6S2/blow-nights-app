@@ -22,23 +22,18 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
   let isPremium = false;
   try {
     const statsRef = db.collection("system").doc("promoStats");
-    let statsSnapshot = await statsRef.get();
-    let initialCount = 0;
-    
-    // Si es la primera vez, contamos los usuarios actuales como base
-    if (!statsSnapshot.exists) {
-      const usersSnapshot = await db.collection("users").count().get();
-      initialCount = usersSnapshot.data().count;
-    }
 
     isPremium = await db.runTransaction(async (transaction) => {
       const statsDoc = await transaction.get(statsRef);
-      let count = initialCount;
-      
+      let count = 0;
+
       if (statsDoc.exists) {
         count = statsDoc.data().count || 0;
+      } else {
+        const usersSnapshot = await db.collection("users").count().get();
+        count = usersSnapshot.data().count;
       }
-      
+
       if (count < 100) {
         transaction.set(statsRef, { count: count + 1 }, { merge: true });
         return true;
@@ -49,7 +44,7 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
   } catch (error) {
     console.error("Error al contar usuarios para premium promo:", error);
     // Fallback: Tu correo siempre es premium
-    isPremium = email === 'cesar.herrera.rojo@gmail.com';
+    isPremium = false;
   }
 
   const userDoc = {
@@ -111,12 +106,15 @@ exports.cleanupAvailability = onSchedule("every 5 minutes", async (event) => {
       .where("disponibleHasta", "<", now)
       .get();
 
-    const batch = db.batch();
-    expiredUsers.forEach(doc => {
-      batch.update(doc.ref, { disponibleHasta: null });
-    });
-
-    return batch.commit();
+    const chunks = [];
+    for (let i = 0; i < expiredUsers.docs.length; i += 500) {
+      chunks.push(expiredUsers.docs.slice(i, i + 500));
+    }
+    await Promise.all(chunks.map(chunk => {
+      const batch = db.batch();
+      chunk.forEach(doc => batch.update(doc.ref, { disponibleHasta: null }));
+      return batch.commit();
+    }));
 });
 
 /**
@@ -387,7 +385,10 @@ exports.cleanupExpiredCheckins = onSchedule({
 exports.onCheckinCreated = onDocumentCreated("checkins/{checkinId}", async (event) => {
   const data = event.data?.data();
   if (!data?.venueId) return null;
-  return db.collection("venues").doc(data.venueId).update({
+  const venueRef = db.collection("venues").doc(data.venueId);
+  const venueSnap = await venueRef.get();
+  if (!venueSnap.exists) return null;
+  return venueRef.update({
     currentCount: admin.firestore.FieldValue.increment(1),
   });
 });
@@ -581,18 +582,27 @@ exports.validateTicketByDoorToken = onCall(async (request) => {
     return { valid: false, message: "PERTENECE A OTRO LOCAL" };
   }
 
-  if (ticket.status === "used") {
-    return { valid: false, message: "YA ESCANEADA" };
-  }
-  if (ticket.status === "cancelled") {
-    return { valid: false, message: "ENTRADA CANCELADA" };
-  }
+  const result = await db.runTransaction(async (transaction) => {
+    const freshDoc = await transaction.get(ticketDoc.ref);
+    const freshTicket = freshDoc.data();
 
-  await ticketDoc.ref.update({
-    status: "used",
-    usedAt: admin.firestore.FieldValue.serverTimestamp(),
-    validatedBy: `door_scanner_${eventId}`,
+    if (freshTicket.status === "used") {
+      return { valid: false, message: "YA ESCANEADA" };
+    }
+    if (freshTicket.status === "cancelled") {
+      return { valid: false, message: "ENTRADA CANCELADA" };
+    }
+
+    transaction.update(ticketDoc.ref, {
+      status: "used",
+      usedAt: admin.firestore.FieldValue.serverTimestamp(),
+      validatedBy: `door_scanner_${eventId}`,
+    });
+
+    return { valid: true };
   });
+
+  if (!result.valid) return result;
 
   const tier = event.ticket_tiers?.find(t => t.id === ticket.ticketType || t.name === ticket.ticketType);
   const perks = tier?.perks || "1 Copa General";
@@ -637,6 +647,16 @@ exports.generateDirectPromoterTicket = onCall(async (request) => {
   const promoterDoc = promotersQuery.docs[0];
   const promoter = promoterDoc.data();
   const venueId = promoterDoc.ref.parent.parent.id;
+
+  const maxTickets = promoter.max_tickets || 200;
+  const issuedSnap = await db.collection("tickets")
+    .where("rrpp_id", "==", promoterDoc.id)
+    .where("eventId", "==", eventId)
+    .where("channel", "==", "rrpp_direct")
+    .count().get();
+  if (issuedSnap.data().count >= maxTickets) {
+    throw new HttpsError('resource-exhausted', `Límite de ${maxTickets} entradas alcanzado.`);
+  }
 
   const eventRef = db.collection('venues').doc(venueId).collection('events').doc(eventId);
   const eventDoc = await eventRef.get();
@@ -954,7 +974,7 @@ exports.createPingCheckoutSession = onCall(async (request) => {
   const stripe = getStripe();
   if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
 
-  const { type, origin } = data; // type: "ping_pack" or "vip_night"
+  const { type, origin, citySlug } = data;
   const uid = auth.uid;
   const email = auth.token.email;
 
@@ -1047,9 +1067,21 @@ exports.createStripeConnectAccount = onCall(async (request) => {
 exports.createStripeAccountLink = onCall(async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
+
+  if (!data.venueId) throw new HttpsError("invalid-argument", "venueId es obligatorio.");
+  const venueSnap = await db.collection("venues").doc(data.venueId).get();
+  if (!venueSnap.exists) throw new HttpsError("not-found", "Venue no encontrado.");
+  const venue = venueSnap.data();
+  if (venue.ownerId !== auth.uid) {
+    throw new HttpsError("permission-denied", "No eres el propietario de este venue.");
+  }
+  if (!venue.stripeAccountId) {
+    throw new HttpsError("failed-precondition", "Este venue no tiene cuenta Stripe.");
+  }
+
   const stripe = getStripe();
   const accountLink = await stripe.accountLinks.create({
-    account: data.accountId,
+    account: venue.stripeAccountId,
     refresh_url: `${data.origin}/business/stripe?refresh=true`,
     return_url: `${data.origin}/business/stripe?return=true`,
     type: 'account_onboarding',
@@ -1077,6 +1109,14 @@ exports.stripeWebhook = onRequest(async (req, res) => {
 
   const session = event.data.object;
   const firebaseUID = session.metadata?.firebaseUID;
+
+  // Idempotency: skip already-processed events
+  const eventRef = db.collection("processed_stripe_events").doc(event.id);
+  const eventDoc = await eventRef.get();
+  if (eventDoc.exists) {
+    return res.json({ received: true, duplicate: true });
+  }
+  await eventRef.set({ processedAt: admin.firestore.FieldValue.serverTimestamp(), type: event.type });
 
   if (event.type === "checkout.session.completed" && firebaseUID) {
     const isTicket = session.metadata?.type === "ticket";
@@ -1310,7 +1350,7 @@ exports.assignRole = onCall(async (request) => {
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
   // Comprobar que el llamador es admin o superadmin
-  const callerIsAdmin = auth.token.role === 'admin' || auth.token.role === 'superadmin' || auth.token.email === 'cesar.herrera.rojo@gmail.com';
+  const callerIsAdmin = auth.token.role === 'admin' || auth.token.role === 'superadmin';
   if (!callerIsAdmin) {
     throw new HttpsError("permission-denied", "No tienes permisos de administrador.");
   }
@@ -1625,11 +1665,17 @@ exports.cleanupExpiredChills = onSchedule("every 30 minutes", async () => {
  */
 exports.checkFranchiseTrigger = onDocumentWritten("venues/{venueId}", async (event) => {
   const after = event.data.after;
-  if (!after.exists) return; // Se borró
+  if (!after.exists) return;
 
+  const before = event.data.before;
   const data = after.data();
-  // Solo nos importa si está activo y tiene ciudad
   if (!data.isActive || !data.cityId) return;
+
+  // Only run when isActive or cityId actually changed (not on every venue write like currentCount)
+  if (before.exists) {
+    const prev = before.data();
+    if (prev.isActive === data.isActive && prev.cityId === data.cityId) return;
+  }
 
   const cityId = data.cityId;
   
@@ -1673,5 +1719,38 @@ exports.checkFranchiseTrigger = onDocumentWritten("venues/{venueId}", async (eve
        });
     }
   }
+});
+
+/**
+ * processReferral — Server-side referral processing
+ */
+exports.processReferral = onCall(async (request) => {
+  const { auth, data } = request;
+  if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
+
+  const { referrerId } = data;
+  if (!referrerId || referrerId === auth.uid) return { success: false };
+
+  const userDoc = await db.collection("users").doc(auth.uid).get();
+  if (userDoc.exists() && userDoc.data()?.referredBy) return { success: false };
+
+  const inviterRef = db.collection("users").doc(referrerId);
+  const inviterDoc = await inviterRef.get();
+  if (!inviterDoc.exists) return { success: false };
+
+  await db.collection("users").doc(auth.uid).update({ referredBy: referrerId });
+
+  const newCount = (inviterDoc.data().invitesCount || 0) + 1;
+  await inviterRef.update({
+    invitesCount: admin.firestore.FieldValue.increment(1),
+  });
+
+  if (newCount >= 3) {
+    const existingClaims = (await admin.auth().getUser(referrerId)).customClaims || {};
+    await admin.auth().setCustomUserClaims(referrerId, { ...existingClaims, premium: true });
+    await inviterRef.update({ premium: true });
+  }
+
+  return { success: true };
 });
 

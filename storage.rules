@@ -10,11 +10,11 @@ service firebase.storage {
     }
 
     match /chatMedia/{chatId}/{allPaths=**} {
-      allow read: if request.auth != null;
+      allow read: if request.auth != null && request.auth.uid in chatId.split('_');
       allow write: if request.auth != null
-        && request.resource.size < 5 * 1024 * 1024 // Máx 5 MB
-        && request.resource.contentType.matches('image/(jpeg|png|webp|gif)')
-        && request.auth.uid in chatId.split('_'); // Solo participantes del chat
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp|gif)|audio/(webm|ogg|mp4|aac|mpeg)')
+        && request.auth.uid in chatId.split('_');
     }
 
     match /verifications/{allPaths=**} {
@@ -23,11 +23,14 @@ service firebase.storage {
       allow read: if false;
     }
 
+    // Venue event images: writes require the path to embed the uid (venues/{venueId}/events/{eventId}/{uid}_{fileName})
+    // Frontend must prefix uploads with auth.uid to pass this rule
     match /venues/{venueId}/events/{eventId}/{fileName} {
       allow read: if true;
       allow write: if request.auth != null
                    && request.resource.size < 5 * 1024 * 1024
-                   && request.resource.contentType.matches('image/.*');
+                   && request.resource.contentType.matches('image/.*')
+                   && fileName.matches(request.auth.uid + '_.*');
     }
   }
 }
