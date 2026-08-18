@@ -325,7 +325,7 @@ IsolatedMap.displayName = 'IsolatedMap';
 
 
 export default function MainMap() {
-  const { user, profile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
   const mapRef = useRef<MapRef>(null);
@@ -385,24 +385,7 @@ export default function MainMap() {
   const [distanceFilter, setDistanceFilter] = useState(50); // 50km por defecto
 
   useEffect(() => {
-    // Obtener ubicación inicial
-    if (typeof navigator !== 'undefined' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-          setUserLocation([longitude, latitude]);
-          setViewState((prev) => ({
-            ...prev,
-            latitude,
-            longitude
-          }));
-        },
-        (err) => {
-          // Silenciamos el error en la consola del mapa para evitar ruidos
-          // El usuario ya recibe el aviso detallado en su pestaña de Perfil
-        }
-      );
-    }
+    if (authLoading || !user) return;
 
     const q = query(collection(db, 'users'), where('online', '==', true));
     const unsubscribe = onSnapshot(q, 
