@@ -1,11 +1,13 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
-import { 
-  onAuthStateChanged, 
-  GoogleAuthProvider, 
+import {
+  onAuthStateChanged,
+  GoogleAuthProvider,
   OAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut
 } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -52,7 +54,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [claims, setClaims] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
   usePresence(user?.uid, profile);
+
+  useEffect(() => {
+    getRedirectResult(auth).then((result) => {
+      if (result?.user) {
+        const refId = sessionStorage.getItem('blow_ref');
+        if (refId) {
+          sessionStorage.removeItem('blow_ref');
+          if (refId !== result.user.uid) {
+            import('firebase/functions').then(({ httpsCallable }) => {
+              import('@/lib/firebase').then(({ functions }) => {
+                httpsCallable(functions, 'processReferral')({ referrerId: refId }).catch(() => {});
+              });
+            });
+          }
+        }
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     // Registro de Service Worker para PWA
@@ -112,43 +134,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loginWithGoogle = useCallback(async () => {
     const provider = new GoogleAuthProvider();
+    const urlParams = new URLSearchParams(window.location.search);
+    const refId = urlParams.get('ref');
+    if (refId) sessionStorage.setItem('blow_ref', refId);
+
     try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      // Lógica de Referidos
-      const urlParams = new URLSearchParams(window.location.search);
-      const refId = urlParams.get('ref');
-
-      if (refId && refId !== user.uid) {
-        try {
-          const { httpsCallable } = await import('firebase/functions');
-          const { functions } = await import('@/lib/firebase');
-          const processReferral = httpsCallable(functions, 'processReferral');
-          await processReferral({ referrerId: refId });
-        } catch (e) {
-          console.error("Error processing referral:", e);
+      if (isMobile) {
+        await signInWithRedirect(auth, provider);
+      } else {
+        const result = await signInWithPopup(auth, provider);
+        if (refId && refId !== result.user.uid) {
+          try {
+            const { httpsCallable } = await import('firebase/functions');
+            const { functions } = await import('@/lib/firebase');
+            const processReferral = httpsCallable(functions, 'processReferral');
+            await processReferral({ referrerId: refId });
+          } catch (e) {
+            console.error("Error processing referral:", e);
+          }
         }
       }
     } catch (error) {
       console.error("Error signing in with Google", error);
       throw error;
     }
-  }, []);
+  }, [isMobile]);
 
   const loginWithApple = useCallback(async () => {
     const provider = new OAuthProvider('apple.com');
     provider.addScope('email');
     provider.addScope('name');
     try {
-      const result = await signInWithPopup(auth, provider);
-      // Apple logic could be identical to Google regarding referrals
-      // We'll skip the referral part for Apple to keep it simple, or replicate if needed
+      if (isMobile) {
+        await signInWithRedirect(auth, provider);
+      } else {
+        await signInWithPopup(auth, provider);
+      }
     } catch (error) {
       console.error("Error signing in with Apple", error);
       throw error;
     }
-  }, []);
+  }, [isMobile]);
 
   const logout = useCallback(async () => {
     try {
