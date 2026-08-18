@@ -49,7 +49,7 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow get: if request.auth != null && notBlocked(userId);
-      allow list: if request.auth != null && request.query.limit <= 20;
+      allow list: if isAdmin() || (request.auth != null && request.query.limit <= 150);
       allow update: if (request.auth.uid == userId && notBanned() && safeFields() && validAge() && validPingReset()) || isAdmin();
       allow create, delete: if isAdmin();
 

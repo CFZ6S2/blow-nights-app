@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, memo, useMemo, useCallback } from '
 import Map, { Marker, NavigationControl, MapRef } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useAuth } from '@/context/AuthContext';
-import { collection, onSnapshot, query, where, doc, setDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc, setDoc, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import Skeleton from '@/components/Skeleton';
@@ -387,7 +387,7 @@ export default function MainMap() {
   useEffect(() => {
     if (authLoading || !user) return;
 
-    const q = query(collection(db, 'users'), where('online', '==', true));
+    const q = query(collection(db, 'users'), where('online', '==', true), limit(150));
     const unsubscribe = onSnapshot(q, 
       (snapshot) => {
         const users: User[] = [];
