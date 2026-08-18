@@ -48,7 +48,7 @@ export function BottomNav() {
   if (hideOnPaths.includes(pathname)) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 bg-black/80 backdrop-blur-2xl border-t border-white/10 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-30 bg-black/80 backdrop-blur-md border-t border-white/10 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_40px_rgba(0,0,0,0.5)] translate-z-0">
       <div className="max-w-md mx-auto flex justify-around py-4 px-4 relative">
         {items.map((item) => {
           const isHome = item.match === `/${c}`;

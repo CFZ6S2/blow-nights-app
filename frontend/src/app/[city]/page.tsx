@@ -62,6 +62,7 @@ export default function Home() {
       door: '/door',
       ambassador: '/ambassador',
       rrpp: '/rrpp',
+      pending_rrpp: '/rrpp/register',
     };
 
     if (redirects[role]) {

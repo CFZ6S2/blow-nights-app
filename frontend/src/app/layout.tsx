@@ -75,7 +75,7 @@ export default function RootLayout({
               <NotificationManager />
               <NotificationToast />
               <ViewerToast />
-              <div className="flex-1 pb-20 overflow-x-hidden">
+              <div className="flex-1 pb-20">
                 <PageTransition>
                   {children}
                 </PageTransition>

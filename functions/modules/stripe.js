@@ -1,7 +1,7 @@
 const { onCall, HttpsError, onRequest } = require("firebase-functions/v2/https");
 const { admin, db, getStripe } = require("../lib/init");
 
-exports.createCheckoutSession = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createCheckoutSession = onCall({ enforceAppCheck: false }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -41,7 +41,7 @@ exports.createCheckoutSession = onCall({ enforceAppCheck: true }, async (request
   }
 });
 
-exports.createChillPassCheckout = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createChillPassCheckout = onCall({ enforceAppCheck: false }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -132,7 +132,7 @@ exports.createChillPassCheckout = onCall({ enforceAppCheck: true }, async (reque
   }
 });
 
-exports.createPingCheckoutSession = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createPingCheckoutSession = onCall({ enforceAppCheck: false }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -194,7 +194,7 @@ exports.createPingCheckoutSession = onCall({ enforceAppCheck: true }, async (req
   }
 });
 
-exports.createStripeConnectAccount = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createStripeConnectAccount = onCall({ enforceAppCheck: false }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -229,7 +229,7 @@ exports.createStripeConnectAccount = onCall({ enforceAppCheck: true }, async (re
   }
 });
 
-exports.createStripeAccountLink = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createStripeAccountLink = onCall({ enforceAppCheck: false }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 

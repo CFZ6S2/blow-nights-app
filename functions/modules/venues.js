@@ -126,7 +126,7 @@ exports.createRRPPParty = onCall({ enforceAppCheck: true }, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Login requerido');
 
-  const { eventName, venueName, address, lat, lng } = data;
+  const { eventName, venueName, address, lat, lng, eventDate, eventTime, ticketType } = data;
   if (!eventName || !venueName || !address || lat === undefined || lng === undefined) {
     throw new HttpsError('invalid-argument', 'Faltan parámetros obligatorios');
   }
@@ -201,7 +201,9 @@ exports.createRRPPParty = onCall({ enforceAppCheck: true }, async (request) => {
   
   batch.set(eventRef, {
     title: eventName,
-    date: new Date().toISOString().split('T')[0],
+    date: eventDate || new Date().toISOString().split('T')[0],
+    time: eventTime || null,
+    ticketType: ticketType || 'general',
     scanner_token: scannerToken,
     createdAt: admin.firestore.FieldValue.serverTimestamp()
   });

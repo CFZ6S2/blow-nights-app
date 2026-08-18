@@ -46,8 +46,16 @@ export default function SetupProfilePage() {
   setCity(savedCity || DEFAULT_CITY);
       router.push(`/${savedCity || DEFAULT_CITY}/`);
     }
-    
     if (profile) {
+      if (profile.role === 'pending_rrpp') {
+        router.replace('/rrpp/register');
+        return;
+      }
+      if (profile.role === 'rrpp') {
+        router.replace('/rrpp');
+        return;
+      }
+
       setNick(profile.nick || '');
       setEdad(profile.edad?.toString() || '');
       setRol(profile.rol || 'versátil');

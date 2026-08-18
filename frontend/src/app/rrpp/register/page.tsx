@@ -39,19 +39,24 @@ export default function RRPPRegisterPage() {
     if (!phone || !city) return alert('Por favor, introduce tu teléfono y ciudad.');
     setIsSubmitting(true);
     try {
-      await setDoc(doc(db, 'rrpp_applications', user!.uid), {
-        uid: user!.uid,
-        email: user!.email || '',
-        nick: profile?.nick || '',
+      const { httpsCallable } = await import('firebase/functions');
+      const { functions } = await import('@/lib/firebase');
+      
+      const submitApp = httpsCallable(functions, 'submitRRPPApplication');
+      await submitApp({
         phone,
         city,
-        status: 'pending',
-        createdAt: serverTimestamp()
+        nick: profile?.nick || '',
+        email: user?.email || ''
       });
+
       setSubmitted(true);
-    } catch (error) {
+      setTimeout(() => {
+        router.push('/');
+      }, 3000);
+    } catch (error: any) {
       console.error(error);
-      alert('Error al enviar la solicitud.');
+      alert('Error al enviar la solicitud: ' + (error.message || 'Error desconocido'));
     } finally {
       setIsSubmitting(false);
     }

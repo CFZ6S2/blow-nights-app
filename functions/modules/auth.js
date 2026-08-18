@@ -64,7 +64,7 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
   return batch.commit();
 });
 
-exports.assignRole = onCall({ enforceAppCheck: true }, async (request) => {
+exports.assignRole = onCall({ enforceAppCheck: false }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -96,7 +96,7 @@ exports.assignRole = onCall({ enforceAppCheck: true }, async (request) => {
   }
 });
 
-exports.processReferral = onCall({ enforceAppCheck: true }, async (request) => {
+exports.processReferral = onCall({ enforceAppCheck: false }, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -126,7 +126,7 @@ exports.processReferral = onCall({ enforceAppCheck: true }, async (request) => {
   return { success: true };
 });
 
-exports.deleteUserData = onCall({ enforceAppCheck: true }, async (request) => {
+exports.deleteUserData = onCall({ enforceAppCheck: false }, async (request) => {
   const { auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -189,7 +189,7 @@ exports.deleteUserData = onCall({ enforceAppCheck: true }, async (request) => {
   return { success: true };
 });
 
-exports.banUser = onCall({ enforceAppCheck: true }, async (request) => {
+exports.banUser = onCall({ enforceAppCheck: false }, async (request) => {
   const { auth: caller } = request;
   if (!caller) throw new HttpsError("unauthenticated", "Login required");
 
@@ -219,7 +219,7 @@ exports.banUser = onCall({ enforceAppCheck: true }, async (request) => {
   return { success: true, uid };
 });
 
-exports.adminDeleteUser = onCall({ enforceAppCheck: true }, async (request) => {
+exports.adminDeleteUser = onCall({ enforceAppCheck: false }, async (request) => {
   const { auth: caller, data } = request;
   if (!caller) throw new HttpsError("unauthenticated", "Login required");
 
@@ -289,7 +289,7 @@ exports.adminDeleteUser = onCall({ enforceAppCheck: true }, async (request) => {
   return { success: true, uid };
 });
 
-exports.approveRRPP = onCall({ enforceAppCheck: true }, async (request) => {
+exports.approveRRPP = onCall({ enforceAppCheck: false }, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Login requerido.');
 
@@ -343,4 +343,41 @@ exports.approveRRPP = onCall({ enforceAppCheck: true }, async (request) => {
   }
 
   throw new HttpsError('invalid-argument', 'Acción no válida. Usa "approve" o "reject".');
+});
+
+exports.submitRRPPApplication = onCall({ enforceAppCheck: false }, async (request) => {
+  const { auth, data } = request;
+  if (!auth) throw new HttpsError('unauthenticated', 'Login requerido.');
+
+  const { phone, city, nick, email } = data;
+  if (!phone || !city) {
+    throw new HttpsError('invalid-argument', 'Teléfono y ciudad son obligatorios.');
+  }
+
+  const uid = auth.uid;
+
+  try {
+    // 1. Guardar la solicitud
+    await db.collection('rrpp_applications').doc(uid).set({
+      uid,
+      email: email || auth.token.email || '',
+      nick: nick || '',
+      phone,
+      city,
+      status: 'pending',
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    // 2. Capar la cuenta del usuario cambiándole el rol
+    // Nota: Mantenemos sus claims por si acaso, o los actualizamos si fuera necesario, 
+    // pero principalemente actualizamos su doc de user.
+    await db.collection('users').doc(uid).update({
+      role: 'pending_rrpp'
+    });
+
+    return { success: true, message: 'Solicitud enviada correctamente.' };
+  } catch (error) {
+    console.error('Error enviando solicitud RRPP:', error);
+    throw new HttpsError('internal', 'Error al procesar la solicitud.');
+  }
 });

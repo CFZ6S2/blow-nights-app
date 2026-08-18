@@ -12,6 +12,7 @@ const adminModule = require("./modules/admin");
 exports.onUserCreate = auth.onUserCreate;
 exports.assignRole = auth.assignRole;
 exports.approveRRPP = auth.approveRRPP;
+exports.submitRRPPApplication = auth.submitRRPPApplication;
 exports.processReferral = auth.processReferral;
 exports.deleteUserData = auth.deleteUserData;
 exports.banUser = auth.banUser;

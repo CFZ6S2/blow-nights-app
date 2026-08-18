@@ -78,6 +78,10 @@ export default function SuperAdminPage() {
   const [userSearching, setUserSearching] = useState(false);
   const [selectedUserDetail, setSelectedUserDetail] = useState<any | null>(null);
   const [adminActionLoading, setAdminActionLoading] = useState(false);
+  
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [usersFilterCity, setUsersFilterCity] = useState<string>('all');
+  const [loadingAllUsers, setLoadingAllUsers] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
@@ -138,6 +142,26 @@ export default function SuperAdminPage() {
     );
 
     return () => { unsubVenues(); unsubCities(); unsubPartners(); unsubApps(); unsubRrppApps(); unsubPromoters(); unsubRoles(); };
+  }, [isSuperAdmin]);
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    const fetchRecentUsers = async () => {
+      setLoadingAllUsers(true);
+      try {
+        const { orderBy, limit } = await import('firebase/firestore');
+        const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(150));
+        const snap = await getDocs(q);
+        const u: any[] = [];
+        snap.forEach(d => u.push({ id: d.id, ...d.data() }));
+        setAllUsers(u);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoadingAllUsers(false);
+      }
+    };
+    fetchRecentUsers();
   }, [isSuperAdmin]);
 
   // --- LOCALES LOGIC ---
@@ -225,17 +249,42 @@ export default function SuperAdminPage() {
   };
 
   const handleAdminDeleteUser = async (uid: string) => {
-    if (!confirm('🛑 ATENCIÓN: ¿Estás completamente seguro de ELIMINAR esta cuenta? Esta acción borrará permanentemente todos sus datos, fotos y documentos. NO SE PUEDE DESHACER.')) return;
+    if (!confirm('¿ESTÁS SEGURO? Esta acción es IRREVERSIBLE. Se borrarán todos sus datos, fotos, likes, mensajes, etc.')) return;
     setAdminActionLoading(true);
     try {
-      const adminDelete = httpsCallable(functions, 'adminDeleteUser');
-      await adminDelete({ uid });
-      alert('Cuenta de usuario eliminada completamente.');
+      const { httpsCallable } = await import('firebase/functions');
+      const deleteFunc = httpsCallable(functions, 'adminDeleteUser');
+      await deleteFunc({ uid });
+      alert('Usuario eliminado permanentemente.');
       setSelectedUserDetail(null);
       setUserSearchResults(prev => prev.filter(u => u.id !== uid));
+      setAllUsers(prev => prev.filter(u => u.id !== uid));
+    } catch (error: any) {
+      console.error(error);
+      alert('Error al eliminar: ' + error.message);
+    } finally {
+      setAdminActionLoading(false);
+    }
+  };
+
+  const handleFastTrackRRPP = async (userId: string) => {
+    if (!confirm('¿Convertir a este usuario en RRPP de forma directa?')) return;
+    setAdminActionLoading(true);
+    try {
+      const { httpsCallable } = await import('firebase/functions');
+      try {
+        const approveFunc = httpsCallable(functions, 'approveRRPP');
+        await approveFunc({ applicationId: userId, action: 'approve' });
+      } catch (e: any) {
+        const assignRoleFunc = httpsCallable(functions, 'assignRole');
+        await assignRoleFunc({ uid: userId, role: 'rrpp' });
+      }
+      alert('¡Usuario convertido en RRPP con éxito!');
+      setSelectedUserDetail({ ...selectedUserDetail, role: 'rrpp' });
+      setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, role: 'rrpp' } : u));
     } catch (e: any) {
       console.error(e);
-      alert(e.message || 'Error al eliminar usuario');
+      alert('Error al convertir: ' + (e.message || 'Desconocido'));
     } finally {
       setAdminActionLoading(false);
     }
@@ -253,6 +302,22 @@ export default function SuperAdminPage() {
     } catch (e: any) {
       console.error(e);
       alert(e.message || 'Error al banear usuario');
+    } finally {
+      setAdminActionLoading(false);
+    }
+  };
+  const handleUpdateUserCity = async (userId: string, newCityId: string) => {
+    if (!confirm(`¿Asignar territorio a ${newCityId || 'Ninguno'}?`)) return;
+    setAdminActionLoading(true);
+    try {
+      await updateDoc(doc(db, 'users', userId), { city: newCityId, cityId: newCityId });
+      setSelectedUserDetail((prev: any) => prev ? { ...prev, city: newCityId, cityId: newCityId } : null);
+      setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, city: newCityId, cityId: newCityId } : u));
+      setUserSearchResults(prev => prev.map(u => u.id === userId ? { ...u, city: newCityId, cityId: newCityId } : u));
+      alert('Territorio actualizado correctamente.');
+    } catch (e: any) {
+      console.error(e);
+      alert('Error actualizando el territorio: ' + (e.message || 'Desconocido'));
     } finally {
       setAdminActionLoading(false);
     }
@@ -561,29 +626,79 @@ export default function SuperAdminPage() {
               </button>
             </div>
 
-            <div className="space-y-3">
-              {userSearchResults.map(u => (
-                <div 
-                  key={u.id} 
-                  onClick={() => setSelectedUserDetail(u)}
-                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-                    selectedUserDetail?.id === u.id
-                      ? 'bg-fuchsia-500/10 border-fuchsia-500/50'
-                      : 'bg-black/30 border-white/5 hover:border-white/20'
-                  }`}
-                >
-                  <img src={u.fotoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.nick || 'U')}&background=random`} alt={u.nick} className="w-10 h-10 rounded-full object-cover" />
-                  <div className="flex-1">
-                    <p className="font-bold text-sm flex items-center gap-2">
-                      {u.nick || 'Sin nick'}
-                      {u.banned && <span className="px-2 py-0.5 bg-red-900/30 text-red-400 text-[10px] rounded uppercase font-black">Baneado</span>}
-                    </p>
-                    <p className="text-[10px] text-slate-400">{u.email}</p>
+            {userSearchResults.length > 0 ? (
+              <div className="space-y-3">
+                <p className="text-xs text-fuchsia-400 font-bold uppercase mb-2">Resultados de búsqueda ({userSearchResults.length})</p>
+                {userSearchResults.map(u => (
+                  <div 
+                    key={u.id} 
+                    onClick={() => setSelectedUserDetail(u)}
+                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                      selectedUserDetail?.id === u.id
+                        ? 'bg-fuchsia-500/10 border-fuchsia-500/50'
+                        : 'bg-black/30 border-white/5 hover:border-white/20'
+                    }`}
+                  >
+                    <img src={u.fotoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.nick || 'U')}&background=random`} alt={u.nick} className="w-10 h-10 rounded-full object-cover" />
+                    <div className="flex-1">
+                      <p className="font-bold text-sm flex items-center gap-2">
+                        {u.nick || 'Sin nick'}
+                        {u.banned && <span className="px-2 py-0.5 bg-red-900/30 text-red-400 text-[10px] rounded uppercase font-black">Baneado</span>}
+                      </p>
+                      <p className="text-[10px] text-slate-400">{u.email}</p>
+                    </div>
+                    <span className="text-[10px] uppercase font-bold text-slate-500 bg-white/5 px-2 py-1 rounded">{u.role || 'user'}</span>
                   </div>
-                  <span className="text-[10px] uppercase font-bold text-slate-500 bg-white/5 px-2 py-1 rounded">{u.role || 'user'}</span>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                  <p className="text-xs text-slate-400 font-bold uppercase">Últimos Registros</p>
+                  <select
+                    value={usersFilterCity}
+                    onChange={e => setUsersFilterCity(e.target.value)}
+                    className="bg-black/30 border border-white/10 rounded-lg px-2 py-1 text-xs outline-none"
+                  >
+                    <option value="all">Todas las ciudades</option>
+                    {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
                 </div>
-              ))}
-            </div>
+                
+                {loadingAllUsers ? (
+                  <p className="text-sm text-slate-500 text-center py-4">Cargando usuarios...</p>
+                ) : (
+                  <div className="space-y-3 h-[50vh] overflow-y-auto pr-2 no-scrollbar">
+                    {allUsers
+                      .filter(u => usersFilterCity === 'all' || (u.city || u.cityId) === usersFilterCity)
+                      .map(u => (
+                      <div 
+                        key={u.id} 
+                        onClick={() => setSelectedUserDetail(u)}
+                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                          selectedUserDetail?.id === u.id
+                            ? 'bg-fuchsia-500/10 border-fuchsia-500/50'
+                            : 'bg-black/30 border-white/5 hover:border-white/20'
+                        }`}
+                      >
+                        <img src={u.fotoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.nick || 'U')}&background=random`} alt={u.nick} className="w-10 h-10 rounded-full object-cover" />
+                        <div className="flex-1">
+                          <p className="font-bold text-sm flex items-center gap-2">
+                            {u.nick || 'Sin nick'}
+                            {u.banned && <span className="px-2 py-0.5 bg-red-900/30 text-red-400 text-[10px] rounded uppercase font-black">Baneado</span>}
+                          </p>
+                          <p className="text-[10px] text-slate-400">{u.email}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-[10px] uppercase font-bold text-slate-500 bg-white/5 px-2 py-0.5 rounded">{u.role || 'user'}</span>
+                          {(u.city || u.cityId) && <span className="text-[9px] uppercase font-bold text-blue-400 bg-blue-900/20 px-2 py-0.5 rounded">{u.city || u.cityId}</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </section>
 
           <section className="bg-white/5 border border-white/10 p-6 rounded-3xl h-[80vh] flex flex-col">
@@ -624,7 +739,19 @@ export default function SuperAdminPage() {
                   </div>
                   <div className="bg-black/30 p-4 rounded-xl border border-white/5">
                     <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Ciudad RRPP</p>
-                    <p className="text-xs text-slate-300">{selectedUserDetail.city || 'N/A'}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <select
+                        disabled={adminActionLoading}
+                        value={selectedUserDetail.city || selectedUserDetail.cityId || ''}
+                        onChange={(e) => handleUpdateUserCity(selectedUserDetail.id, e.target.value)}
+                        className="bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-xs text-white outline-none w-full appearance-none"
+                      >
+                        <option value="">N/A (Ninguna)</option>
+                        {cities.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
 
@@ -632,10 +759,23 @@ export default function SuperAdminPage() {
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 border-b border-white/10 pb-2">Acciones de Moderación</p>
                   
                   <button 
-                    onClick={() => router.push(`/madrid/chat/detail?chatId=superadmin_${selectedUserDetail.id}`)} // Simplificado para mandar mensaje
+                    onClick={async () => {
+                      if (!user) return;
+                      const { getOrCreateChat } = await import('@/hooks/useChat');
+                      const chatId = await getOrCreateChat(user.uid, selectedUserDetail.id);
+                      router.push(`/${selectedUserDetail.city || 'madrid'}/chat/detail?id=${chatId}`);
+                    }}
                     className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-3 rounded-xl text-sm font-bold transition-colors"
                   >
                     <span className="material-icons text-sm">chat</span> Enviar Mensaje Directo
+                  </button>
+
+                  <button 
+                    disabled={adminActionLoading || selectedUserDetail.role === 'rrpp'}
+                    onClick={() => handleFastTrackRRPP(selectedUserDetail.id)}
+                    className="w-full flex items-center justify-center gap-2 bg-fuchsia-900/20 hover:bg-fuchsia-900/40 text-fuchsia-400 border border-fuchsia-500/20 px-4 py-3 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
+                  >
+                    <span className="material-icons text-sm">assignment_ind</span> {selectedUserDetail.role === 'rrpp' ? 'Ya es RRPP' : 'Convertir a RRPP'}
                   </button>
 
                   <button 
@@ -1170,14 +1310,14 @@ export default function SuperAdminPage() {
 
       {activeTab === 'rrpps' && (
         <div className="space-y-8">
-          {rrppApplications.length > 0 && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-900 border-2 border-fuchsia-500/50 rounded-3xl p-6 shadow-2xl">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-900 border-2 border-fuchsia-500/50 rounded-3xl p-6 shadow-2xl">
               <div className="flex items-start gap-4">
                 <span className="text-4xl">📋</span>
                 <div className="w-full">
                   <h2 className="text-xl font-black text-white tracking-tight leading-none mb-1">Solicitudes RRPP Pendientes ({rrppApplications.length})</h2>
                   <p className="text-sm text-slate-400 mb-4">Revisa y aprueba o rechaza las solicitudes de RRPP independientes.</p>
                   <div className="space-y-3">
+                    {rrppApplications.length === 0 && <p className="text-sm text-slate-500">No hay solicitudes RRPP pendientes.</p>}
                     {rrppApplications.map(app => (
                       <div key={app.id} className="bg-black/30 rounded-xl p-4 border border-white/10">
                         <div className="flex justify-between items-start mb-2">
@@ -1213,7 +1353,6 @@ export default function SuperAdminPage() {
                 </div>
               </div>
             </motion.div>
-          )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <section className="md:col-span-1 bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4 h-fit">

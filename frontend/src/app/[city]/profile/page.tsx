@@ -51,10 +51,18 @@ export default function MyProfilePage() {
     setIsDeleting(true);
     try {
       await deleteAccount?.();
+      await logout();
       router.push('/login');
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.code === 'unauthenticated' || err?.message?.includes('Unauthenticated')) {
+        // La cuenta probablemente ya se eliminó o la sesión se invalidó en el proceso
+        await logout();
+        router.push('/login');
+        return;
+      }
       setIsDeleting(false);
       setShowDeleteModal(false);
+      alert('Error: ' + (err?.message || 'No se pudo eliminar la cuenta.'));
     }
   };
 
@@ -184,7 +192,15 @@ export default function MyProfilePage() {
                 </motion.div>
               )}
             </div>
-            <p className="text-slate-500 text-xs font-black uppercase tracking-[0.2em] mt-1">{profile.rol === 'party_only' ? 'Solo Fiesta' : profile.rol} • {profile.intencion}</p>
+            <p className="text-slate-500 text-xs font-black uppercase tracking-[0.2em] mt-1">
+              {profile.role === 'rrpp' ? (
+                <span className="text-fuchsia-400">Promotor / RRPP</span>
+              ) : ['admin', 'superadmin', 'cityAdmin', 'venue'].includes(profile.role || '') ? (
+                <span className="text-blue-400">Staff / Oficial</span>
+              ) : (
+                `${profile.rol === 'party_only' ? 'Solo Fiesta' : profile.rol || ''} ${profile.intencion ? `• ${profile.intencion}` : ''}`
+              )}
+            </p>
           </div>
         </header>
 

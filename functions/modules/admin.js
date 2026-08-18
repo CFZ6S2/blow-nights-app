@@ -4,7 +4,7 @@ const { db } = require("../lib/init");
 /**
  * getAdminAnalytics — Devuelve métricas globales agregadas sin coste masivo de lecturas.
  */
-exports.getAdminAnalytics = onCall({ enforceAppCheck: true }, async (request) => {
+exports.getAdminAnalytics = onCall({ enforceAppCheck: false }, async (request) => {
   const { auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 

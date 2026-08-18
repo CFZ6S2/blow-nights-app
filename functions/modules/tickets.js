@@ -1,7 +1,7 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { admin, db, getStripe } = require("../lib/init");
 
-exports.createTicketCheckout = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createTicketCheckout = onCall({ enforceAppCheck: false }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -92,7 +92,7 @@ exports.createTicketCheckout = onCall({ enforceAppCheck: true }, async (request)
   return { sessionId: session.id, url: session.url };
 });
 
-exports.validateTicket = onCall({ enforceAppCheck: true }, async (request) => {
+exports.validateTicket = onCall({ enforceAppCheck: false }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -155,7 +155,7 @@ exports.validateTicket = onCall({ enforceAppCheck: true }, async (request) => {
   };
 });
 
-exports.validateTicketByDoorToken = onCall({ enforceAppCheck: true }, async (request) => {
+exports.validateTicketByDoorToken = onCall({ enforceAppCheck: false }, async (request) => {
   const { data } = request;
   const { qrToken, doorAccessToken, eventId, venueId } = data;
 
@@ -221,7 +221,7 @@ exports.validateTicketByDoorToken = onCall({ enforceAppCheck: true }, async (req
   };
 });
 
-exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: true }, async (request) => {
+exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: false }, async (request) => {
   const { data } = request;
   const { promoterToken, eventId, clientName, tierId } = data;
 
@@ -316,7 +316,7 @@ exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: true }, async (
   };
 });
 
-exports.closePromoterList = onCall({ enforceAppCheck: true }, async (request) => {
+exports.closePromoterList = onCall({ enforceAppCheck: false }, async (request) => {
   const { data } = request;
   const { token } = data;
 
@@ -338,7 +338,7 @@ exports.closePromoterList = onCall({ enforceAppCheck: true }, async (request) =>
   return { success: true };
 });
 
-exports.liquidatePromoter = onCall({ enforceAppCheck: true }, async (request) => {
+exports.liquidatePromoter = onCall({ enforceAppCheck: false }, async (request) => {
   const { data } = request;
   const { token } = data;
 
@@ -365,7 +365,7 @@ exports.liquidatePromoter = onCall({ enforceAppCheck: true }, async (request) =>
   return { success: true };
 });
 
-exports.getPromoterStats = onCall({ enforceAppCheck: true }, async (request) => {
+exports.getPromoterStats = onCall({ enforceAppCheck: false }, async (request) => {
   const { data } = request;
   const { token } = data;
 
@@ -405,6 +405,11 @@ exports.getPromoterStats = onCall({ enforceAppCheck: true }, async (request) => 
     userQuota = promoter.qr_quota || 0;
   }
 
+  const eventDoc = await db.collection(`venues/${venueId}/events`).doc(eventId).get();
+  const eventData = eventDoc.exists ? eventDoc.data() : {};
+  const venueDoc = await db.collection("venues").doc(venueId).get();
+  const venueData = venueDoc.exists ? venueDoc.data() : {};
+
   return {
     promoter: {
       id: promoterDoc.id,
@@ -416,6 +421,16 @@ exports.getPromoterStats = onCall({ enforceAppCheck: true }, async (request) => 
       qr_quota: userQuota,
       liquidated_by_rrpp: promoter.liquidated_by_rrpp || false,
       liquidated_by_venue: promoter.liquidated_by_venue || false,
+    },
+    event: {
+      title: eventData.title || '',
+      date: eventData.date || '',
+      time: eventData.time || null,
+      ticketType: eventData.ticketType || 'general',
+      scannerToken: eventData.scanner_token || '',
+    },
+    venue: {
+      name: venueData.name || '',
     },
     stats: {
       totalSold,

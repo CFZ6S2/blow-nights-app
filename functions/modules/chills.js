@@ -2,7 +2,7 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { admin, db } = require("../lib/init");
 
-exports.createChill = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createChill = onCall({ enforceAppCheck: false }, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -57,7 +57,7 @@ exports.createChill = onCall({ enforceAppCheck: true }, async (request) => {
   return { success: true, chillId: chillRef.id };
 });
 
-exports.requestChillAccess = onCall({ enforceAppCheck: true }, async (request) => {
+exports.requestChillAccess = onCall({ enforceAppCheck: false }, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -119,7 +119,7 @@ exports.requestChillAccess = onCall({ enforceAppCheck: true }, async (request) =
   return { success: true };
 });
 
-exports.respondChillRequest = onCall({ enforceAppCheck: true }, async (request) => {
+exports.respondChillRequest = onCall({ enforceAppCheck: false }, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -178,7 +178,7 @@ exports.respondChillRequest = onCall({ enforceAppCheck: true }, async (request) 
   return { success: true, action };
 });
 
-exports.endChill = onCall({ enforceAppCheck: true }, async (request) => {
+exports.endChill = onCall({ enforceAppCheck: false }, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 

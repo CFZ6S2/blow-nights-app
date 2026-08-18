@@ -14,7 +14,8 @@ import {
   orderBy,
   limit,
   getDocs,
-  startAfter
+  startAfter,
+  where
 } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -33,6 +34,8 @@ export default function AdminDashboard() {
   const [reports, setReports] = useState<any[]>([]);
   const [verifications, setVerifications] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [rrppApps, setRrppApps] = useState<any[]>([]);
+  const [processingRrpp, setProcessingRrpp] = useState<string | null>(null);
   const [lastVisible, setLastVisible] = useState<any>(null);
   const [loadingUsers, setLoadingUsers] = useState(false);
   
@@ -90,6 +93,15 @@ export default function AdminDashboard() {
       }
     );
 
+    // RRPP Apps en tiempo real
+    const unsubRrppApps = onSnapshot(
+      query(collection(db, 'rrpp_applications'), where('status', '==', 'pending')),
+      (snapshot) => {
+        const apps = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
+        setRrppApps(apps);
+      }
+    );
+
     // Carga inicial paginada de usuarios (primeros 25)
     loadMoreUsers(true);
 
@@ -97,6 +109,7 @@ export default function AdminDashboard() {
       unsubSettings();
       unsubReports();
       unsubVerifications();
+      unsubRrppApps();
     };
   }, [isAdmin]);
 
@@ -139,6 +152,33 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleAdminDeleteUser = async (uid: string) => {
+    if (!confirm('🛑 ATENCIÓN: ¿Estás completamente seguro de ELIMINAR esta cuenta? NO SE PUEDE DESHACER.')) return;
+    try {
+      const adminDelete = httpsCallable(functions, 'adminDeleteUser');
+      await adminDelete({ uid });
+      alert('Cuenta eliminada completamente.');
+      setUsers(users.filter(u => u.id !== uid));
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || 'Error al eliminar usuario');
+    }
+  };
+
+  const handleAdminBanUser = async (uid: string) => {
+    const reason = prompt('Motivo del baneo (opcional):');
+    if (reason === null) return;
+    try {
+      const ban = httpsCallable(functions, 'banUser');
+      await ban({ uid, reason });
+      alert('Usuario baneado exitosamente.');
+      setUsers(users.map(u => u.id === uid ? { ...u, banned: true, bannedReason: reason } : u));
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || 'Error al banear usuario');
+    }
+  };
+
   const handleVerification = async (userId: string, status: string) => {
     try {
       await updateDoc(doc(db, 'verifications', userId), { status });
@@ -148,6 +188,22 @@ export default function AdminDashboard() {
       });
     } catch (error) {
       console.error("Error handling verification:", error);
+    }
+  };
+
+  const handleRrppApplication = async (applicationId: string, action: 'approve' | 'reject') => {
+    const label = action === 'approve' ? 'aprobar' : 'rechazar';
+    if (!confirm(`¿Seguro que quieres ${label} esta solicitud RRPP?`)) return;
+    setProcessingRrpp(applicationId);
+    try {
+      const approveRRPP = httpsCallable(functions, 'approveRRPP');
+      await approveRRPP({ applicationId, action });
+      alert(action === 'approve' ? 'RRPP aprobado correctamente.' : 'Solicitud rechazada.');
+    } catch (e: any) {
+      console.error(e);
+      alert('Error: ' + (e.message || 'Error procesando solicitud'));
+    } finally {
+      setProcessingRrpp(null);
     }
   };
 
@@ -228,10 +284,47 @@ export default function AdminDashboard() {
         <TabButton active={activeTab === 'users'} onClick={() => setActiveTab('users')} label="Usuarios" icon="group" />
         <TabButton active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} label="Reportes" icon="gavel" />
         <TabButton active={activeTab === 'verifications'} onClick={() => setActiveTab('verifications')} label="Verificaciones" icon="verified" />
+        <TabButton active={activeTab === 'rrpps'} onClick={() => setActiveTab('rrpps')} label={`RRPP (${rrppApps.length})`} icon="assignment_ind" />
       </div>
 
       {/* Content Tabs */}
       <AnimatePresence mode="wait">
+        {activeTab === 'rrpps' && (
+          <motion.div key="rrpps" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
+            {rrppApps.length === 0 && <p className="text-sm text-slate-500">No hay solicitudes RRPP pendientes.</p>}
+            {rrppApps.map(app => (
+              <div key={app.id} className="bg-white/5 backdrop-blur-md border border-fuchsia-500/30 rounded-2xl p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <p className="font-bold text-white text-lg">{app.nick || 'Sin nick'}</p>
+                    <p className="text-xs text-slate-400">{app.email}</p>
+                  </div>
+                  <span className="px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded-md text-xs font-bold uppercase">Pendiente</span>
+                </div>
+                <p className="text-sm text-slate-300 mb-1">📞 {app.phone} | 📍 {app.city}</p>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={() => handleRrppApplication(app.id, 'approve')}
+                    disabled={processingRrpp === app.id}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-xs font-bold uppercase transition-colors disabled:opacity-50"
+                  >
+                    {processingRrpp === app.id ? '...' : 'Aprobar'}
+                  </button>
+                  <button
+                    onClick={() => handleRrppApplication(app.id, 'reject')}
+                    disabled={processingRrpp === app.id}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-xs font-bold uppercase transition-colors disabled:opacity-50"
+                  >
+                    Rechazar
+                  </button>
+                  <a href={`https://wa.me/${app.phone?.replace(/\D/g, '')}?text=Hola%20${app.nick || ''},%20te%20escribo%20desde%20Blow%20Nights%20sobre%20tu%20solicitud%20RRPP...`} target="_blank" rel="noreferrer" className="px-4 py-2 bg-[#25D366] hover:bg-[#1ebe5d] rounded-lg text-xs font-bold uppercase transition-colors flex items-center gap-1">
+                    WhatsApp
+                  </a>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        )}
         {activeTab === 'stats' && (
           <motion.div key="stats" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
@@ -280,14 +373,31 @@ export default function AdminDashboard() {
                       <p className="text-[10px] text-slate-500 font-mono">{u.id.substring(0, 8)}...</p>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => togglePremium(u.id, u.premium)}
-                    className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all ${
-                      u.premium ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30' : 'bg-white/5 text-slate-400 border border-white/10'
-                    }`}
-                  >
-                    {u.premium ? 'PREMIUM' : 'HACER PREMIUM'}
-                  </button>
+                  <div className="flex flex-wrap gap-2 justify-end">
+                    <button 
+                      onClick={() => togglePremium(u.id, u.premium)}
+                      className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all ${
+                        u.premium ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30' : 'bg-white/5 text-slate-400 border border-white/10'
+                      }`}
+                    >
+                      {u.premium ? 'PREMIUM' : 'PREMIUM'}
+                    </button>
+                    <button 
+                      disabled={u.banned}
+                      onClick={() => handleAdminBanUser(u.id)}
+                      className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all ${
+                        u.banned ? 'bg-red-900/30 text-red-500 border border-red-900/50' : 'bg-orange-500/10 text-orange-400 border border-orange-500/20 hover:bg-orange-500/20'
+                      }`}
+                    >
+                      {u.banned ? 'BANEADO' : 'BANEAR'}
+                    </button>
+                    <button 
+                      onClick={() => handleAdminDeleteUser(u.id)}
+                      className="px-3 py-1 rounded-full text-[10px] font-bold transition-all bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20"
+                    >
+                      ELIMINAR
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
