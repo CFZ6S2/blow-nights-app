@@ -59,6 +59,7 @@ export default function SuperAdminPage() {
   const [roleVenueId, setRoleVenueId] = useState('');
   const [assigningRole, setAssigningRole] = useState(false);
   const [recentAssignments, setRecentAssignments] = useState<any[]>([]);
+  const [ambassadorVenues, setAmbassadorVenues] = useState<string[]>([]);
 
   // --- RRPP STATE ---
   const [promoters, setPromoters] = useState<any[]>([]);
@@ -111,7 +112,7 @@ export default function SuperAdminPage() {
     });
 
     const unsubRoles = onSnapshot(
-      query(collection(db, 'users'), where('role', 'in', ['venue', 'cityAdmin', 'admin', 'superadmin', 'rrpp', 'door'])),
+      query(collection(db, 'users'), where('role', 'in', ['venue', 'cityAdmin', 'admin', 'superadmin', 'rrpp', 'door', 'ambassador'])),
       (snap) => {
         const r: any[] = [];
         snap.forEach(d => r.push({ id: d.id, ...d.data() }));
@@ -341,6 +342,7 @@ export default function SuperAdminPage() {
     { value: 'admin', label: 'Admin', icon: 'admin_panel_settings', color: 'text-purple-400', redirect: '/admin' },
     { value: 'superadmin', label: 'Super Admin', icon: 'shield', color: 'text-fuchsia-400', redirect: '/super-admin' },
     { value: 'door', label: 'Portero', icon: 'sensor_door', color: 'text-orange-400', redirect: '/door' },
+    { value: 'ambassador', label: 'Ambassador', icon: 'handshake', color: 'text-yellow-400', redirect: '/ambassador' },
   ];
 
   const handleRoleSearch = async () => {
@@ -376,9 +378,17 @@ export default function SuperAdminPage() {
       if (selectedRole === 'venue' && roleVenueId) {
         await updateDoc(doc(db, 'venues', roleVenueId), { ownerId: roleSearchResult.id });
       }
+      if (selectedRole === 'ambassador' && ambassadorVenues.length > 0) {
+        await Promise.all(
+          ambassadorVenues.map(vId =>
+            updateDoc(doc(db, 'venues', vId), { ambassadorId: roleSearchResult.id })
+          )
+        );
+      }
       await assignRoleFunc(params);
       alert(`Rol "${selectedRole}" asignado a ${roleSearchResult.email}. El cambio será efectivo en su próximo login.`);
       setRoleSearchResult({ ...roleSearchResult, role: selectedRole });
+      setAmbassadorVenues([]);
     } catch (e) {
       console.error(e);
       alert('Error al asignar rol');
@@ -521,6 +531,30 @@ export default function SuperAdminPage() {
                         <option key={v.id} value={v.id}>{v.name}</option>
                       ))}
                     </select>
+                  </div>
+                )}
+
+                {selectedRole === 'ambassador' && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500 block">Locales afiliados por este Ambassador</label>
+                    <p className="text-[10px] text-slate-500">Selecciona los locales que ha traído. Se les vinculará su ambassadorId para cobrar comisión automática por cada ticket.</p>
+                    <div className="max-h-48 overflow-y-auto space-y-1 no-scrollbar">
+                      {venues.map(v => (
+                        <label key={v.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={ambassadorVenues.includes(v.id)}
+                            onChange={e => {
+                              if (e.target.checked) setAmbassadorVenues(prev => [...prev, v.id]);
+                              else setAmbassadorVenues(prev => prev.filter(id => id !== v.id));
+                            }}
+                            className="accent-yellow-400"
+                          />
+                          <span className="text-sm">{v.name}</span>
+                          {v.ambassadorId && <span className="text-[9px] text-yellow-400 ml-auto">Ya asignado</span>}
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 )}
 

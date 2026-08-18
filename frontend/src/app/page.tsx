@@ -49,6 +49,7 @@ export default function Home() {
       superadmin: '/super-admin',
       admin: '/admin',
       door: '/door',
+      ambassador: '/ambassador',
     };
 
     if (redirects[role]) {

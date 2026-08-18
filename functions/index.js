@@ -1220,22 +1220,28 @@ exports.stripeWebhook = onRequest(async (req, res) => {
         });
       }
 
-      // 40% del fee de gestión (1€) al City Manager = 0.40€ por ticket
+      // --- SPLITS DEL FEE DE GESTIÓN (1€ = 100 céntimos) ---
+      // Configurable: ajustar estos valores para cambiar el reparto
+      const PLATFORM_FEE_CENTS = 100; // 1.00€ total retenido por la plataforma
+      const CITY_MANAGER_CENTS = 30;  // 0.30€ al City Manager (30%)
+      const AMBASSADOR_CENTS = 25;    // 0.25€ al Ambassador que afilió la sala (25%)
+      // Plataforma se queda: 100 - 30 - 25 = 45 céntimos (0.45€) menos fees de Stripe
+
+      // Transfer al City Manager
       if (cityId) {
         try {
           const cityDoc = await db.collection("cities").doc(cityId).get();
           const cityManagerStripe = cityDoc.exists ? cityDoc.data()?.partner_stripe_account_id : null;
           if (cityManagerStripe) {
-            const cityManagerCut = 40; // 0.40€ en céntimos (40% de 1€)
             await stripe.transfers.create({
-              amount: cityManagerCut,
+              amount: CITY_MANAGER_CENTS,
               currency: "eur",
               destination: cityManagerStripe,
-              description: `40% ticket ${eventId} - ${venueId}`,
+              description: `CityManager ${cityId} ticket ${eventId}`,
               transfer_group: session.id,
             });
             await db.collection("cities").doc(cityId).collection("earnings").add({
-              amount: 0.40,
+              amount: CITY_MANAGER_CENTS / 100,
               type: "ticket_fee",
               venueId,
               eventId,
@@ -1244,7 +1250,35 @@ exports.stripeWebhook = onRequest(async (req, res) => {
             });
           }
         } catch (e) {
-          console.error("Error en transfer 40% ticket al City Manager:", e);
+          console.error("Error en transfer City Manager:", e);
+        }
+      }
+
+      // Transfer al Ambassador que afilió esta sala
+      const ambassadorId = venueDoc.exists ? venueDoc.data()?.ambassadorId : null;
+      if (ambassadorId) {
+        try {
+          const ambassadorDoc = await db.collection("users").doc(ambassadorId).get();
+          const ambassadorStripe = ambassadorDoc.exists ? ambassadorDoc.data()?.stripeAccountId : null;
+          if (ambassadorStripe) {
+            await stripe.transfers.create({
+              amount: AMBASSADOR_CENTS,
+              currency: "eur",
+              destination: ambassadorStripe,
+              description: `Ambassador ticket ${eventId} - ${venueId}`,
+              transfer_group: session.id,
+            });
+            await db.collection("users").doc(ambassadorId).collection("earnings").add({
+              amount: AMBASSADOR_CENTS / 100,
+              type: "ticket_fee",
+              venueId,
+              eventId,
+              userId: firebaseUID,
+              timestamp: admin.firestore.FieldValue.serverTimestamp(),
+            });
+          }
+        } catch (e) {
+          console.error("Error en transfer Ambassador:", e);
         }
       }
     } else {
