@@ -11,6 +11,7 @@ import { useSafeActions } from '@/hooks/useSafeActions';
 import MatchOverlay from '@/components/MatchOverlay';
 import { ProfileSkeleton } from '@/components/Skeleton';
 import { useRouter } from 'next/navigation';
+import { useCityRouter } from '@/hooks/useCityRouter';
 import { formatLastSeen } from '@/lib/timeUtils';
 
 interface ProfileOverlayProps {
@@ -23,6 +24,7 @@ import { User } from '@/types';
 
 export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
   const router = useRouter();
+  const { cityPath } = useCityRouter();
   const { user: currentUser, profile: currentProfile } = useAuth();
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -163,7 +165,7 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
     if (!currentUser) return router.push('/login');
     triggerHaptic(15);
     const chatId = await getOrCreateChat(currentUser.uid, id);
-    router.push(`/chat/detail?id=${chatId}`);
+    router.push(cityPath(`/chat/detail?id=${chatId}`));
   };
 
   return (
@@ -459,7 +461,7 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
                       if (confirm('¿Estás seguro de que quieres bloquear a este usuario? No volverás a ver su perfil ni recibir sus mensajes.')) {
                         await blockUser(id);
                         onClose();
-                        router.push('/');
+                        router.push(cityPath());
                       }
                     }}
                     className="w-full p-4 flex items-center gap-3 text-sm font-bold text-red-500 hover:bg-red-500/10 rounded-2xl transition-all text-left"

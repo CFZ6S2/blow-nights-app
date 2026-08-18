@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useRouter } from 'next/navigation';
+import { useCityRouter } from '@/hooks/useCityRouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { collection, query, where, onSnapshot, doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -16,7 +16,7 @@ export default function MyProfilePage() {
   const { t } = useTranslation();
   const { user, profile, loading, logout, deleteAccount, requestVerification } = useAuth();
   const { toggleNotifications } = useNotifications();
-  const router = useRouter();
+  const { cityPath, router } = useCityRouter();
   
   const [stats, setStats] = useState({ visits: 0, likes: 0, matches: 0, invitesCount: 0 });
   const [isDeleting, setIsDeleting] = useState(false);
@@ -533,7 +533,7 @@ export default function MyProfilePage() {
                 fileInput.click();
               }
             },
-            { label: t('profile.recent_visits'), icon: 'history', href: '/visits', color: 'text-blue-400' },
+            { label: t('profile.recent_visits'), icon: 'history', href: cityPath('/visits'), color: 'text-blue-400' },
             { label: t('profile.premium_plan'), icon: 'stars', href: '/premium', color: 'text-yellow-500' },
             { label: t('profile.tos'), icon: 'gavel', href: '/terms', color: 'text-slate-400' },
             { label: t('profile.privacy'), icon: 'admin_panel_settings', href: '/privacy', color: 'text-slate-400' },

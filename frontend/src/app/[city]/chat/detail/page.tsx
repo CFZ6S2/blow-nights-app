@@ -1,6 +1,7 @@
 'use client';
 
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useCityRouter } from '@/hooks/useCityRouter';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useChat } from '@/hooks/useChat';
@@ -33,7 +34,7 @@ export default function ChatDetailPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
+  const { cityPath, router } = useCityRouter();
   const [isNearBottom, setIsNearBottom] = useState(true);
   const [showOptions, setShowOptions] = useState(false);
 
@@ -260,7 +261,7 @@ export default function ChatDetailPage() {
                 exit={{ opacity: 0, scale: 0.9, y: -20 }}
                 className="absolute top-24 right-6 w-56 bg-slate-900/90 backdrop-blur-2xl border border-white/10 rounded-3xl p-2 z-40 shadow-2xl"
               >
-                <button onClick={() => { triggerHaptic(10); router.push(`/profile/view?id=${otherUser.id || searchParams.get('otherId')}`); }} className="w-full p-4 flex items-center gap-3 text-sm font-bold text-slate-200 hover:bg-white/5 rounded-2xl transition-all">
+                <button onClick={() => { triggerHaptic(10); router.push(cityPath(`/profile/view?id=${otherUser.id || searchParams.get('otherId')}`)); }} className="w-full p-4 flex items-center gap-3 text-sm font-bold text-slate-200 hover:bg-white/5 rounded-2xl transition-all">
                   <span className="material-icons text-slate-400">person</span> {t('chat.view_profile')}
                 </button>
                 <button 
@@ -294,7 +295,7 @@ export default function ChatDetailPage() {
                     triggerHaptic(10); 
                     if (confirm('¿Bloquear usuario? No podrán hablarte más.')) {
                       await blockUser(otherUser.id || searchParams.get('otherId'));
-                      router.push('/chat');
+                      router.push(cityPath('/chat'));
                     }
                   }} 
                   className="w-full p-4 flex items-center gap-3 text-sm font-bold text-red-500 hover:bg-red-500/10 rounded-2xl transition-all"

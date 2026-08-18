@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useCityRouter } from '@/hooks/useCityRouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChatSkeleton } from '@/components/Skeleton';
 import ProfileOverlay from '@/components/ProfileOverlay';
@@ -14,7 +14,7 @@ export default function VisitsPage() {
   const [visits, setVisits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProfileId, setSelectedProfileId] = useState(null);
-  const router = useRouter();
+  const { cityPath, router } = useCityRouter();
 
   const triggerHaptic = (intensity: number | number[] = 10) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {

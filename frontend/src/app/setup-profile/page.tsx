@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { DEFAULT_CITY } from '@/lib/routes';
 import { doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
@@ -41,7 +42,8 @@ export default function SetupProfilePage() {
       router.push('/login');
     } else if (profile && profile.edad !== null && !profile.needsUpdate) {
       // Si el perfil ya está completo y no forzamos actualización, vamos al home
-      router.push('/');
+      const savedCity = typeof window !== 'undefined' ? localStorage.getItem('blownights_city') : null;
+      router.push(`/${savedCity || DEFAULT_CITY}/`);
     }
     
     if (profile) {
@@ -170,7 +172,8 @@ export default function SetupProfilePage() {
         needsUpdate: false
       }, { merge: true });
 
-      router.push('/');
+      const savedCity = typeof window !== 'undefined' ? localStorage.getItem('blownights_city') : null;
+      router.push(`/${savedCity || DEFAULT_CITY}/`);
     } catch (err: any) {
       console.error("Error updating profile", err);
       if (err.code === 'storage/unauthorized' || err.code === 'storage/retry-limit-exceeded') {

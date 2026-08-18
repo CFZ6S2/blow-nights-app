@@ -9,6 +9,7 @@ import { db } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import Skeleton from '@/components/Skeleton';
 import { useRouter } from 'next/navigation';
+import { useCityRouter } from '@/hooks/useCityRouter';
 import ProfileOverlay from './ProfileOverlay';
 import { User, Chill } from '@/types';
 import { useCity } from '@/context/CityContext';
@@ -307,6 +308,7 @@ export default function MainMap() {
   const { user, profile, loading: authLoading } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
+  const { cityPath } = useCityRouter();
   const mapRef = useRef<MapRef>(null);
   const profileRef = useRef(profile);
   profileRef.current = profile;
@@ -489,13 +491,13 @@ export default function MainMap() {
 
   const handleVenueClick = useCallback((id: string) => {
     triggerHaptic(10);
-    router.push(`/venues/detail?id=${id}`);
-  }, [router]);
+    router.push(cityPath(`/venues/detail?id=${id}`));
+  }, [router, cityPath]);
 
   const handleChillClick = useCallback((id: string) => {
     triggerHaptic(10);
-    router.push(`/chills/detail?id=${id}`);
-  }, [router]);
+    router.push(cityPath(`/chills/detail?id=${id}`));
+  }, [router, cityPath]);
 
   const filteredUsers = useMemo(() => {
     return usersNearby.filter((u) => {

@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { DEFAULT_CITY } from '@/lib/routes';
 
 export default function LoginPage() {
   const { user, loginWithGoogle, loginWithApple } = useAuth();
@@ -14,7 +15,8 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      router.push('/');
+      const savedCity = typeof window !== 'undefined' ? localStorage.getItem('blownights_city') : null;
+      router.push(`/${savedCity || DEFAULT_CITY}/`);
     }
   }, [user, router]);
 

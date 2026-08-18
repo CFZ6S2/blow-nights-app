@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useCityRouter } from '@/hooks/useCityRouter';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, increment } from 'firebase/firestore';
@@ -12,7 +13,7 @@ function ChillManageContent() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
   const { user, profile } = useAuth();
-  const router = useRouter();
+  const { cityPath, router } = useCityRouter();
   
   const [chill, setChill] = useState<Chill | null>(null);
   const [requests, setRequests] = useState<ChillRequest[]>([]);
@@ -33,12 +34,12 @@ function ChillManageContent() {
           const chillData = { id: docSnap.id, ...docSnap.data() } as Chill;
           // Verify ownership
           if (chillData.host_uid !== user.uid) {
-            router.push('/');
+            router.push(cityPath());
             return;
           }
           setChill(chillData);
         } else {
-          router.push('/');
+          router.push(cityPath());
         }
       } catch (err) {
         console.error("Error loading chill:", err);

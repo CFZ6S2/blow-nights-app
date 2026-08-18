@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { DEFAULT_CITY } from '@/lib/routes';
 import { Building2, QrCode, TrendingUp, Users, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default function BusinessLandingPage() {
@@ -17,7 +18,7 @@ export default function BusinessLandingPage() {
             <span className="text-xl font-black tracking-tight">BlowNights <span className="text-fuchsia-400">Business</span></span>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-sm font-semibold text-slate-400 hover:text-white hidden md:block transition-colors">
+            <Link href={`/${DEFAULT_CITY}/`} className="text-sm font-semibold text-slate-400 hover:text-white hidden md:block transition-colors">
               App de Usuarios
             </Link>
             <Link

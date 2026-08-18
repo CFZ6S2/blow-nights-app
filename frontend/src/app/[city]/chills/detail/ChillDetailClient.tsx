@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCityRouter } from '@/hooks/useCityRouter';
 import { doc, onSnapshot, collection, query, orderBy, addDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
@@ -21,7 +21,7 @@ interface ChatMessage {
 }
 
 export default function ChillDetailClient({ chillId }: { chillId: string }) {
-  const router = useRouter();
+  const { cityPath, router } = useCityRouter();
   const { user, profile, hasChillAccess } = useAuth();
 
   const [chill, setChill] = useState<Chill | null>(null);
@@ -138,7 +138,7 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
         <span className="material-icons text-6xl text-slate-700 mb-4">explore_off</span>
         <h1 className="text-xl font-black mb-2">Chill no encontrado</h1>
         <p className="text-slate-500 text-sm mb-6">Puede haber expirado o sido eliminado.</p>
-        <button onClick={() => router.push('/chills')} className="px-6 py-3 bg-fuchsia-600 rounded-xl font-bold text-sm">
+        <button onClick={() => router.push(cityPath('/chills'))} className="px-6 py-3 bg-fuchsia-600 rounded-xl font-bold text-sm">
           Volver al Radar
         </button>
       </div>

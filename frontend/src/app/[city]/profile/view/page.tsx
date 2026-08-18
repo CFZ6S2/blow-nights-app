@@ -1,6 +1,7 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useCityRouter } from '@/hooks/useCityRouter';
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -16,7 +17,7 @@ function PublicProfileContent() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
   const pingVenueId = searchParams.get('pingVenueId');
-  const router = useRouter();
+  const { cityPath, router } = useCityRouter();
   const { user: currentUser, profile: currentProfile } = useAuth();
   
   const [profile, setProfile] = useState<any>(null);
@@ -94,7 +95,7 @@ function PublicProfileContent() {
     if (!currentUser) return router.push('/login');
     triggerHaptic(10);
     const chatId = await getOrCreateChat(currentUser.uid, id!);
-    router.push(`/chat/detail?id=${chatId}`);
+    router.push(cityPath(`/chat/detail?id=${chatId}`));
   };
 
   const handleLike = async (isSuper = false) => {

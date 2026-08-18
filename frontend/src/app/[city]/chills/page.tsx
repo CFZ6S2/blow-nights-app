@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useCity } from '@/context/CityContext';
 import { useChills, useMyChills } from '@/hooks/useChills';
-import { useRouter } from 'next/navigation';
+import { useCityRouter } from '@/hooks/useCityRouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { calculateDistance } from '@/lib/geo';
 import { Chill } from '@/types';
@@ -95,7 +95,7 @@ function ChillCard({ chill, userLat, userLng, onClick }: {
 
 export default function ChillsPage() {
   const { user, profile, loading: authLoading, hasChillAccess } = useAuth();
-  const router = useRouter();
+  const { cityPath, router } = useCityRouter();
   const { citySlug, currentCity } = useCity();
   const { chills, loading } = useChills(citySlug);
   const { myChills } = useMyChills();
@@ -195,7 +195,7 @@ export default function ChillsPage() {
                     chill={chill}
                     userLat={userLat}
                     userLng={userLng}
-                    onClick={() => router.push(`/chills/detail?id=${chill.id}`)}
+                    onClick={() => router.push(cityPath(`/chills/detail?id=${chill.id}`))}
                   />
                 ))}
               </AnimatePresence>
@@ -225,7 +225,7 @@ export default function ChillsPage() {
                     chill={chill}
                     userLat={userLat}
                     userLng={userLng}
-                    onClick={() => router.push(`/chills/detail?id=${chill.id}`)}
+                    onClick={() => router.push(cityPath(`/chills/detail?id=${chill.id}`))}
                   />
                 ))}
               </AnimatePresence>
@@ -241,7 +241,7 @@ export default function ChillsPage() {
             onClose={() => setShowCreate(false)}
             onCreated={(id) => {
               setShowCreate(false);
-              router.push(`/chills/detail?id=${id}`);
+              router.push(cityPath(`/chills/detail?id=${id}`));
             }}
           />
         )}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCityRouter } from '@/hooks/useCityRouter';
 import { useAuth } from '@/context/AuthContext';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 
 export default function CreateChillPage() {
   const { user, profile } = useAuth();
-  const router = useRouter();
+  const { cityPath, router } = useCityRouter();
   const { t } = useTranslation();
 
   const [type, setType] = useState<ChillType>('social');
@@ -28,7 +28,7 @@ export default function CreateChillPage() {
 
   useEffect(() => {
     if (!user) {
-      router.push('/');
+      router.push(cityPath());
     }
   }, [user, router]);
 
@@ -130,7 +130,7 @@ export default function CreateChillPage() {
       const docRef = await addDoc(collection(db, 'chills'), chillData);
       
       // Redirect to host dashboard
-      router.push(`/chills/manage?id=${docRef.id}`);
+      router.push(cityPath(`/chills/manage?id=${docRef.id}`));
     } catch (err: any) {
       console.error("Error creating chill:", err);
       setError(err.message || 'Error al crear el evento');

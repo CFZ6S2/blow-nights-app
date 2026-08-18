@@ -2,16 +2,18 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { useCityRouter } from '@/hooks/useCityRouter';
 
 export default function MatchOverlay({ matchData, onClose }: { matchData: any, onClose: () => void }) {
   const router = useRouter();
+  const { cityPath } = useCityRouter();
 
   if (!matchData) return null;
 
   const handleGoToChat = async () => {
     const { getOrCreateChat } = await import('@/hooks/useChat');
     const chatId = await getOrCreateChat(matchData.user1.uid, matchData.user2.uid);
-    router.push(`/chat/detail?id=${chatId}`);
+    router.push(cityPath(`/chat/detail?id=${chatId}`));
     onClose();
   };
 

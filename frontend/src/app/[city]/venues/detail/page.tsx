@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useCityRouter } from '@/hooks/useCityRouter';
 import { motion } from 'framer-motion';
 import { doc, onSnapshot, collection, query, where, Timestamp, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
@@ -12,6 +13,7 @@ import { ShieldCheck, Sparkles, Building2 } from 'lucide-react';
 export default function VenueDetailPage() {
   const { user, profile, loading } = useAuth();
   const router = useRouter();
+  const { cityPath } = useCityRouter();
   const searchParams = useSearchParams();
   const venueId = searchParams?.get('id');
 
@@ -213,7 +215,7 @@ export default function VenueDetailPage() {
                   if(confirm('¿Seguro que quieres borrar este punto?')) {
                     try {
                       await deleteDoc(doc(db, 'venues', venue.id));
-                      router.push('/venues');
+                      router.push(cityPath('/venues'));
                     } catch (err) {
                       console.error(err);
                       alert('Error al borrar el punto. Asegúrate de tener conexión.');

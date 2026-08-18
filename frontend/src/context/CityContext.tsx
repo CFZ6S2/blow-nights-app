@@ -86,14 +86,13 @@ export function CityProvider({ children }: { children: React.ReactNode }) {
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as City));
       setCities(list);
 
-      // 1. Detectar ciudad por subdominio (ej: madrid.blownights.com)
+      // 1. Detectar ciudad por URL path (ej: /madrid/...)
       if (typeof window !== 'undefined') {
-        const hostname = window.location.hostname;
-        const subdomain = hostname.split('.')[0];
-        const domainCity = list.find((c) => c.slug === subdomain);
-        
-        if (domainCity) {
-          setCurrentCityState(domainCity);
+        const pathSlug = window.location.pathname.split('/')[1];
+        const pathCity = list.find((c) => c.slug === pathSlug);
+        if (pathCity) {
+          setCurrentCityState(pathCity);
+          localStorage.setItem(CITY_STORAGE_KEY, pathCity.slug);
           setLoading(false);
           return;
         }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useCityRouter } from '@/hooks/useCityRouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTickets } from '@/hooks/useTickets';
 import { httpsCallable } from 'firebase/functions';
@@ -76,7 +76,7 @@ function generateQRMatrix(data: string): boolean[][] {
 
 export default function WalletPage() {
   const { user, profile, loading } = useAuth();
-  const router = useRouter();
+  const { cityPath, router } = useCityRouter();
   const { tickets, valid, used, loading: ticketsLoading } = useTickets(user?.uid);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [tab, setTab] = useState<'valid' | 'used'>('valid');
@@ -150,7 +150,7 @@ export default function WalletPage() {
             </p>
             {tab === 'valid' && (
               <button
-                onClick={() => router.push('/venues')}
+                onClick={() => router.push(cityPath('/venues'))}
                 className="px-6 py-3 rounded-2xl bg-fuchsia-600 text-white text-xs font-black uppercase tracking-widest"
               >
                 Ver locales

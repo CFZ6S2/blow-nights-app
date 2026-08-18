@@ -9,6 +9,7 @@ import QRCode from 'react-qr-code';
 import { Map, AlertCircle, MapPin, Key, UserPlus } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
+import { DEFAULT_CITY } from '@/lib/routes';
 
 function TicketContent() {
   const searchParams = useSearchParams();
@@ -211,7 +212,7 @@ function TicketContent() {
         {/* Existing Link for logged in users (optional) */}
         {user && (
           <div className="mt-6 text-center">
-            <Link href="/" className="text-purple-400 text-xs font-bold uppercase tracking-wider hover:text-purple-300">
+            <Link href={`/${DEFAULT_CITY}/`} className="text-purple-400 text-xs font-bold uppercase tracking-wider hover:text-purple-300">
               Ver el Radar del Evento &rarr;
             </Link>
           </div>

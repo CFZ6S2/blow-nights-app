@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useCityRouter } from '@/hooks/useCityRouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { collection, query, where, onSnapshot, doc, setDoc, addDoc, deleteDoc, serverTimestamp, Timestamp, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -42,6 +43,7 @@ type VisibilityMode = 'public' | 'ghost' | 'anonymous';
 export default function VenuesPage() {
   const { user, profile, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { cityPath } = useCityRouter();
   const { cityId, currentCity } = useCity();
   const [venues, setVenues] = useState<any[]>([]);
   const { grouped, loading: venuesLoading } = useVenues(cityId);
@@ -354,7 +356,7 @@ export default function VenuesPage() {
                       ))}
                     </div>
                     <Link
-                      href={`/venues/detail?id=${venue.id}`}
+                      href={cityPath(`/venues/detail?id=${venue.id}`)}
                       className="text-[10px] font-black text-yellow-500 uppercase tracking-widest"
                     >
                       Entradas
