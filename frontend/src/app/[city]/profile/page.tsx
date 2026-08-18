@@ -7,6 +7,7 @@ import { useCityRouter } from '@/hooks/useCityRouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { collection, query, where, onSnapshot, doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { CITY_SLUGS } from '@/lib/routes';
 import app from '@/lib/firebase';
 import { getAnalytics, logEvent } from 'firebase/analytics';
 import Link from 'next/link';
@@ -16,7 +17,7 @@ export default function MyProfilePage() {
   const { t } = useTranslation();
   const { user, profile, loading, logout, deleteAccount, requestVerification } = useAuth();
   const { toggleNotifications } = useNotifications();
-  const { cityPath, router } = useCityRouter();
+  const { city, cityPath, router } = useCityRouter();
   
   const [stats, setStats] = useState({ visits: 0, likes: 0, matches: 0, invitesCount: 0 });
   const [isDeleting, setIsDeleting] = useState(false);
@@ -235,6 +236,35 @@ export default function MyProfilePage() {
             </motion.div>
           ))}
         </div>
+
+        {/* City Selector */}
+        <section className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-[2.5rem] space-y-4">
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-widest">{t('profile.city', 'Tu Ciudad')}</h3>
+            <p className="text-[10px] text-slate-500 mt-1">{t('profile.city_desc', 'Selecciona tu ciudad para ver contenido local')}</p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {CITY_SLUGS.map((c) => (
+              <button
+                key={c}
+                onClick={async () => {
+                  if (!user) return;
+                  triggerHaptic(15);
+                  await setDoc(doc(db, 'users', user.uid), { cityId: c }, { merge: true });
+                  localStorage.setItem('blownights_city', c);
+                  router.push(`/${c}/profile`);
+                }}
+                className={`px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                  (profile?.cityId || city) === c
+                    ? 'bg-fuchsia-600 border-fuchsia-500 text-white shadow-lg shadow-fuchsia-500/20'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'
+                }`}
+              >
+                {c.charAt(0).toUpperCase() + c.slice(1)}
+              </button>
+            ))}
+          </div>
+        </section>
 
         {/* Visibility Toggle */}
         <section className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-[2.5rem] space-y-4">
