@@ -51,15 +51,11 @@ const UserMarker = memo(({ u, onClick, index }: { u: User, onClick: (id: string)
         onClick={() => onClick(u.id)}
         className="relative group cursor-pointer"
       >
-        {/* Pulso Premium Vivo */}
         {u.online && (
-          <motion.div
-            className={`absolute inset-0 rounded-full blur-xl -z-10 ${
+          <div
+            className={`absolute inset-0 rounded-full blur-xl -z-10 animate-marker-pulse ${
               isBoosted ? 'bg-gradient-to-r from-yellow-400 to-fuchsia-500' : 'bg-fuchsia-500/40'
             }`}
-            initial={{ scale: 1, opacity: 0.7 }}
-            animate={{ scale: [1, 1.4, 1], opacity: [0.7, 0, 0.7] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
           />
         )}
 
@@ -68,25 +64,19 @@ const UserMarker = memo(({ u, onClick, index }: { u: User, onClick: (id: string)
           ? 'border-white shadow-[0_0_20px_rgba(255,255,255,0.6)]' 
           : u.premium ? 'border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.4)]' : 'border-fuchsia-500 shadow-[0_0_15px_rgba(217,70,239,0.4)]'
         } overflow-hidden shadow-2xl transform group-hover:scale-110 group-active:scale-95 transition-all duration-300`}>
-          <motion.img 
-            layoutId={`marker-photo-${u.id}`}
-            src={u.fotoUrl || '/globe.svg'} 
-            alt={u.nick} 
-            className="w-full h-full object-cover" 
+          <img
+            src={u.fotoUrl || '/globe.svg'}
+            alt={u.nick}
+            className="w-full h-full object-cover"
             loading="lazy"
           />
         </div>
         
         {/* Mood Bubble (Emoji Flotante) */}
         {u.mood && (
-          <motion.div 
-            initial={{ y: 0 }}
-            animate={{ y: [-2, 2, -2] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full w-8 h-8 flex items-center justify-center text-lg shadow-xl"
-          >
+          <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full w-8 h-8 flex items-center justify-center text-lg shadow-xl animate-mood-float">
             {u.mood}
-          </motion.div>
+          </div>
         )}
 
         {/* Badge de estado */}
@@ -177,11 +167,7 @@ const VenueMarker = memo(({ v, onClick, index }: { v: any, onClick: (id: string)
         className="relative group cursor-pointer"
       >
         {isBoosted && (
-          <motion.div
-            className="absolute inset-0 rounded-[1rem] bg-yellow-500/30 blur-xl -z-10"
-            animate={{ scale: [1, 1.6, 1], opacity: [0.6, 0.2, 0.6] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
+          <div className="absolute inset-0 rounded-[1rem] bg-yellow-500/30 blur-xl -z-10 animate-marker-pulse" />
         )}
         {!isBoosted && (
           <div className={`absolute inset-0 rounded-[1rem] ${gradientClass} blur-lg -z-10`} />
@@ -237,11 +223,7 @@ const ChillMarker = memo(({ c, onClick, index }: { c: Chill, onClick: (id: strin
         onClick={() => onClick(c.id)}
         className="relative group cursor-pointer"
       >
-        <motion.div
-          className={`absolute inset-0 rounded-full ${isCommercial ? 'bg-amber-500/30' : 'bg-fuchsia-500/20'} blur-xl -z-10`}
-          animate={{ scale: [1, 1.8, 1], opacity: [0.4, 0, 0.4] }}
-          transition={{ duration: 3, repeat: Infinity }}
-        />
+        <div className={`absolute inset-0 rounded-full ${isCommercial ? 'bg-amber-500/30' : 'bg-fuchsia-500/20'} blur-xl -z-10 animate-marker-pulse`} />
         <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${isCommercial ? 'from-amber-400 to-orange-500 border-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.5)]' : 'from-fuchsia-600 to-purple-700 border-fuchsia-400 shadow-[0_0_20px_rgba(192,38,211,0.5)]'} border-2 flex items-center justify-center group-hover:scale-110 transition-transform`}>
           <span className="material-icons text-white text-xl">{isCommercial ? 'vpn_key' : 'local_fire_department'}</span>
         </div>

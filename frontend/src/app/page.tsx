@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -30,14 +30,20 @@ export default function Home() {
   const { user, profile, isAdmin, isSuperAdmin, loading, logout } = useAuth();
   const router = useRouter();
   const boostCooldown = useMemo(() => new Date(Date.now() - 24*60*60*1000), []);
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    if (loading || !user) return;
+    if (loading || !user) {
+      hasRedirected.current = false;
+      return;
+    }
 
     if (!profile || profile.edad === null || profile.edad === undefined) {
       router.push('/setup-profile');
       return;
     }
+
+    if (hasRedirected.current) return;
 
     const role = profile?.role;
     if (!role || role === 'user') return;
@@ -53,6 +59,7 @@ export default function Home() {
     };
 
     if (redirects[role]) {
+      hasRedirected.current = true;
       router.replace(redirects[role]);
     }
   }, [user, profile, loading, router]);
