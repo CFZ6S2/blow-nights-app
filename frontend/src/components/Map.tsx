@@ -270,6 +270,11 @@ export default function MainMap() {
   const router = useRouter();
   const mapRef = useRef<MapRef>(null);
   
+  const profileRef = useRef(profile);
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
+  
   const [viewState, setViewState] = useState({
     latitude: 40.485,
     longitude: -3.36,
@@ -343,7 +348,7 @@ export default function MainMap() {
     const unsubscribe = onSnapshot(q, 
       (snapshot) => {
         const users: User[] = [];
-        const blockedUsers = profile?.blockedUsers || [];
+        const blockedUsers = profileRef.current?.blockedUsers || [];
         
         snapshot.forEach((doc) => {
           const uData = doc.data();
@@ -394,7 +399,7 @@ export default function MainMap() {
       unsubVenues();
       unsubChills();
     };
-  }, [user, profile, citySlug]);
+  }, [user, citySlug]);
 
   const centerOnUser = () => {
     if (!mapRef.current) return;
