@@ -6,7 +6,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { useAuth } from '@/context/AuthContext';
 import { collection, onSnapshot, query, where, doc, setDoc, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Skeleton from '@/components/Skeleton';
 import { useRouter } from 'next/navigation';
 import ProfileOverlay from './ProfileOverlay';
@@ -46,7 +46,6 @@ const UserMarker = memo(({ u, onClick, index }: { u: User, onClick: (id: string)
       <motion.div 
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: isBoosted ? 1.3 : 1, opacity: 1 }}
-        exit={{ scale: 0, opacity: 0 }}
         transition={{ delay: Math.min(index * 0.01, 0.3), type: "spring", stiffness: 260, damping: 18 }}
         onClick={() => onClick(u.id)}
         className="relative group cursor-pointer"
@@ -282,34 +281,32 @@ const IsolatedMap = memo(({
     >
       <NavigationControl position="top-left" />
 
-      <AnimatePresence>
-        {radarFilter.mode === 'users' && filteredUsers.map((u: any, index: number) => (
-          <UserMarker 
-            key={u.id} 
-            u={u} 
-            index={index}
-            onClick={handleViewProfile} 
-          />
-        ))}
+      {radarFilter.mode === 'users' && filteredUsers.map((u: any, index: number) => (
+        <UserMarker 
+          key={u.id} 
+          u={u} 
+          index={index}
+          onClick={handleViewProfile} 
+        />
+      ))}
 
-        {radarFilter.mode === 'places' && visibleVenues.map((v: any, index: number) => (
-          <VenueMarker
-            key={v.id}
-            v={v}
-            index={index}
-            onClick={handleVenueClick}
-          />
-        ))}
+      {radarFilter.mode === 'places' && visibleVenues.map((v: any, index: number) => (
+        <VenueMarker
+          key={v.id}
+          v={v}
+          index={index}
+          onClick={handleVenueClick}
+        />
+      ))}
 
-        {radarFilter.mode === 'places' && visibleChills.map((c: any, index: number) => (
-          <ChillMarker
-            key={c.id}
-            c={c}
-            index={index}
-            onClick={handleChillClick}
-          />
-        ))}
-      </AnimatePresence>
+      {radarFilter.mode === 'places' && visibleChills.map((c: any, index: number) => (
+        <ChillMarker
+          key={c.id}
+          c={c}
+          index={index}
+          onClick={handleChillClick}
+        />
+      ))}
     </Map>
   );
 }, (prev: any, next: any) => {
