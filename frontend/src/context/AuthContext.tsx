@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { 
   onAuthStateChanged, 
   GoogleAuthProvider, 
@@ -110,7 +110,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = useCallback(async () => {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
@@ -134,9 +134,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Error signing in with Google", error);
       throw error;
     }
-  };
+  }, []);
 
-  const loginWithApple = async () => {
+  const loginWithApple = useCallback(async () => {
     const provider = new OAuthProvider('apple.com');
     provider.addScope('email');
     provider.addScope('name');
@@ -148,17 +148,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Error signing in with Apple", error);
       throw error;
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await signOut(auth);
     } catch (error) {
       console.error("Error signing out", error);
     }
-  };
+  }, []);
 
-  const deleteAccount = async () => {
+  const deleteAccount = useCallback(async () => {
     if (!user) return;
     try {
       const { httpsCallable } = await import('firebase/functions');
@@ -169,9 +169,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Error deleting account:", error);
       throw error;
     }
-  };
+  }, [user]);
 
-  const requestVerification = async (photoFile: File) => {
+  const requestVerification = useCallback(async (photoFile: File) => {
     if (!user || !photoFile) return;
     try {
       const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
@@ -200,34 +200,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Error requesting verification:", error);
       throw error;
     }
-  };
+  }, [user, profile?.nick]);
 
   const isSuperAdmin = claims?.role === 'superadmin';
   const isAdmin = isSuperAdmin || claims?.role === 'admin';
   const isCityAdmin = claims?.role === 'cityAdmin';
   const isVenueManager = isAdmin || isCityAdmin || claims?.role === 'venueOwner' || claims?.role === 'venue';
-  // eslint-disable-next-line react-hooks/purity
-  const now = Date.now();
   const hasChillAccess = isAdmin || !!claims?.premium || !!profile?.premium
-    || (typeof claims?.pass_expires === 'number' && claims.pass_expires > now);
+    || (typeof claims?.pass_expires === 'number' && claims.pass_expires > Date.now());
+
+  const value = useMemo(() => ({
+    user,
+    profile,
+    claims,
+    isSuperAdmin,
+    isAdmin,
+    isCityAdmin,
+    isVenueManager,
+    hasChillAccess,
+    loginWithGoogle,
+    loginWithApple,
+    logout,
+    deleteAccount,
+    requestVerification,
+    loading
+  }), [user, profile, claims, isSuperAdmin, isAdmin, isCityAdmin, isVenueManager, hasChillAccess, loginWithGoogle, loginWithApple, logout, deleteAccount, requestVerification, loading]);
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      profile,
-      claims,
-      isSuperAdmin,
-      isAdmin,
-      isCityAdmin,
-      isVenueManager,
-      hasChillAccess,
-      loginWithGoogle,
-      loginWithApple,
-      logout,
-      deleteAccount,
-      requestVerification,
-      loading
-    }}>
+    <AuthContext.Provider value={value}>
       {loading ? (
         <div className="flex items-center justify-center min-h-screen bg-slate-950">
           <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]"></div>
