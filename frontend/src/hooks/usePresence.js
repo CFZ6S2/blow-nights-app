@@ -1,64 +1,52 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { db, auth } from '@/lib/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 export function usePresence(userId, profile) {
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
+
   useEffect(() => {
     if (!userId) return;
 
     const userRef = doc(db, 'users', userId);
 
-    const setOnline = async () => {
+    const updatePresence = async (visible) => {
       try {
         if (!auth.currentUser) return;
-        // Si está en modo ghost, no lo ponemos como online (visible en el mapa)
-        if (profile?.ghostMode) {
+        if (visible) {
+          // Respetar el estado de visibilidad que el usuario eligió
+          if (profileRef.current?.online === false) {
+            await updateDoc(userRef, { lastSeen: serverTimestamp() });
+            return;
+          }
+          await updateDoc(userRef, {
+            online: true,
+            lastSeen: serverTimestamp()
+          });
+        } else {
           await updateDoc(userRef, {
             online: false,
             lastSeen: serverTimestamp()
           });
-          return;
         }
-        await updateDoc(userRef, {
-          online: true,
-          lastSeen: serverTimestamp()
-        });
       } catch (err) {
         // Silenciamos errores de permisos si el usuario se está desconectando
       }
     };
 
-    const setOffline = async () => {
-      try {
-        if (!auth.currentUser) return;
-        await updateDoc(userRef, {
-          online: false,
-          lastSeen: serverTimestamp()
-        });
-      } catch (err) {
-        // Silenciamos errores de permisos si el usuario se está desconectando
-      }
-    };
+    updatePresence(true);
 
-    // Al montar
-    setOnline();
-
-    // Detectar visibilidad de la página
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        setOnline();
-      } else {
-        setOffline();
-      }
+      updatePresence(document.visibilityState === 'visible');
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Al desmontar (cerrar pestaña o cerrar sesión)
     return () => {
-      setOffline();
+      updatePresence(false);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [userId]);

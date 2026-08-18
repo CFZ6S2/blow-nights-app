@@ -121,6 +121,20 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "type",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "venues",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "type",
           "order": "ASCENDING"
         },

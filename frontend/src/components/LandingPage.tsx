@@ -46,6 +46,14 @@ export default function LandingPage({ onStart }: LandingPageProps) {
 
       {/* ═══ HERO ═══ */}
       <header className="relative min-h-[100dvh] flex flex-col items-center justify-center px-6 overflow-hidden">
+        {/* Top nav links */}
+        <div className="absolute top-0 left-0 right-0 z-50 px-6 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/business" className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 hover:text-fuchsia-400 transition-colors">Locales</Link>
+            <Link href="/partners/apply" className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 hover:text-fuchsia-400 transition-colors">RRPP</Link>
+          </div>
+        </div>
+
         {/* Ambient glow */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <motion.div
@@ -368,12 +376,12 @@ export default function LandingPage({ onStart }: LandingPageProps) {
               ))}
             </div>
 
-            <button
-              onClick={handleStart}
-              className="px-8 py-4 rounded-xl bg-fuchsia-600 text-white font-[800] text-[12px] uppercase tracking-[0.12em] hover:bg-fuchsia-500 active:scale-[0.97] transition-all"
+            <Link
+              href="/business"
+              className="inline-block px-8 py-4 rounded-xl bg-fuchsia-600 text-white font-[800] text-[12px] uppercase tracking-[0.12em] hover:bg-fuchsia-500 active:scale-[0.97] transition-all"
             >
               Registra tu local
-            </button>
+            </Link>
           </motion.div>
         </div>
       </section>
@@ -420,60 +428,11 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         </div>
       </section>
 
-      {/* ═══ INSTALL PWA ═══ */}
-      <section className="py-24 md:py-32 px-6 border-t border-white/[0.04]">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="bg-gradient-to-br from-indigo-600 to-fuchsia-600 rounded-[2rem] p-10 md:p-16 text-center space-y-6 relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-[80px] rounded-full -translate-y-1/2 translate-x-1/3" />
-            <div className="relative z-10 space-y-6">
-              <h2 className="text-3xl md:text-5xl font-[900] tracking-tight text-white">
-                Lleva tu circuito<br />en el bolsillo
-              </h2>
-              <p className="text-white/70 text-base md:text-lg max-w-lg mx-auto leading-relaxed">
-                Instala Blow Nights como app. Notificaciones en vivo, acceso desde la home y experiencia nativa.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-                <button
-                  onClick={() => window.dispatchEvent(new CustomEvent('show-pwa-prompt'))}
-                  className="w-full sm:w-auto px-10 py-5 rounded-2xl bg-white text-black font-[900] text-[12px] uppercase tracking-[0.12em] hover:bg-white/90 active:scale-[0.97] transition-all flex items-center justify-center gap-3"
-                >
-                  <span className="material-icons text-lg">install_mobile</span>
-                  Instalar App
-                </button>
-                <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Sin App Store</span>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ═══ FINAL CTA ═══ */}
-      <section className="py-24 md:py-32 px-6 border-t border-white/[0.04]">
-        <div className="max-w-2xl mx-auto text-center space-y-8">
-          <h2 className="text-3xl md:text-5xl font-[900] tracking-tight">
-            La noche empieza<br />
-            <span className="text-slate-500">cuando tú llegas</span>
-          </h2>
-          <button
-            onClick={handleStart}
-            className="px-16 py-6 rounded-2xl bg-white text-black font-[900] text-sm uppercase tracking-[0.15em] hover:bg-slate-100 active:scale-[0.97] transition-all shadow-[0_20px_50px_rgba(255,255,255,0.06)]"
-          >
-            Entrar a Blow Nights
-          </button>
-          <p className="text-[11px] text-slate-600 font-medium">
-            Gratis. Sin descargas. Solo Google Sign-In.
-          </p>
-        </div>
-      </section>
 
       {/* ═══ FOOTER ═══ */}
       <footer className="py-16 px-6 border-t border-white/[0.04] text-center space-y-6">
         <div className="flex justify-center gap-8">
+          <Link href="/business" className="text-[10px] font-bold uppercase tracking-[0.15em] text-fuchsia-500 hover:text-fuchsia-400 transition-colors">Para Negocios</Link>
           <Link href="/terms" className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600 hover:text-white transition-colors">Términos</Link>
           <Link href="/privacy" className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600 hover:text-white transition-colors">Privacidad</Link>
           <Link href="/rules" className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600 hover:text-white transition-colors">Normas</Link>

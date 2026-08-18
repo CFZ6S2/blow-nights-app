@@ -9,7 +9,7 @@ import { useAuth } from "@/context/AuthContext"
 import { useTranslation } from "react-i18next"
 
 export function BottomNav() {
-  const { isAdmin, isCityAdmin, isVenueManager } = useAuth()
+  const { user, isAdmin, isCityAdmin, isVenueManager } = useAuth()
   const pathname = usePathname()
   const { t } = useTranslation()
 
@@ -37,7 +37,8 @@ export function BottomNav() {
     }
   };
 
-  // No mostrar en la pantalla de login o setup inicial
+  // No mostrar si no hay usuario logueado o en pantallas de login/setup
+  if (!user) return null;
   const hideOnPaths = ['/login', '/setup-profile'];
   if (hideOnPaths.includes(pathname)) return null;
 
