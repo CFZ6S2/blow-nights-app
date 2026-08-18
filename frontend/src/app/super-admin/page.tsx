@@ -12,7 +12,7 @@ export default function SuperAdminPage() {
   const { user, isSuperAdmin, loading } = useAuth();
   const router = useRouter();
   
-  const [activeTab, setActiveTab] = useState<'roles' | 'ciudades' | 'facturacion' | 'locales' | 'partners' | 'rrpps'>('roles');
+  const [activeTab, setActiveTab] = useState<'roles' | 'ciudades' | 'facturacion' | 'locales' | 'partners' | 'rrpps' | 'usuarios'>('usuarios');
 
   // --- LOCALES STATE ---
   const [venues, setVenues] = useState<any[]>([]);
@@ -71,6 +71,13 @@ export default function SuperAdminPage() {
   const [newPromoterVenueId, setNewPromoterVenueId] = useState('');
   const [newPromoterEventId, setNewPromoterEventId] = useState('');
   const [savingPromoter, setSavingPromoter] = useState(false);
+
+  // --- USUARIOS STATE ---
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userSearchResults, setUserSearchResults] = useState<any[]>([]);
+  const [userSearching, setUserSearching] = useState(false);
+  const [selectedUserDetail, setSelectedUserDetail] = useState<any | null>(null);
+  const [adminActionLoading, setAdminActionLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
@@ -184,6 +191,70 @@ export default function SuperAdminPage() {
     } catch (e) {
       console.error(e);
       alert('Error asignando propietario');
+    }
+  };
+
+  // --- USUARIOS LOGIC ---
+  const handleAdminUserSearch = async () => {
+    if (!userSearchQuery.trim()) return;
+    setUserSearching(true);
+    setSelectedUserDetail(null);
+    try {
+      // Intentar buscar por email exacto primero
+      const qEmail = query(collection(db, 'users'), where('email', '==', userSearchQuery.toLowerCase().trim()));
+      const snapEmail = await getDocs(qEmail);
+      let results: any[] = [];
+      snapEmail.forEach(d => results.push({ id: d.id, ...d.data() }));
+
+      // Si no hay email, buscar por nick (prefijo)
+      if (results.length === 0) {
+        const end = userSearchQuery.replace(/.$/, c => String.fromCharCode(c.charCodeAt(0) + 1));
+        const qNick = query(collection(db, 'users'), where('nick', '>=', userSearchQuery), where('nick', '<', end));
+        const snapNick = await getDocs(qNick);
+        snapNick.forEach(d => results.push({ id: d.id, ...d.data() }));
+      }
+
+      setUserSearchResults(results);
+      if (results.length === 0) alert('No se encontraron usuarios con ese email o nick.');
+    } catch (e) {
+      console.error(e);
+      alert('Error al buscar usuarios');
+    } finally {
+      setUserSearching(false);
+    }
+  };
+
+  const handleAdminDeleteUser = async (uid: string) => {
+    if (!confirm('🛑 ATENCIÓN: ¿Estás completamente seguro de ELIMINAR esta cuenta? Esta acción borrará permanentemente todos sus datos, fotos y documentos. NO SE PUEDE DESHACER.')) return;
+    setAdminActionLoading(true);
+    try {
+      const adminDelete = httpsCallable(functions, 'adminDeleteUser');
+      await adminDelete({ uid });
+      alert('Cuenta de usuario eliminada completamente.');
+      setSelectedUserDetail(null);
+      setUserSearchResults(prev => prev.filter(u => u.id !== uid));
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || 'Error al eliminar usuario');
+    } finally {
+      setAdminActionLoading(false);
+    }
+  };
+
+  const handleAdminBanUser = async (uid: string) => {
+    const reason = prompt('Motivo del baneo (opcional):');
+    if (reason === null) return; // cancelado
+    setAdminActionLoading(true);
+    try {
+      const ban = httpsCallable(functions, 'banUser');
+      await ban({ uid, reason });
+      alert('Usuario baneado exitosamente. Se le ha expulsado de la sesión y no podrá volver a entrar.');
+      setSelectedUserDetail((prev: any) => prev ? { ...prev, banned: true, bannedReason: reason } : null);
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || 'Error al banear usuario');
+    } finally {
+      setAdminActionLoading(false);
     }
   };
 
@@ -460,6 +531,7 @@ export default function SuperAdminPage() {
         </div>
 
         <div className="flex gap-2 overflow-x-auto no-scrollbar border-b border-white/10 pb-2">
+          <button onClick={() => setActiveTab('usuarios')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'usuarios' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Usuarios</button>
           <button onClick={() => setActiveTab('roles')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'roles' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Gestionar Roles</button>
           <button onClick={() => setActiveTab('ciudades')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'ciudades' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Plazas y Licencias</button>
           <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'partners' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Partners Asociados</button>
@@ -470,6 +542,123 @@ export default function SuperAdminPage() {
       </header>
 
       {/* TABS CONTENT */}
+
+      {activeTab === 'usuarios' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <section className="bg-white/5 border border-white/10 p-6 rounded-3xl space-y-6">
+            <h2 className="text-sm font-black uppercase tracking-widest text-slate-300">Buscar Usuarios</h2>
+            <div className="flex gap-2">
+              <input
+                placeholder="Email o Nick..."
+                type="text"
+                value={userSearchQuery}
+                onChange={e => setUserSearchQuery(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleAdminUserSearch()}
+                className="flex-1 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none"
+              />
+              <button onClick={handleAdminUserSearch} disabled={userSearching} className="bg-fuchsia-600 px-5 py-3 rounded-xl text-sm font-bold hover:bg-fuchsia-500 transition-colors disabled:opacity-50">
+                {userSearching ? '...' : 'Buscar'}
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {userSearchResults.map(u => (
+                <div 
+                  key={u.id} 
+                  onClick={() => setSelectedUserDetail(u)}
+                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                    selectedUserDetail?.id === u.id
+                      ? 'bg-fuchsia-500/10 border-fuchsia-500/50'
+                      : 'bg-black/30 border-white/5 hover:border-white/20'
+                  }`}
+                >
+                  <img src={u.fotoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.nick || 'U')}&background=random`} alt={u.nick} className="w-10 h-10 rounded-full object-cover" />
+                  <div className="flex-1">
+                    <p className="font-bold text-sm flex items-center gap-2">
+                      {u.nick || 'Sin nick'}
+                      {u.banned && <span className="px-2 py-0.5 bg-red-900/30 text-red-400 text-[10px] rounded uppercase font-black">Baneado</span>}
+                    </p>
+                    <p className="text-[10px] text-slate-400">{u.email}</p>
+                  </div>
+                  <span className="text-[10px] uppercase font-bold text-slate-500 bg-white/5 px-2 py-1 rounded">{u.role || 'user'}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="bg-white/5 border border-white/10 p-6 rounded-3xl h-[80vh] flex flex-col">
+            <h2 className="text-sm font-black uppercase tracking-widest text-slate-300 mb-6">Detalle de Usuario</h2>
+            {!selectedUserDetail ? (
+              <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">
+                Selecciona un usuario para ver sus detalles
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto no-scrollbar space-y-6">
+                <div className="flex items-center gap-4">
+                  <img src={selectedUserDetail.fotoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedUserDetail.nick || 'U')}&background=random`} alt={selectedUserDetail.nick} className="w-24 h-24 rounded-2xl object-cover shadow-lg border border-white/10" />
+                  <div>
+                    <h3 className="text-2xl font-black">{selectedUserDetail.nick || 'Usuario Sin Nombre'}</h3>
+                    <p className="text-slate-400 text-sm mb-2">{selectedUserDetail.email}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="px-2 py-1 bg-white/10 text-white text-[10px] rounded uppercase font-bold">{selectedUserDetail.role || 'user'}</span>
+                      {selectedUserDetail.premium && <span className="px-2 py-1 bg-yellow-500/20 text-yellow-500 text-[10px] rounded uppercase font-bold">Premium</span>}
+                      {selectedUserDetail.banned && <span className="px-2 py-1 bg-red-900/30 text-red-400 text-[10px] rounded uppercase font-bold">Baneado</span>}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-black/30 p-4 rounded-xl border border-white/5">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">ID (UID)</p>
+                    <p className="text-xs font-mono text-slate-300 break-all">{selectedUserDetail.id}</p>
+                  </div>
+                  <div className="bg-black/30 p-4 rounded-xl border border-white/5">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Creado</p>
+                    <p className="text-xs text-slate-300">
+                      {selectedUserDetail.createdAt ? new Date(selectedUserDetail.createdAt.seconds ? selectedUserDetail.createdAt.seconds * 1000 : selectedUserDetail.createdAt).toLocaleDateString() : 'Desconocido'}
+                    </p>
+                  </div>
+                  <div className="bg-black/30 p-4 rounded-xl border border-white/5">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Teléfono</p>
+                    <p className="text-xs text-slate-300">{selectedUserDetail.phone || 'No registrado'}</p>
+                  </div>
+                  <div className="bg-black/30 p-4 rounded-xl border border-white/5">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Ciudad RRPP</p>
+                    <p className="text-xs text-slate-300">{selectedUserDetail.city || 'N/A'}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 mt-8">
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 border-b border-white/10 pb-2">Acciones de Moderación</p>
+                  
+                  <button 
+                    onClick={() => router.push(`/madrid/chat/detail?chatId=superadmin_${selectedUserDetail.id}`)} // Simplificado para mandar mensaje
+                    className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-3 rounded-xl text-sm font-bold transition-colors"
+                  >
+                    <span className="material-icons text-sm">chat</span> Enviar Mensaje Directo
+                  </button>
+
+                  <button 
+                    disabled={adminActionLoading || selectedUserDetail.banned}
+                    onClick={() => handleAdminBanUser(selectedUserDetail.id)}
+                    className="w-full flex items-center justify-center gap-2 bg-orange-900/20 hover:bg-orange-900/40 text-orange-400 border border-orange-500/20 px-4 py-3 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
+                  >
+                    <span className="material-icons text-sm">block</span> {selectedUserDetail.banned ? 'Usuario ya Baneado' : 'Banear Usuario'}
+                  </button>
+
+                  <button 
+                    disabled={adminActionLoading}
+                    onClick={() => handleAdminDeleteUser(selectedUserDetail.id)}
+                    className="w-full flex items-center justify-center gap-2 bg-red-900/20 hover:bg-red-900/50 text-red-400 border border-red-500/30 px-4 py-3 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
+                  >
+                    <span className="material-icons text-sm">delete_forever</span> Eliminar Cuenta Definitivamente
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
+      )}
 
       {activeTab === 'roles' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

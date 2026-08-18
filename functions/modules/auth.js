@@ -194,8 +194,9 @@ exports.banUser = onCall({ enforceAppCheck: true }, async (request) => {
   if (!caller) throw new HttpsError("unauthenticated", "Login required");
 
   const callerDoc = await db.collection("users").doc(caller.uid).get();
-  if (!callerDoc.exists || callerDoc.data().role !== "admin") {
-    throw new HttpsError("permission-denied", "Admin only");
+  const callerRole = callerDoc.data()?.role;
+  if (!callerDoc.exists || (callerRole !== "admin" && callerRole !== "superadmin")) {
+    throw new HttpsError("permission-denied", "Admin/Superadmin only");
   }
 
   const { uid, reason } = request.data;
@@ -214,6 +215,76 @@ exports.banUser = onCall({ enforceAppCheck: true }, async (request) => {
     bannedBy: caller.uid,
     bannedReason: reason || null,
   });
+
+  return { success: true, uid };
+});
+
+exports.adminDeleteUser = onCall({ enforceAppCheck: true }, async (request) => {
+  const { auth: caller, data } = request;
+  if (!caller) throw new HttpsError("unauthenticated", "Login required");
+
+  const callerDoc = await db.collection("users").doc(caller.uid).get();
+  const callerRole = callerDoc.data()?.role;
+  if (!callerDoc.exists || (callerRole !== "superadmin" && callerRole !== "admin")) {
+    throw new HttpsError("permission-denied", "Admin/Superadmin only");
+  }
+
+  const { uid } = data;
+  if (!uid) throw new HttpsError("invalid-argument", "uid is required");
+  if (uid === caller.uid) throw new HttpsError("invalid-argument", "Cannot delete yourself");
+
+  const deleteByField = async (col, field) => {
+    const snap = await db.collection(col).where(field, "==", uid).get();
+    const batch = db.batch();
+    snap.docs.forEach((d) => batch.delete(d.ref));
+    if (!snap.empty) await batch.commit();
+  };
+
+  await Promise.all([
+    deleteByField("likes", "fromId"),
+    deleteByField("likes", "toId"),
+    deleteByField("visits", "visitorId"),
+    deleteByField("visits", "visitedId"),
+    deleteByField("pings", "fromUserId"),
+    deleteByField("pings", "toUserId"),
+    deleteByField("checkins", "userId"),
+    deleteByField("tickets", "userId"),
+    deleteByField("chill_requests", "user_uid"),
+    deleteByField("reports", "reportedBy"),
+    deleteByField("matches", "users"),
+  ]);
+
+  const blocksSnap = await db.collection("users").doc(uid).collection("blocks").get();
+  if (!blocksSnap.empty) {
+    const batch = db.batch();
+    blocksSnap.docs.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
+
+  const earningsSnap = await db.collection("users").doc(uid).collection("earnings").get();
+  if (!earningsSnap.empty) {
+    const batch = db.batch();
+    earningsSnap.docs.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
+
+  await Promise.all([
+    db.collection("locations").doc(uid).delete(),
+    db.collection("verifications").doc(uid).delete(),
+    db.collection("subscriptions").doc(uid).delete(),
+    db.collection("partner_applications").doc(uid).delete().catch(() => {}),
+  ]);
+
+  try {
+    const bucket = admin.storage().bucket();
+    const [files] = await bucket.getFiles({ prefix: `profilePictures/${uid}/` });
+    await Promise.all(files.map((f) => f.delete()));
+  } catch (e) {
+    console.warn("Storage cleanup failed:", e.message);
+  }
+
+  await db.collection("users").doc(uid).delete();
+  await admin.auth().deleteUser(uid);
 
   return { success: true, uid };
 });

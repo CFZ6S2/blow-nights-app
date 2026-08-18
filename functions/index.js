@@ -15,6 +15,7 @@ exports.approveRRPP = auth.approveRRPP;
 exports.processReferral = auth.processReferral;
 exports.deleteUserData = auth.deleteUserData;
 exports.banUser = auth.banUser;
+exports.adminDeleteUser = auth.adminDeleteUser;
 exports.getAdminAnalytics = adminModule.getAdminAnalytics;
 
 // Notifications
