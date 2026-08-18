@@ -231,10 +231,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user, profile?.nick]);
 
-  const isSuperAdmin = claims?.role === 'superadmin';
-  const isAdmin = isSuperAdmin || claims?.role === 'admin';
-  const isCityAdmin = claims?.role === 'cityAdmin';
-  const isVenueManager = isAdmin || isCityAdmin || claims?.role === 'venueOwner' || claims?.role === 'venue';
+  const isSuperAdmin = claims?.role === 'superadmin' || profile?.role === 'superadmin';
+  const isAdmin = isSuperAdmin || claims?.role === 'admin' || profile?.role === 'admin';
+  const isCityAdmin = claims?.role === 'cityAdmin' || profile?.role === 'cityAdmin';
+  const isVenueManager = isAdmin || isCityAdmin || claims?.role === 'venueOwner' || claims?.role === 'venue' || profile?.role === 'venueOwner' || profile?.role === 'venue';
   const hasChillAccess = isAdmin || !!claims?.premium || !!profile?.premium
     || (typeof claims?.pass_expires === 'number' && claims.pass_expires > Date.now());
 

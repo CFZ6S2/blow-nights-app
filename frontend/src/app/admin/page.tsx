@@ -19,7 +19,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AdminDashboard() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, isSuperAdmin, loading } = useAuth();
   const router = useRouter();
   
   const [stats, setStats] = useState({
@@ -168,10 +168,24 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-slate-950 text-white p-4 pb-24">
       {/* Header */}
       <header className="mb-8">
-        <h1 className="text-3xl font-black bg-gradient-to-r from-fuchsia-500 to-indigo-500 bg-clip-text text-transparent">
-          ADMIN DASHBOARD
-        </h1>
-        <p className="text-slate-400 text-sm">Control optimizado de infraestructura y métricas.</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-black bg-gradient-to-r from-fuchsia-500 to-indigo-500 bg-clip-text text-transparent">
+              ADMIN DASHBOARD
+            </h1>
+            <p className="text-slate-400 text-sm">Control optimizado de infraestructura y métricas.</p>
+          </div>
+          <div className="flex gap-2">
+            {isSuperAdmin && (
+              <button onClick={() => router.push('/super-admin')} className="bg-fuchsia-600/20 text-fuchsia-400 border border-fuchsia-600/50 px-4 py-2 rounded-xl text-xs font-black uppercase hover:bg-fuchsia-600/30 transition-all">
+                Panel Maestro
+              </button>
+            )}
+            <button onClick={() => router.push('/')} className="bg-white/5 text-slate-400 border border-white/10 px-4 py-2 rounded-xl text-xs font-bold hover:bg-white/10 transition-all">
+              Volver
+            </button>
+          </div>
+        </div>
       </header>
 
       {/* Control Central de Ecosistema */}

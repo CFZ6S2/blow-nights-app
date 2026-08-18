@@ -12,7 +12,6 @@ import { useRouter } from 'next/navigation';
 import ProfileOverlay from './ProfileOverlay';
 import { User, Chill } from '@/types';
 import { useCity } from '@/context/CityContext';
-import CitySelector from './CitySelector';
 import { calculateDistance } from '@/lib/geo';
 import SwipeCards from './SwipeCards';
 import { useTranslation } from 'react-i18next';
@@ -734,23 +733,56 @@ export default function MainMap() {
           </div>
         )}
 
-        {/* Botón flotante de Disponibilidad */}
+        {/* Controles flotantes en la parte inferior del mapa */}
         {!isAddingPin && (
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[85%] max-w-xs z-20">
+          <div className="absolute bottom-4 left-4 right-4 z-20 flex items-end justify-between">
+            {/* Ghost toggle (visibilidad) */}
             <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={toggleAvailability}
-            className={`w-full py-5 rounded-[2rem] font-black shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 flex items-center justify-center gap-4 border-2 ${
-              isAvailable 
-              ? 'bg-green-500 border-green-400 text-white' 
-              : 'bg-slate-900/60 backdrop-blur-2xl text-white border-white/10'
-            }`}
-          >
-            <div className={`w-3 h-3 rounded-full ${isAvailable ? 'bg-white shadow-[0_0_15px_white] animate-pulse' : 'bg-slate-600'}`}></div>
-            <span className="text-xs uppercase tracking-[0.2em]">{isAvailable ? t('map.visible_now', 'VISIBLE AHORA') : t('map.make_visible', 'VOLVERME VISIBLE')}</span>
-          </motion.button>
-        </div>
+              whileTap={{ scale: 0.9 }}
+              onClick={toggleAvailability}
+              className={`w-14 h-14 rounded-2xl backdrop-blur-xl border flex items-center justify-center shadow-lg transition-all ${
+                isAvailable
+                  ? 'bg-fuchsia-600/80 border-fuchsia-400 shadow-[0_0_20px_rgba(217,70,239,0.4)]'
+                  : 'bg-slate-900/60 border-white/10'
+              }`}
+            >
+              <span className="text-2xl">{isAvailable ? '👻' : '🫥'}</span>
+            </motion.button>
+
+            {/* Botones de acción */}
+            <div className="flex items-center gap-2">
+              {profile?.premium && (
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => { triggerHaptic(10); setIsAddingPin(!isAddingPin); }}
+                  className={`w-12 h-12 rounded-2xl backdrop-blur-xl text-white border flex items-center justify-center shadow-lg transition-all ${
+                    isAddingPin ? 'bg-fuchsia-600 border-fuchsia-400' : 'bg-slate-900/60 border-white/10 hover:bg-white/10'
+                  }`}
+                >
+                  <span className="material-icons text-xl">{isAddingPin ? 'close' : 'add_location'}</span>
+                </motion.button>
+              )}
+
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={centerOnUser}
+                className="w-12 h-12 rounded-2xl bg-slate-900/60 backdrop-blur-xl text-white border border-white/10 flex items-center justify-center shadow-lg hover:bg-white/10 transition-all"
+              >
+                <span className="material-icons text-xl text-fuchsia-400">my_location</span>
+              </motion.button>
+
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => { triggerHaptic(10); setFiltersOpen(true); }}
+                className="relative w-12 h-12 rounded-2xl bg-slate-900/60 backdrop-blur-xl text-white border border-white/10 flex items-center justify-center shadow-lg hover:bg-white/10 transition-all"
+              >
+                <span className="material-icons text-xl text-fuchsia-400">tune</span>
+                {(roleFilter || intentionFilter || onlyPremium) && (
+                  <div className="absolute top-2 right-2 w-3 h-3 rounded-full bg-fuchsia-500 border-2 border-slate-900 animate-pulse shadow-[0_0_8px_#d946ef]"></div>
+                )}
+              </motion.button>
+            </div>
+          </div>
         )}
       </motion.div>
 
@@ -768,45 +800,6 @@ export default function MainMap() {
       </AnimatePresence>
       </div>
 
-      {/* Controles del Mapa (Fuera del contenedor del mapa) */}
-      <div className="flex items-center justify-between px-2 pb-4">
-        <CitySelector />
-        <div className="flex items-center gap-3">
-          {profile?.premium && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => { triggerHaptic(10); setIsAddingPin(!isAddingPin); }}
-              className={`w-12 h-12 rounded-2xl backdrop-blur-xl text-white border flex items-center justify-center shadow-lg transition-all ${
-                isAddingPin ? 'bg-fuchsia-600 border-fuchsia-400' : 'bg-white/5 border-white/10 hover:bg-white/10'
-              }`}
-            >
-              <span className="material-icons text-xl">{isAddingPin ? 'close' : 'add_location'}</span>
-            </motion.button>
-          )}
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={centerOnUser}
-            className="w-12 h-12 rounded-2xl bg-white/5 text-white border border-white/10 flex items-center justify-center shadow-lg hover:bg-white/10 transition-all"
-          >
-            <span className="material-icons text-xl text-fuchsia-400">my_location</span>
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => { triggerHaptic(10); setFiltersOpen(true); }}
-            className="relative w-12 h-12 rounded-2xl bg-white/5 text-white border border-white/10 flex items-center justify-center shadow-lg hover:bg-white/10 transition-all"
-          >
-            <span className="material-icons text-xl text-fuchsia-400">tune</span>
-            {(roleFilter || intentionFilter || onlyPremium) && (
-              <div className="absolute top-2 right-2 w-3 h-3 rounded-full bg-fuchsia-500 border-2 border-slate-900 animate-pulse shadow-[0_0_8px_#d946ef]"></div>
-            )}
-          </motion.button>
-        </div>
-      </div>
 
       {/* Drawer de Filtros Premium */}
       <AnimatePresence>

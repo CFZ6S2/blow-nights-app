@@ -142,9 +142,14 @@ export default function Home() {
         
         <div className="flex items-center gap-2">
           <CitySelector />
+          {isSuperAdmin && (
+            <Link href="/super-admin" prefetch={false} className="bg-fuchsia-600/20 text-fuchsia-400 border border-fuchsia-600/50 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase hover:bg-fuchsia-600/30 transition-all">
+              Panel Maestro
+            </Link>
+          )}
           {isAdmin && (
             <Link href="/admin" prefetch={false} className="bg-purple-600/20 text-purple-400 border border-purple-600/50 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase hover:bg-purple-600/30 transition-all">
-              Panel Admin
+              Admin
             </Link>
           )}
           <button 
