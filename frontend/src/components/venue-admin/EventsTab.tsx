@@ -54,7 +54,7 @@ function EventPromoters({ venueId, eventId }: { venueId: string; eventId: string
       snap.forEach(d => p.push({ id: d.id, ...d.data() } as Promoter));
       setPromoters(p);
       setLoading(false);
-    });
+    }, () => setLoading(false));
     return unsub;
   }, [venueId, eventId]);
 
@@ -210,7 +210,7 @@ export default function EventsTab({ venueId }: { venueId: string }) {
       });
       setEvents(evts);
       setLoading(false);
-    });
+    }, () => setLoading(false));
     return unsub;
   }, [venueId]);
 

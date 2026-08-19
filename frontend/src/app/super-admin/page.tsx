@@ -90,35 +90,36 @@ export default function SuperAdminPage() {
 
   useEffect(() => {
     if (!isSuperAdmin) return;
+    const errNoop = () => {};
     const unsubVenues = onSnapshot(collection(db, 'venues'), (snap) => {
       const v: any[] = [];
       snap.forEach(d => v.push({ id: d.id, ...d.data() }));
       setVenues(v);
-    });
+    }, errNoop);
 
     const unsubCities = onSnapshot(collection(db, 'cities'), (snap) => {
       const c: any[] = [];
       snap.forEach(d => c.push({ id: d.id, ...d.data() }));
       setCities(c);
-    });
+    }, errNoop);
 
     const unsubPartners = onSnapshot(query(collection(db, 'users'), where('isAssociatePartner', '==', true)), (snap) => {
       const p: any[] = [];
       snap.forEach(d => p.push({ id: d.id, ...d.data() }));
       setPartners(p);
-    });
+    }, errNoop);
 
     const unsubApps = onSnapshot(query(collection(db, 'partner_applications'), where('status', '==', 'pending')), (snap) => {
       const a: any[] = [];
       snap.forEach(d => a.push({ id: d.id, ...d.data() }));
       setApplications(a);
-    });
+    }, errNoop);
 
     const unsubRrppApps = onSnapshot(query(collection(db, 'rrpp_applications'), where('status', '==', 'pending')), (snap) => {
       const r: any[] = [];
       snap.forEach(d => r.push({ id: d.id, ...d.data() }));
       setRrppApplications(r);
-    });
+    }, errNoop);
 
     const unsubPromoters = onSnapshot(collectionGroup(db, 'promoters'), (snap) => {
       const p: any[] = [];
@@ -130,7 +131,7 @@ export default function SuperAdminPage() {
         p.push({ id: d.id, venueId, eventId, ...d.data() });
       });
       setPromoters(p);
-    });
+    }, errNoop);
 
     const unsubRoles = onSnapshot(
       query(collection(db, 'users'), where('role', 'in', ['venue', 'cityAdmin', 'admin', 'superadmin', 'rrpp', 'door', 'ambassador'])),
@@ -138,7 +139,8 @@ export default function SuperAdminPage() {
         const r: any[] = [];
         snap.forEach(d => r.push({ id: d.id, ...d.data() }));
         setRecentAssignments(r);
-      }
+      },
+      errNoop
     );
 
     return () => { unsubVenues(); unsubCities(); unsubPartners(); unsubApps(); unsubRrppApps(); unsubPromoters(); unsubRoles(); };

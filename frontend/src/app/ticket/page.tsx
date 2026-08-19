@@ -8,6 +8,7 @@ import { ChillRequest, Chill } from '@/types';
 import QRCode from 'react-qr-code';
 import { Map, AlertCircle, MapPin, Key, UserPlus } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import Link from 'next/link';
 import { DEFAULT_CITY } from '@/lib/routes';
 
@@ -15,6 +16,7 @@ function TicketContent() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
   const { user } = useAuth();
+  const { isReady } = useRequireAuth();
 
   const [request, setRequest] = useState<ChillRequest | null>(null);
   const [chill, setChill] = useState<Chill | null>(null);
@@ -22,7 +24,7 @@ function TicketContent() {
   const [qrToken, setQrToken] = useState('');
   const [exactAddress, setExactAddress] = useState<string | null>(null);
 
-  const isAcceptedStatus = request?.status === 'ACCEPTED' || request?.status === 'accepted';
+  const isAcceptedStatus = request?.status?.toLowerCase() === 'accepted';
   const isCheckedInStatus = request?.checkedIn;
   const generatedPin = request?.pin || (request ? (parseInt(request.id.replace(/[^a-f0-9]/gi, ''), 16) % 10000).toString().padStart(4, '0') : '0000');
 
@@ -60,7 +62,7 @@ function TicketContent() {
         setRequest(null);
       }
       setLoading(false);
-    });
+    }, () => setLoading(false));
 
     return () => unsubscribe();
   }, [id, chill]);
@@ -92,6 +94,16 @@ function TicketContent() {
         <AlertCircle size={48} className="text-red-500 mb-4" />
         <h1 className="text-xl font-bold">Pase No Encontrado</h1>
         <p className="text-gray-400 text-center mt-2">Este pase no existe o ha sido purgado del sistema.</p>
+      </div>
+    );
+  }
+
+  if (user && request.user_uid !== user.uid) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white p-6">
+        <AlertCircle size={48} className="text-red-500 mb-4" />
+        <h1 className="text-xl font-bold">Acceso Denegado</h1>
+        <p className="text-gray-400 text-center mt-2">Este pase no te pertenece.</p>
       </div>
     );
   }

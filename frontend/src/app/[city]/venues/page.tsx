@@ -23,7 +23,7 @@ function VenueCounter({ venueId }: { venueId: string }) {
       where('venueId', '==', venueId),
       where('expiresAt', '>', now)
     );
-    const unsub = onSnapshot(q, (snap) => setCount(snap.size));
+    const unsub = onSnapshot(q, (snap) => setCount(snap.size), () => {});
     return unsub;
   }, [venueId]);
 
@@ -74,17 +74,17 @@ export default function VenuesPage() {
     const unsub1 = onSnapshot(q1, (snap) => {
       results = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       merge();
-    });
+    }, () => {});
     const unsub2 = onSnapshot(q2, (snap) => {
       const anonResults = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       if (anonResults.length > 0 && results.length === 0) {
         results = anonResults;
       }
       merge();
-    });
+    }, () => {});
 
     return () => { unsub1(); unsub2(); };
-  }, [user]);
+  }, [user?.uid]);
 
   const handleCheckin = async (venueId: string, venueName: string) => {
     if (!user || checkingIn) return;

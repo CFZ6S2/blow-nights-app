@@ -2,13 +2,17 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useRequireRole } from '@/hooks/useRequireRole';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/lib/firebase';
 import { motion } from 'framer-motion';
 
 export default function RRPPComprarCreditosPage() {
   const { user } = useAuth();
+  const { isReady } = useRequireRole(['rrpp', 'admin', 'superadmin'], '/rrpp/register');
   const [loading, setLoading] = useState(false);
+
+  if (!isReady) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-fuchsia-500" /></div>;
 
   const handleComprar = async (quantity: number) => {
     if (!user) return;

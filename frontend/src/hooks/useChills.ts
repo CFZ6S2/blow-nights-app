@@ -29,7 +29,7 @@ export function useChills(citySlug: string | null) {
     }, () => setLoading(false));
 
     return unsub;
-  }, [citySlug]);
+  }, [citySlug, user?.uid, authLoading]);
 
   return { chills, loading };
 }
@@ -53,7 +53,7 @@ export function useChillRequests(chillId: string | null) {
     }, () => setLoading(false));
 
     return unsub;
-  }, [chillId]);
+  }, [chillId, user?.uid, authLoading]);
 
   return { requests, loading };
 }
@@ -78,7 +78,7 @@ export function useMyChills() {
     }, () => setLoading(false));
 
     return unsub;
-  }, [user]);
+  }, [user?.uid, authLoading]);
 
   return { myChills, loading };
 }

@@ -6,6 +6,7 @@ import { httpsCallable } from 'firebase/functions';
 import { functions, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 const PLATFORM_FEE = 1.00; // 1.00€ gastos de gestión
 
@@ -24,6 +25,7 @@ function BuyTicketContent() {
   const eventId = searchParams.get('event');
   const rrppId = searchParams.get('rrpp');
   const { user } = useAuth();
+  const { isReady } = useRequireAuth();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

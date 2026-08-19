@@ -7,9 +7,11 @@ import { db, auth } from '@/lib/firebase';
 import { motion } from 'framer-motion';
 import { TrendingUp, Building2, Ticket, Users, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useRequireRole } from '@/hooks/useRequireRole';
 
 export default function CityManagerDashboard() {
   const { user, loading: authLoading } = useAuth();
+  const { isReady } = useRequireRole(['cityAdmin', 'admin', 'superadmin']);
   const router = useRouter();
   const [dataLoading, setDataLoading] = useState(true);
   

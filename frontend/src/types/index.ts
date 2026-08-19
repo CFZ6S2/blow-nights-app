@@ -12,7 +12,6 @@ export interface User {
   lat?: number;
   lng?: number;
   geohash?: string;
-  blocked_users?: string[];
   blockedUsers?: string[];
   boostedUntil?: any;
   mood?: string;
@@ -138,7 +137,7 @@ export interface ChillRequest {
   user_foto: string;
   user_edad: number | null;
   user_bio?: string;
-  status: 'pending' | 'accepted' | 'denied' | 'ACCEPTED' | 'PENDING' | 'DENIED';
+  status: 'pending' | 'accepted' | 'denied';
   created_at: any;
   qrToken?: string;
   qr_code?: string;

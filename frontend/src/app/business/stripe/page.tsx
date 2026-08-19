@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
-export default function StripeOnboardingPage() {
+function StripeOnboardingContent() {
   const { user, profile, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -57,9 +57,9 @@ export default function StripeOnboardingPage() {
 
       // 2. Generate Account Link
       const createLink = httpsCallable(functions, 'createStripeAccountLink');
-      const res2: any = await createLink({ 
-        accountId, 
-        origin: window.location.origin 
+      const res2: any = await createLink({
+        accountId,
+        origin: window.location.origin
       });
 
       if (res2.data?.url) {
@@ -110,9 +110,9 @@ export default function StripeOnboardingPage() {
             <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-black px-4 py-1 rounded-bl-2xl uppercase">
               Powered by Stripe Connect
             </div>
-            
+
             <h2 className="text-xl font-bold mb-4">{venue.name}</h2>
-            
+
             {venue.stripeAccountId ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-3 text-green-400 bg-green-400/10 p-4 rounded-xl border border-green-400/20">
@@ -125,7 +125,7 @@ export default function StripeOnboardingPage() {
                 <p className="text-sm text-slate-400">
                   Todo está listo. Cuando vendas una entrada, el dinero de la venta (descontando los gastos de gestión) se transferirá automáticamente a tu cuenta bancaria a través de Stripe.
                 </p>
-                <button 
+                <button
                   onClick={handleConnectStripe}
                   disabled={isLinking}
                   className="w-full bg-[#1c1f38] hover:bg-[#23273f] text-white font-bold py-3 rounded-xl transition-all mt-4 border border-[#3b3f68]"
@@ -150,7 +150,7 @@ export default function StripeOnboardingPage() {
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={handleConnectStripe}
                   disabled={isLinking}
                   className="w-full bg-[#635BFF] hover:bg-[#4B45FF] text-white font-bold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
@@ -173,5 +173,13 @@ export default function StripeOnboardingPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function StripeOnboardingPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-white">Cargando...</div>}>
+      <StripeOnboardingContent />
+    </Suspense>
   );
 }

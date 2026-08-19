@@ -29,7 +29,8 @@ export default function RRPPFooter({ saldoQRs = 0, unreadMessages = 0 }: RRPPFoo
         if (snapshot.exists()) {
           setBalance(snapshot.data()?.qr_quota || 0);
         }
-      }
+      },
+      () => {}
     );
 
     // For unread messages we would ideally query the chat doc if there's an unread count
@@ -38,7 +39,7 @@ export default function RRPPFooter({ saldoQRs = 0, unreadMessages = 0 }: RRPPFoo
     return () => {
       unsubscribeUser();
     };
-  }, [user]);
+  }, [user?.uid]);
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 px-4 py-2">

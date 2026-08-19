@@ -121,8 +121,8 @@ export default function ChillsPage() {
   const sorted = useMemo(() => {
     if (!userLat || !userLng) return chills;
     return [...chills].sort((a, b) => {
-      const dA = parseFloat(calculateDistance(userLat, userLng, a.approx_lat, a.approx_lng));
-      const dB = parseFloat(calculateDistance(userLat, userLng, b.approx_lat, b.approx_lng));
+      const dA = calculateDistance(userLat, userLng, a.approx_lat, a.approx_lng);
+      const dB = calculateDistance(userLat, userLng, b.approx_lat, b.approx_lng);
       return dA - dB;
     });
   }, [chills, userLat, userLng]);

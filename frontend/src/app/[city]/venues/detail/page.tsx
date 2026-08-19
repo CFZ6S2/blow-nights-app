@@ -62,7 +62,7 @@ export default function VenueDetailPage() {
     if (!venueId) return;
     const unsub = onSnapshot(doc(db, 'venues', venueId), (snap) => {
       if (snap.exists()) setVenue({ id: snap.id, ...snap.data() });
-    });
+    }, () => {});
     return unsub;
   }, [venueId]);
 
@@ -73,7 +73,7 @@ export default function VenueDetailPage() {
       where('venueId', '==', venueId),
       where('expiresAt', '>', Timestamp.now())
     );
-    const unsub = onSnapshot(q, (snap) => setCheckinCount(snap.size));
+    const unsub = onSnapshot(q, (snap) => setCheckinCount(snap.size), () => {});
     return unsub;
   }, [venueId]);
 

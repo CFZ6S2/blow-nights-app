@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { useCityRouter } from '@/hooks/useCityRouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChatSkeleton } from '@/components/Skeleton';
@@ -11,6 +12,7 @@ import ProfileOverlay from '@/components/ProfileOverlay';
 
 export default function VisitsPage() {
   const { user, profile, loading: authLoading } = useAuth();
+  const { isReady } = useRequireAuth();
   const [visits, setVisits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProfileId, setSelectedProfileId] = useState(null);
@@ -48,7 +50,7 @@ export default function VisitsPage() {
     );
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user?.uid]);
 
   if (authLoading || loading) {
     return (

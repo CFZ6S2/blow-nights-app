@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, limitToLast } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 
@@ -35,7 +35,8 @@ export const useChat = (chatId: string | null) => {
     // Suscribirse a mensajes
     const q = query(
       collection(db, 'chats', chatId, 'messages'),
-      orderBy('timestamp', 'asc')
+      orderBy('timestamp', 'asc'),
+      limitToLast(100)
     );
 
     const unsubscribeMessages = onSnapshot(q, 
@@ -57,7 +58,7 @@ export const useChat = (chatId: string | null) => {
     const unsubscribeChat = onSnapshot(chatRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data();
-        
+
         // Typing
         const typingState = data.typing || {};
         const otherUserId = data.users.find((id: string) => id !== user.uid);
@@ -66,16 +67,16 @@ export const useChat = (chatId: string | null) => {
         // Active Users
         setActiveUsers(data.activeUsers || []);
       }
-    });
+    }, () => {});
 
     return () => {
       unsubscribeMessages();
       unsubscribeChat();
       setMeInactive();
     };
-  }, [chatId, user]);
+  }, [chatId, user?.uid]);
 
-  const sendMessage = async (content = '', type = 'text', url = null) => {
+  const sendMessage = async (content = '', type = 'text', url: string | null = null) => {
     if ((!content.trim() && !url) || !user || !chatId) return;
 
     const messageData = {

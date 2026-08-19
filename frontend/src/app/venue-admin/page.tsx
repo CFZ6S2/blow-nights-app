@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useRequireRole } from '@/hooks/useRequireRole';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -18,6 +19,7 @@ import EventsTab from '@/components/venue-admin/EventsTab';
 
 export default function VenueAdminPage() {
   const { user, profile, loading, isAdmin } = useAuth();
+  const { isReady: hasRole } = useRequireRole(['venue', 'venueOwner', 'cityAdmin', 'admin', 'superadmin']);
   const router = useRouter();
   const profileRef = useRef(profile);
   profileRef.current = profile;
@@ -55,7 +57,7 @@ export default function VenueAdminPage() {
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       setMyVenues(list);
       if (list.length > 0 && !selectedVenue) setSelectedVenue(list[0]);
-    });
+    }, () => {});
     return unsub;
   }, [user?.uid, isAdmin]);
 
@@ -69,7 +71,7 @@ export default function VenueAdminPage() {
     );
     const unsubCheckins = onSnapshot(checkinsQ, (snap) => {
       setCheckins(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
+    }, () => {});
 
     const ticketsQ = query(
       collection(db, 'tickets'),
@@ -79,7 +81,7 @@ export default function VenueAdminPage() {
     );
     const unsubTickets = onSnapshot(ticketsQ, (snap) => {
       setTickets(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
+    }, () => {});
 
     return () => { unsubCheckins(); unsubTickets(); };
   }, [selectedVenue]);

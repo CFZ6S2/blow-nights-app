@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 
@@ -10,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 export default function PremiumPage() {
   const { t } = useTranslation();
   const { user, profile, loading } = useAuth();
+  const { isReady } = useRequireAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
@@ -117,9 +119,8 @@ export default function PremiumPage() {
                 <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> {t('premium.incognito')}</li>
               </ul>
               <button
-                disabled={isSubmitting}
-                // TODO(buyer): reemplaza por el Price ID real del plan mensual creado en el Dashboard de Stripe.
-                onClick={() => handleSubscribe('price_monthly_placeholder')}
+                disabled={isSubmitting || !process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY}
+                onClick={() => handleSubscribe(process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY!)}
                 className="w-full bg-white text-black font-black py-5 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all uppercase tracking-widest text-[10px]"
               >
                 {t('premium.choose_plan')}
@@ -148,9 +149,8 @@ export default function PremiumPage() {
                 <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">check_circle</span> {t('premium.priority_support')}</li>
               </ul>
               <button
-                disabled={isSubmitting}
-                // TODO(buyer): reemplaza por el Price ID real del plan anual creado en el Dashboard de Stripe.
-                onClick={() => handleSubscribe('price_yearly_placeholder')}
+                disabled={isSubmitting || !process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY}
+                onClick={() => handleSubscribe(process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY!)}
                 className="w-full bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white font-black py-5 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-fuchsia-500/20"
               >
                 {t('premium.activate_yearly')}

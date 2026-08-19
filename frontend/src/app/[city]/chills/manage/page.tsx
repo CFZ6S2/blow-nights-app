@@ -4,6 +4,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useCityRouter } from '@/hooks/useCityRouter';
 import { useAuth } from '@/context/AuthContext';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, increment } from 'firebase/firestore';
 import { Chill, ChillRequest } from '@/types';
@@ -13,6 +14,7 @@ function ChillManageContent() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
   const { user, profile } = useAuth();
+  const { isReady } = useRequireAuth();
   const { cityPath, router } = useCityRouter();
   
   const [chill, setChill] = useState<Chill | null>(null);
@@ -49,7 +51,7 @@ function ChillManageContent() {
     };
     
     fetchChill();
-  }, [id, user, router]);
+  }, [id, user?.uid, router]);
 
   // Listen to pending requests
   useEffect(() => {
@@ -66,10 +68,10 @@ function ChillManageContent() {
         pendingReqs.push({ id: doc.id, ...doc.data() } as ChillRequest);
       });
       setRequests(pendingReqs);
-    });
+    }, () => {});
 
     return () => unsubscribe();
-  }, [id, user, chill]);
+  }, [id, user?.uid, chill]);
 
   if (loading) {
     return <div className="min-h-screen bg-[#0a0b12] flex items-center justify-center text-white text-xs">Cargando panel...</div>;
@@ -97,7 +99,7 @@ function ChillManageContent() {
     try {
       const qrPayload = `CHILL-REQ-${req.id}`;
       await updateDoc(doc(db, 'chill_requests', req.id), {
-        status: 'ACCEPTED',
+        status: 'accepted',
         monetization_type: 'in_app',
         qr_code: qrPayload,
         checkedIn: false
@@ -134,7 +136,7 @@ function ChillManageContent() {
     setProcessingId(req.id);
     try {
       await updateDoc(doc(db, 'chill_requests', req.id), {
-        status: 'ACCEPTED',
+        status: 'accepted',
         monetization_type: 'out_of_app'
       });
 
@@ -195,10 +197,10 @@ function ChillManageContent() {
       {/* Solicitudes de Asistentes */}
       <div className="space-y-2">
         <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Solicitudes de Acceso</h3>
-        {requests.filter(r => r.status === 'PENDING' || r.status === 'pending').length === 0 && (
+        {requests.filter(r => r.status?.toLowerCase() === 'pending').length === 0 && (
           <p className="text-xs text-gray-500 py-4 text-center">No hay solicitudes pendientes</p>
         )}
-        {requests.filter(r => r.status === 'PENDING' || r.status === 'pending').map(req => (
+        {requests.filter(r => r.status?.toLowerCase() === 'pending').map(req => (
           <div key={req.id} className="bg-[#121422] border border-[#23273f] p-3 rounded-xl flex items-center justify-between gap-2">
             <div>
               <p className="text-sm font-bold text-white">{req.userName || req.user_nick}</p>

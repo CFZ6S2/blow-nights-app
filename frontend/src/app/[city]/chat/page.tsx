@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { useCityRouter } from '@/hooks/useCityRouter';
 import Link from 'next/link';
 import { ChatSkeleton } from '@/components/Skeleton';
@@ -12,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 export default function ChatListPage() {
   const { t } = useTranslation();
   const { user, isSuperAdmin, loading: authLoading } = useAuth();
+  const { isReady } = useRequireAuth();
   const [chats, setChats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { cityPath, router } = useCityRouter();
@@ -57,7 +59,7 @@ export default function ChatListPage() {
     );
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user?.uid]);
 
   if (authLoading || loading) return (
     <div className="flex flex-col min-h-screen bg-slate-950 text-white p-4">

@@ -174,7 +174,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Error deleting account:", error);
       throw error;
     }
-  }, [user]);
+  }, [user?.uid]);
 
   const requestVerification = useCallback(async (photoFile: File) => {
     if (!user || !photoFile) return;
@@ -205,12 +205,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Error requesting verification:", error);
       throw error;
     }
-  }, [user, profile?.nick]);
+  }, [user?.uid, profile?.nick]);
 
-  const isSuperAdmin = claims?.role === 'superadmin' || profile?.role === 'superadmin';
-  const isAdmin = isSuperAdmin || claims?.role === 'admin' || profile?.role === 'admin';
-  const isCityAdmin = claims?.role === 'cityAdmin' || profile?.role === 'cityAdmin';
-  const isVenueManager = isAdmin || isCityAdmin || claims?.role === 'venueOwner' || claims?.role === 'venue' || profile?.role === 'venueOwner' || profile?.role === 'venue';
+  // Roles privilegiados solo desde claims (server-side) para evitar escalado via Firestore
+  const isSuperAdmin = claims?.role === 'superadmin';
+  const isAdmin = isSuperAdmin || claims?.role === 'admin';
+  const isCityAdmin = claims?.role === 'cityAdmin';
+  const isVenueManager = isAdmin || isCityAdmin || claims?.role === 'venueOwner' || claims?.role === 'venue';
   const hasChillAccess = isAdmin || !!claims?.premium || !!profile?.premium
     || (typeof claims?.pass_expires === 'number' && claims.pass_expires > Date.now());
 

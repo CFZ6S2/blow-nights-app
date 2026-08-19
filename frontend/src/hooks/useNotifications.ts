@@ -9,20 +9,20 @@ import { useNotificationUI } from '@/context/NotificationContext';
 
 export function useNotifications() {
   const { user } = useAuth();
-  const { addNotification } = useNotificationUI();
+  const notificationCtx = useNotificationUI();
+  const addNotification = notificationCtx?.addNotification;
 
   const toggleNotifications = async () => {
     if (!user || !messaging) return;
-    
+
     try {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
         const token = await getToken(messaging, {
           vapidKey: process.env.NEXT_PUBLIC_VAPID_KEY
         });
-        
+
         if (token) {
-          console.log('Token FCM:', token);
           await updateDoc(doc(db, 'users', user.uid), {
             fcmToken: token,
             notificationsEnabled: true
@@ -41,20 +41,15 @@ export function useNotifications() {
   };
 
   useEffect(() => {
-    if (!user || !messaging) return;
+    if (!user || !messaging || !addNotification) return;
 
-    // Listener para mensajes en primer plano
     const unsubscribe = onMessage(messaging, (payload) => {
-      console.log('Mensaje en primer plano recibido:', payload);
-      
-      // Mostrar Toast in-app
       addNotification({
-        title: payload.notification.title,
-        body: payload.notification.body,
+        title: payload.notification?.title ?? '',
+        body: payload.notification?.body ?? '',
         data: payload.data
       });
 
-      // Vibrar un poco
       if (typeof navigator !== 'undefined' && navigator.vibrate) {
         navigator.vibrate(50);
       }

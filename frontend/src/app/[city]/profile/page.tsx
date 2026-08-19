@@ -77,19 +77,19 @@ export default function MyProfilePage() {
       const vQ = query(collection(db, 'visits'), where('visitedId', '==', user.uid));
       const unsubscribeVisits = onSnapshot(vQ, (snap) => {
         setStats(prev => ({ ...prev, visits: snap.size || 0 }));
-      });
+      }, () => {});
 
       // Suscribirse a estadísticas de likes recibidos
       const lQ = query(collection(db, 'likes'), where('toId', '==', user.uid));
       const unsubscribeLikes = onSnapshot(lQ, (snap) => {
         setStats(prev => ({ ...prev, likes: snap.size }));
-      });
+      }, () => {});
 
       // Suscribirse a estadísticas de matches
       const mQ = query(collection(db, 'matches'), where('users', 'array-contains', user.uid));
       const unsubscribeMatches = onSnapshot(mQ, (snap) => {
         setStats(prev => ({ ...prev, matches: snap.size || 0 }));
-      });
+      }, () => {});
 
       return () => {
         unsubscribeVisits();

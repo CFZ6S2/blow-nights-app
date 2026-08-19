@@ -6,10 +6,14 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AlertCircle } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 function TicketViewInner() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
+  const { user } = useAuth();
+  const { isReady } = useRequireAuth();
 
   const [ticket, setTicket] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +52,16 @@ function TicketViewInner() {
         <AlertCircle size={48} className="text-red-500 mb-4" />
         <h1 className="text-xl font-bold">Pase No Encontrado</h1>
         <p className="text-gray-400 text-center mt-2">Este pase no existe o es inválido.</p>
+      </div>
+    );
+  }
+
+  if (user && ticket.userId && ticket.userId !== user.uid) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white p-6">
+        <AlertCircle size={48} className="text-red-500 mb-4" />
+        <h1 className="text-xl font-bold">Acceso Denegado</h1>
+        <p className="text-gray-400 text-center mt-2">Este pase no te pertenece.</p>
       </div>
     );
   }

@@ -8,7 +8,7 @@ export function useMedia() {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const uploadFile = async (file, path) => {
+  const uploadFile = async (file: File, path: string): Promise<string> => {
     return new Promise((resolve, reject) => {
       setUploading(true);
       const storageRef = ref(storage, path);

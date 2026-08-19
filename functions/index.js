@@ -7,6 +7,7 @@ const tickets = require("./modules/tickets");
 const chills = require("./modules/chills");
 const venues = require("./modules/venues");
 const adminModule = require("./modules/admin");
+const likes = require("./modules/likes");
 
 // Auth & Users
 exports.onUserCreate = auth.onUserCreate;
@@ -44,6 +45,9 @@ exports.generateDirectPromoterTicket = tickets.generateDirectPromoterTicket;
 exports.closePromoterList = tickets.closePromoterList;
 exports.liquidatePromoter = tickets.liquidatePromoter;
 exports.getPromoterStats = tickets.getPromoterStats;
+
+// Likes & Matches
+exports.sendLike = likes.sendLike;
 
 // Chills / Afters
 exports.createChill = chills.createChill;

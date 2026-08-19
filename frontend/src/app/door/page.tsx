@@ -69,11 +69,11 @@ function DoorScannerContent() {
             // Fallback just in case (will fail without index, but backwards compatible)
             const eventsQuery = query(collectionGroup(db, 'events'), where('scanner_token', '==', token));
             const eventsSnap = await getDocs(eventsQuery);
-            eventsSnap.forEach(async (d) => {
+            for (const d of eventsSnap.docs) {
               if (d.id === eventId) {
                 title = d.data().title || 'Evento RRPP';
                 found = true;
-                
+
                 const venueRef = d.ref.parent.parent;
                 if (venueRef) {
                   const venueSnap = await getDoc(venueRef);
@@ -82,7 +82,7 @@ function DoorScannerContent() {
                   }
                 }
               }
-            });
+            }
           }
         }
 

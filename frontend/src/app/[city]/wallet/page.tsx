@@ -7,72 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTickets } from '@/hooks/useTickets';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/lib/firebase';
-
-function QRCode({ token, size = 200 }: { token: string; size?: number }) {
-  const modules = generateQRMatrix(token);
-  const moduleCount = modules.length;
-  const cellSize = size / moduleCount;
-
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="rounded-2xl">
-      <rect width={size} height={size} fill="white" />
-      {modules.map((row, y) =>
-        row.map((cell, x) =>
-          cell ? (
-            <rect
-              key={`${x}-${y}`}
-              x={x * cellSize}
-              y={y * cellSize}
-              width={cellSize}
-              height={cellSize}
-              fill="black"
-              rx={cellSize * 0.1}
-            />
-          ) : null
-        )
-      )}
-    </svg>
-  );
-}
-
-function generateQRMatrix(data: string): boolean[][] {
-  const size = 25;
-  const matrix: boolean[][] = Array.from({ length: size }, () =>
-    Array.from({ length: size }, () => false)
-  );
-
-  const addFinderPattern = (startX: number, startY: number) => {
-    for (let y = 0; y < 7; y++) {
-      for (let x = 0; x < 7; x++) {
-        if (y === 0 || y === 6 || x === 0 || x === 6 ||
-            (y >= 2 && y <= 4 && x >= 2 && x <= 4)) {
-          matrix[startY + y][startX + x] = true;
-        }
-      }
-    }
-  };
-
-  addFinderPattern(0, 0);
-  addFinderPattern(size - 7, 0);
-  addFinderPattern(0, size - 7);
-
-  let bitIndex = 0;
-  const bytes = new TextEncoder().encode(data);
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      if (x < 8 && y < 8) continue;
-      if (x >= size - 8 && y < 8) continue;
-      if (x < 8 && y >= size - 8) continue;
-
-      const byteIndex = Math.floor(bitIndex / 8) % bytes.length;
-      const bit = (bytes[byteIndex] >> (7 - (bitIndex % 8))) & 1;
-      matrix[y][x] = bit === 1;
-      bitIndex++;
-    }
-  }
-
-  return matrix;
-}
+import QRCodeSVG from 'react-qr-code';
 
 export default function WalletPage() {
   const { user, profile, loading } = useAuth();
@@ -238,7 +173,7 @@ export default function WalletPage() {
                 {selectedTicket.status === 'valid' && selectedTicket.qrToken && (
                   <div className="flex justify-center mb-6">
                     <div className="bg-white p-4 rounded-3xl print:border-4 print:border-black">
-                      <QRCode token={selectedTicket.qrToken} size={200} />
+                      <QRCodeSVG value={selectedTicket.qrToken} size={200} />
                     </div>
                   </div>
                 )}

@@ -31,7 +31,7 @@ export function useVenues(cityId: string | null) {
       const list = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setVenues(list);
       setLoading(false);
-    });
+    }, () => setLoading(false));
 
     return unsub;
   }, [cityId]);
@@ -68,7 +68,7 @@ export function useVenueCheckins(venueId: string | null) {
 
     const unsub = onSnapshot(q, (snap) => {
       setCount(snap.size);
-    });
+    }, () => {});
 
     return unsub;
   }, [venueId]);

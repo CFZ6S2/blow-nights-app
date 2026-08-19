@@ -8,6 +8,7 @@ import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/lib/firebase';
 import { motion } from 'framer-motion';
 import { useMedia } from '@/hooks/useMedia';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import RRPPEventCard from './RRPPEventCard';
 
 function RRPPInner() {
@@ -15,6 +16,7 @@ function RRPPInner() {
   const tokenParam = searchParams.get('token');
   const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
+  const { isReady } = useRequireAuth();
   const { uploadFile, uploading } = useMedia();
 
   const [promoterDocs, setPromoterDocs] = useState<any[]>([]);
@@ -55,7 +57,7 @@ function RRPPInner() {
     };
 
     fetchPromoters();
-  }, [user, tokenParam]);
+  }, [user?.uid, tokenParam]);
 
   const handleUploadFlyer = (e: any) => {
     if (e.target.files && e.target.files[0]) {

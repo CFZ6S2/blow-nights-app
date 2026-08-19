@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/lib/firebase';
+import jsQR from 'jsqr';
 
 type ScanResult = {
   valid: boolean;
@@ -31,6 +32,8 @@ export default function ScannerPage() {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [mode, setMode] = useState<'camera' | 'manual'>('camera');
   const streamRef = useRef<MediaStream | null>(null);
+  const scanningRef = useRef(true);
+  const animFrameRef = useRef<number>(0);
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
@@ -47,6 +50,8 @@ export default function ScannerPage() {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
         setScanning(true);
+        scanningRef.current = true;
+        startQRLoop();
       }
     } catch (err: any) {
       setCameraError(err.message || 'No se pudo acceder a la cámara');
@@ -54,7 +59,35 @@ export default function ScannerPage() {
     }
   }, []);
 
+  const startQRLoop = useCallback(() => {
+    function tick() {
+      if (!scanningRef.current) return;
+      if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA && canvasRef.current) {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (ctx) {
+          canvas.height = videoRef.current.videoHeight;
+          canvas.width = videoRef.current.videoWidth;
+          ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: 'dontInvert',
+          });
+          if (code && code.data) {
+            scanningRef.current = false;
+            validateToken(code.data);
+            return;
+          }
+        }
+      }
+      animFrameRef.current = requestAnimationFrame(tick);
+    }
+    animFrameRef.current = requestAnimationFrame(tick);
+  }, []);
+
   const stopCamera = useCallback(() => {
+    scanningRef.current = false;
+    cancelAnimationFrame(animFrameRef.current);
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
@@ -93,7 +126,10 @@ export default function ScannerPage() {
   const handleReset = () => {
     setResult(null);
     setManualToken('');
-    if (mode === 'camera') startCamera();
+    if (mode === 'camera') {
+      scanningRef.current = true;
+      startCamera();
+    }
   };
 
   if (loading || !profile) {

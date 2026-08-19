@@ -2,17 +2,21 @@
 
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useRequireRole } from '@/hooks/useRequireRole';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 
 export default function RRPPProfilePage() {
   const { user, profile } = useAuth();
+  const { isReady } = useRequireRole(['rrpp', 'admin', 'superadmin'], '/rrpp/register');
   const router = useRouter();
 
   const handleLogout = async () => {
     await signOut(auth);
-    window.location.href = '/login';
+    router.push('/login');
   };
+
+  if (!isReady) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-fuchsia-500" /></div>;
 
   return (
     <div className="min-h-screen bg-black text-white p-6 pb-24 font-sans">

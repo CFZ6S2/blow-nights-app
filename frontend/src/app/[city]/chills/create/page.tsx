@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCityRouter } from '@/hooks/useCityRouter';
 import { useAuth } from '@/context/AuthContext';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ChillType } from '@/types';
@@ -11,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 
 export default function CreateChillPage() {
   const { user, profile } = useAuth();
+  const { isReady } = useRequireAuth();
   const { cityPath, router } = useCityRouter();
   const { t } = useTranslation();
 
@@ -27,10 +29,10 @@ export default function CreateChillPage() {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
 
   useEffect(() => {
-    if (!user) {
+    if (isReady && !user) {
       router.push(cityPath());
     }
-  }, [user, router]);
+  }, [isReady, user, router, cityPath]);
 
   // Jitter algorithm: offset by roughly 0-500 meters
   const applyJitter = (lat: number, lng: number) => {

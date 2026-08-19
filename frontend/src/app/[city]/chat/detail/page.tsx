@@ -2,8 +2,9 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useCityRouter } from '@/hooks/useCityRouter';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { useChat } from '@/hooks/useChat';
 import { useSafeActions } from '@/hooks/useSafeActions';
 import { useMedia } from '@/hooks/useMedia';
@@ -16,11 +17,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { calculateDistance } from '@/lib/geo';
 import { useTranslation } from 'react-i18next';
 
-export default function ChatDetailPage() {
+function ChatDetailContent() {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const chatId = searchParams.get('id');
   const { user, profile: myProfile } = useAuth();
+  const { isReady } = useRequireAuth();
   const { messages, loading, isOtherTyping, activeUsers, sendMessage, setTypingStatus, markAsRead, grantPrivateAccess } = useChat(chatId);
   const { blockUser, reportUser } = useSafeActions();
   const { uploadFile, uploading, progress } = useMedia();
@@ -62,7 +64,7 @@ export default function ChatDetailPage() {
       }
     };
     if (user && chatId) fetchOtherUser();
-  }, [chatId, user]);
+  }, [chatId, user?.uid]);
 
   useEffect(() => {
     if (isNearBottom) {
@@ -458,5 +460,13 @@ export default function ChatDetailPage() {
         onClose={() => setIsModalOpen(false)} 
       />
     </div>
+  );
+}
+
+export default function ChatDetailPage() {
+  return (
+    <Suspense fallback={null}>
+      <ChatDetailContent />
+    </Suspense>
   );
 }

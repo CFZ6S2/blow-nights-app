@@ -2,21 +2,26 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useRequireRole } from '@/hooks/useRequireRole';
 import { db } from '@/lib/firebase';
-import { 
-  collection, 
-  query, 
-  orderBy, 
-  onSnapshot, 
-  addDoc, 
-  serverTimestamp 
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  addDoc,
+  serverTimestamp,
+  limitToLast
 } from 'firebase/firestore';
 
 export default function RRPPChatPage() {
   const { user } = useAuth();
+  const { isReady } = useRequireRole(['rrpp', 'admin', 'superadmin'], '/rrpp/register');
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  if (!isReady) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-fuchsia-500" /></div>;
 
   const chatId = user ? `support_${user.uid}` : null;
 
@@ -25,7 +30,8 @@ export default function RRPPChatPage() {
 
     const q = query(
       collection(db, 'chats', chatId, 'messages'),
-      orderBy('createdAt', 'asc')
+      orderBy('createdAt', 'asc'),
+      limitToLast(100)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -34,7 +40,7 @@ export default function RRPPChatPage() {
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
-    });
+    }, () => {});
 
     return () => unsubscribe();
   }, [chatId]);

@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { Ticket } from '@/types';
 
-export function useTickets(userId) {
-  const [tickets, setTickets] = useState([]);
+export function useTickets(userId: string | undefined) {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,10 +19,10 @@ export function useTickets(userId) {
     );
 
     const unsub = onSnapshot(q, (snap) => {
-      const list = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const list = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Ticket));
       setTickets(list);
       setLoading(false);
-    });
+    }, () => setLoading(false));
 
     return unsub;
   }, [userId]);

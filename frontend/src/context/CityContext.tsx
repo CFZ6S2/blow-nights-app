@@ -110,6 +110,9 @@ export function CityProvider({ children }: { children: React.ReactNode }) {
       }
 
       detectCityByGPS(list);
+    }, (err) => {
+      console.error('CityContext onSnapshot error:', err);
+      setLoading(false);
     });
     return unsub;
   }, [detectCityByGPS]);

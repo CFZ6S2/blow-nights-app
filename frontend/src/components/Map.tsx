@@ -405,7 +405,7 @@ export default function MainMap() {
         }
       });
       setVenuesMap(v);
-    });
+    }, () => {});
 
     let unsubChills = () => {};
     if (citySlug) {
@@ -416,7 +416,7 @@ export default function MainMap() {
       );
       unsubChills = onSnapshot(qChills, (snap) => {
         setChillsMap(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Chill)));
-      });
+      }, () => {});
     }
 
     return () => {
@@ -511,7 +511,7 @@ export default function MainMap() {
       // Filtro de distancia
       if (profile?.lat && u.lat && userLocation) {
         const distance = calculateDistance(userLocation[0], userLocation[1], u.lat as number, u.lng as number);
-        if (parseFloat(distance) > distanceFilter) return false;
+        if (distance > distanceFilter) return false;
       }
 
       // New unified search

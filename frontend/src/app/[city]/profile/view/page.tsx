@@ -104,7 +104,7 @@ function PublicProfileContent() {
 
     triggerHaptic(isSuper ? [30, 50, 30] : 20);
     const result = await sendLike(id, isSuper);
-    
+
     if (result.isMatch) {
       setMatchData(result.matchData);
     } else if (!result.error) {
