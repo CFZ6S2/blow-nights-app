@@ -113,7 +113,7 @@ exports.validateTicket = onCall({ enforceAppCheck: false }, async (request) => {
 
   const venueDoc = await db.collection("venues").doc(ticket.venueId).get();
   const venue = venueDoc.exists ? venueDoc.data() : null;
-  const callerIsAdmin = auth.token.role === 'admin';
+  const callerIsAdmin = auth.token.role === 'admin' || auth.token.role === 'superadmin';
   if (!venue || (venue.ownerId !== auth.uid && !callerIsAdmin)) {
     throw new HttpsError("permission-denied", "No tienes permiso para validar entradas de este local.");
   }
@@ -178,6 +178,9 @@ exports.validateTicketByDoorToken = onCall({ enforceAppCheck: false }, async (re
 
   if (ticket.venueId !== venueId) {
     return { valid: false, message: "PERTENECE A OTRO LOCAL" };
+  }
+  if (ticket.eventId !== eventId) {
+    return { valid: false, message: "PERTENECE A OTRO EVENTO" };
   }
 
   const result = await db.runTransaction(async (transaction) => {
@@ -438,7 +441,6 @@ exports.getPromoterStats = onCall({ enforceAppCheck: false }, async (request) =>
       date: eventData.date || '',
       time: eventData.time || null,
       ticketType: eventData.ticketType || 'general',
-      scannerToken: eventData.scanner_token || '',
     },
     venue: {
       name: venueData.name || '',

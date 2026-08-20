@@ -97,7 +97,7 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
         }).catch(console.error);
       }
     };
-  }, [id, currentUser, currentProfile]);
+  }, [id, currentUser?.uid, currentProfile?.nick, currentProfile?.fotoUrl]);
 
   const handleScroll = () => {
     if (carouselRef.current) {

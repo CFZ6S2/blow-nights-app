@@ -84,7 +84,7 @@ export default function VenueAdminPage() {
     }, () => {});
 
     return () => { unsubCheckins(); unsubTickets(); };
-  }, [selectedVenue]);
+  }, [selectedVenue?.id]);
 
   const sendPromotion = async () => {
     if (!selectedVenue || !promoText.trim() || sendingPromo) return;

@@ -67,21 +67,24 @@ export default function AdminDashboard() {
     fetchAnalytics();
 
     // Settings en tiempo real (pesan muy poco)
+    const errNoop = (e: any) => console.error("Snapshot error", e);
+
     const unsubSettings = onSnapshot(doc(db, 'settings', 'platform'), (docSnap) => {
       if (docSnap.exists()) {
         setPlatformSettings(docSnap.data() as any);
       } else {
         setPlatformSettings({ enableDarkNightsBridge: false });
       }
-    });
+    }, errNoop);
 
     // Reportes pendientes en tiempo real
     const unsubReports = onSnapshot(
-      query(collection(db, 'reports'), orderBy('timestamp', 'desc'), limit(50)), 
+      query(collection(db, 'reports'), orderBy('timestamp', 'desc'), limit(50)),
       (snapshot) => {
         const allReports = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
         setReports(allReports);
-      }
+      },
+      errNoop
     );
 
     // Verificaciones pendientes en tiempo real
@@ -90,7 +93,8 @@ export default function AdminDashboard() {
       (snapshot) => {
         const allVers = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
         setVerifications(allVers);
-      }
+      },
+      errNoop
     );
 
     // RRPP Apps en tiempo real
@@ -99,7 +103,8 @@ export default function AdminDashboard() {
       (snapshot) => {
         const apps = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
         setRrppApps(apps);
-      }
+      },
+      errNoop
     );
 
     // Carga inicial paginada de usuarios (primeros 25)

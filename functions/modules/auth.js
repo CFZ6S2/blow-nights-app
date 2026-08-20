@@ -79,8 +79,14 @@ exports.assignRole = onCall({ enforceAppCheck: false }, async (request) => {
     throw new HttpsError("invalid-argument", "uid y role son obligatorios.");
   }
 
+  const validRoles = ['user', 'venue', 'venueOwner', 'cityAdmin', 'admin', 'superadmin', 'rrpp', 'door', 'ambassador', 'pending_rrpp'];
+  if (!validRoles.includes(role)) {
+    throw new HttpsError("invalid-argument", `Rol inválido: ${role}`);
+  }
+
   try {
-    const claims = { role: role };
+    const existingClaims = (await admin.auth().getUser(uid)).customClaims || {};
+    const claims = { ...existingClaims, role };
     if (cityId) claims.cityId = cityId;
 
     await admin.auth().setCustomUserClaims(uid, claims);

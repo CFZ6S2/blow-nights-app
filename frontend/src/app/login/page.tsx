@@ -18,11 +18,12 @@ function LoginInner() {
 
   useEffect(() => {
     if (!user || authLoading) return;
+    if (!profile) return;
     if (redirect) {
       router.push(redirect);
       return;
     }
-    const role = profile?.role;
+    const role = profile.role;
     if (role && role !== 'user') {
       const roleRedirects: Record<string, string> = {
         rrpp: '/rrpp',

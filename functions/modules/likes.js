@@ -21,10 +21,16 @@ exports.sendLike = onCall({ enforceAppCheck: false }, async (request) => {
   const reverseLikeId = `${targetUserId}_${auth.uid}`;
 
   const result = await db.runTransaction(async (tx) => {
+    const likeRef = db.collection("likes").doc(likeId);
+    const existingLike = await tx.get(likeRef);
+    if (existingLike.exists) {
+      return { isMatch: false, alreadyLiked: true };
+    }
+
     const reverseLikeRef = db.collection("likes").doc(reverseLikeId);
     const reverseLikeSnap = await tx.get(reverseLikeRef);
 
-    tx.set(db.collection("likes").doc(likeId), {
+    tx.set(likeRef, {
       fromId: auth.uid,
       toId: targetUserId,
       type: isSuper ? "superlike" : "like",

@@ -510,7 +510,7 @@ export default function MainMap() {
       
       // Filtro de distancia
       if (profile?.lat && u.lat && userLocation) {
-        const distance = calculateDistance(userLocation[0], userLocation[1], u.lat as number, u.lng as number);
+        const distance = calculateDistance(userLocation[1], userLocation[0], u.lat as number, u.lng as number);
         if (distance > distanceFilter) return false;
       }
 

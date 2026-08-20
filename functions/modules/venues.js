@@ -45,16 +45,25 @@ exports.cleanupExpiredCheckins = onSchedule({
 
   if (expired.empty) return;
 
+  const venueDecrements = {};
   const batchSize = 500;
   let ops = [];
-  for (const doc of expired.docs) {
-    ops.push(doc.ref.delete());
+  for (const d of expired.docs) {
+    const venueId = d.data().venueId;
+    if (venueId) venueDecrements[venueId] = (venueDecrements[venueId] || 0) + 1;
+    ops.push(d.ref.delete());
     if (ops.length >= batchSize) {
       await Promise.all(ops);
       ops = [];
     }
   }
   if (ops.length) await Promise.all(ops);
+
+  for (const [venueId, count] of Object.entries(venueDecrements)) {
+    await db.collection("venues").doc(venueId).update({
+      currentCount: admin.firestore.FieldValue.increment(-count)
+    }).catch(() => {});
+  }
   console.log(`Cleaned up ${expired.size} expired checkins.`);
 });
 

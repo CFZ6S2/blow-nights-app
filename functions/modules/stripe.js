@@ -229,6 +229,11 @@ exports.createStripeConnectAccount = onCall({ enforceAppCheck: false }, async (r
   const venueSnap = await venueRef.get();
   if (!venueSnap.exists) throw new HttpsError("not-found", "Local no encontrado.");
 
+  const venue = venueSnap.data();
+  if (venue.ownerId !== auth.uid) {
+    throw new HttpsError("permission-denied", "Solo el propietario del local puede crear una cuenta Stripe.");
+  }
+
   try {
     let accountId = venueSnap.data().stripeAccountId;
     if (!accountId) {
@@ -325,11 +330,16 @@ exports.stripeWebhook = onRequest(async (req, res) => {
   const firebaseUID = session.metadata?.firebaseUID;
 
   const eventRef = db.collection("processed_stripe_events").doc(event.id);
-  const eventDoc = await eventRef.get();
-  if (eventDoc.exists) {
-    return res.json({ received: true, duplicate: true });
+  try {
+    await db.runTransaction(async (tx) => {
+      const eventDoc = await tx.get(eventRef);
+      if (eventDoc.exists) throw new Error("DUPLICATE");
+      tx.set(eventRef, { processedAt: admin.firestore.FieldValue.serverTimestamp(), type: event.type });
+    });
+  } catch (e) {
+    if (e.message === "DUPLICATE") return res.json({ received: true, duplicate: true });
+    throw e;
   }
-  await eventRef.set({ processedAt: admin.firestore.FieldValue.serverTimestamp(), type: event.type });
 
   if (event.type === "checkout.session.completed") {
     if (session.metadata?.type === "rrpp_qr_pack") {
@@ -550,6 +560,8 @@ if (event.type === "customer.subscription.deleted") {
     if (uid) {
       await db.collection("users").doc(uid).update({ premium: false });
       await db.collection("subscriptions").doc(uid).update({ status: "canceled" });
+      const existingClaims = (await admin.auth().getUser(uid)).customClaims || {};
+      await admin.auth().setCustomUserClaims(uid, { ...existingClaims, premium: false });
     }
   }
 

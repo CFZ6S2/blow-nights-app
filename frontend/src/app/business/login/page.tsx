@@ -17,11 +17,9 @@ export default function BusinessLoginPage() {
   const [error, setError] = useState('');
 
   const handleAuthResult = async (user: any) => {
-    // Verificar si el usuario ya existe en Firestore
     const userRef = doc(db, 'users', user.uid);
     const snap = await getDoc(userRef);
     if (!snap.exists()) {
-      // Perfil corporativo muy limpio, sin preguntas lúdicas
       await setDoc(userRef, {
         email: user.email,
         role: 'venueOwner',
@@ -30,9 +28,16 @@ export default function BusinessLoginPage() {
         createdAt: serverTimestamp(),
         lastSeen: serverTimestamp(),
       });
+      router.push('/venue-admin');
+    } else {
+      const data = snap.data();
+      const role = data?.role;
+      if (role === 'venue' || role === 'venueOwner' || role === 'admin' || role === 'superadmin') {
+        router.push('/venue-admin');
+      } else {
+        setError('Esta cuenta no tiene permisos de gestión de local. Contacta con soporte.');
+      }
     }
-    // Redirigir al panel de administración del local
-    router.push('/venue-admin');
   };
 
   const loginWithGoogle = async () => {
