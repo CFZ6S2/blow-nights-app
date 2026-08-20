@@ -1,7 +1,7 @@
 const { onCall, HttpsError, onRequest } = require("firebase-functions/v2/https");
 const { admin, db, getStripe } = require("../lib/init");
 
-exports.createCheckoutSession = onCall({ enforceAppCheck: false }, async (request) => {
+exports.createCheckoutSession = onCall({ enforceAppCheck: true }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -41,7 +41,7 @@ exports.createCheckoutSession = onCall({ enforceAppCheck: false }, async (reques
   }
 });
 
-exports.createVenueSubscriptionCheckout = onCall({ enforceAppCheck: false }, async (request) => {
+exports.createVenueSubscriptionCheckout = onCall({ enforceAppCheck: true }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -117,7 +117,7 @@ exports.createVenueSubscriptionCheckout = onCall({ enforceAppCheck: false }, asy
   }
 });
 
-exports.createChillPassCheckout = onCall({ enforceAppCheck: false }, async (request) => {
+exports.createChillPassCheckout = onCall({ enforceAppCheck: true }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -208,7 +208,7 @@ exports.createChillPassCheckout = onCall({ enforceAppCheck: false }, async (requ
   }
 });
 
-exports.createPingCheckoutSession = onCall({ enforceAppCheck: false }, async (request) => {
+exports.createPingCheckoutSession = onCall({ enforceAppCheck: true }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -291,7 +291,7 @@ exports.createPingCheckoutSession = onCall({ enforceAppCheck: false }, async (re
   }
 });
 
-exports.createStripeConnectAccount = onCall({ enforceAppCheck: false }, async (request) => {
+exports.createStripeConnectAccount = onCall({ enforceAppCheck: true }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -331,7 +331,7 @@ exports.createStripeConnectAccount = onCall({ enforceAppCheck: false }, async (r
   }
 });
 
-exports.createStripeAccountLink = onCall({ enforceAppCheck: false }, async (request) => {
+exports.createStripeAccountLink = onCall({ enforceAppCheck: true }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -356,7 +356,7 @@ exports.createStripeAccountLink = onCall({ enforceAppCheck: false }, async (requ
   return { url: accountLink.url };
 });
 
-exports.createQRPackageCheckout = onCall({}, async (request) => {
+exports.createQRPackageCheckout = onCall({ enforceAppCheck: true }, async (request) => {
   const { data } = request;
   const stripe = getStripe();
   if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
@@ -418,15 +418,16 @@ exports.stripeWebhook = onRequest(async (req, res) => {
   }
 
   if (event.type === "checkout.session.completed") {
-    if (session.metadata?.type === "rrpp_qr_pack") {
-      const quantity = parseInt(session.metadata.quantity || "0");
+    if (session.metadata?.type === "rrpp_qr_pack" || session.metadata?.type === "qr_credits_pack") {
+      const quantityStr = session.metadata.quantity || session.metadata.creditsAmount || "0";
+      const quantity = parseInt(quantityStr);
       const uid = session.metadata.firebaseUID;
       if (uid) {
         await db.collection("users").doc(uid).update({
           qr_quota: admin.firestore.FieldValue.increment(quantity)
         });
 
-        // 50/50 split con city manager (0.50€ por QR)
+        // 50/50 split con city manager (0.25€ por QR)
         try {
           const userDoc = await db.collection("users").doc(uid).get();
           const cityId = userDoc.exists ? userDoc.data().cityId : null;
@@ -434,7 +435,7 @@ exports.stripeWebhook = onRequest(async (req, res) => {
             const cityDoc = await db.collection("cities").doc(cityId).get();
             const cityManagerStripe = cityDoc.exists ? cityDoc.data()?.partner_stripe_account_id : null;
             if (cityManagerStripe) {
-              const managerCut = 50 * quantity; // 0.50€ por QR
+              const managerCut = 25 * quantity; // 0.25€ por QR
               const transferData = {
                 amount: managerCut,
                 currency: "eur",
@@ -508,7 +509,7 @@ exports.stripeWebhook = onRequest(async (req, res) => {
           const cityDoc = await db.collection("cities").doc(citySlug).get();
           const partnerStripeId = cityDoc.exists ? cityDoc.data()?.partner_stripe_account_id : null;
           if (partnerStripeId) {
-            const partnerCutCents = Math.round(session.amount_total * 0.40);
+            const partnerCutCents = Math.round(session.amount_total * 0.50);
             const transferData = {
               amount: partnerCutCents,
               currency: "eur",
@@ -546,7 +547,7 @@ exports.stripeWebhook = onRequest(async (req, res) => {
           const cityDoc = await db.collection("cities").doc(citySlug).get();
           const partnerStripeId = cityDoc.exists ? cityDoc.data()?.partner_stripe_account_id : null;
           if (partnerStripeId) {
-            const partnerCutCents = Math.round(session.amount_total * 0.40);
+            const partnerCutCents = Math.round(session.amount_total * 0.50);
             const amountEur = partnerCutCents / 100;
             const transferData = {
               amount: partnerCutCents,
@@ -741,7 +742,7 @@ if (event.type === "customer.subscription.deleted") {
   res.json({ received: true });
 });
 
-exports.createStripePortalSession = onCall({ enforceAppCheck: false }, async (request) => {
+exports.createStripePortalSession = onCall({ enforceAppCheck: true }, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Necesitas estar logueado");
 

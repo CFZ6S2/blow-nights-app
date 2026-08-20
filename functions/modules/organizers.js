@@ -1,7 +1,7 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { admin, db, getStripe } = require("../lib/init");
 
-exports.submitOrganizerApplication = onCall({ enforceAppCheck: false }, async (request) => {
+exports.submitOrganizerApplication = onCall({ enforceAppCheck: true }, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Login requerido.');
 
@@ -34,7 +34,7 @@ exports.submitOrganizerApplication = onCall({ enforceAppCheck: false }, async (r
   }
 });
 
-exports.approveOrganizer = onCall({ enforceAppCheck: false }, async (request) => {
+exports.approveOrganizer = onCall({ enforceAppCheck: true }, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Login requerido.');
 

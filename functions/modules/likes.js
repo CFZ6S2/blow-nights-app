@@ -1,7 +1,7 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { admin, db } = require("../lib/init");
 
-exports.sendLike = onCall({ enforceAppCheck: false }, async (request) => {
+exports.sendLike = onCall({ enforceAppCheck: true }, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
