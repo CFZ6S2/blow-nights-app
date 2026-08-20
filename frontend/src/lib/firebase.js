@@ -28,21 +28,33 @@ if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY)
   });
 }
 
+import { getPerformance } from "firebase/performance";
+
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const functions = getFunctions(app);
+
 // getMessaging() throws synchronously in browsers/webviews that lack the
 // required APIs (e.g. in-app browsers like WhatsApp/Instagram, some iOS
 // contexts). Guard it so an unsupported environment doesn't crash the app.
 let messagingInstance = null;
+let perfInstance = null;
+
 if (typeof window !== 'undefined') {
   try {
     messagingInstance = getMessaging(app);
   } catch (err) {
     console.warn('Firebase Messaging not supported in this browser:', err?.message);
   }
+  
+  try {
+    perfInstance = getPerformance(app);
+  } catch (err) {
+    console.warn('Firebase Performance not supported:', err?.message);
+  }
 }
 export const messaging = messagingInstance;
+export const perf = perfInstance;
 
 export default app;
