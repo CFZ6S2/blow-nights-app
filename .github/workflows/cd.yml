@@ -61,7 +61,13 @@ jobs:
       - name: Install Functions Dependencies
         working-directory: ./functions
         run: npm ci
-      
+
+      - name: Inject Functions Environment
+        working-directory: ./functions
+        run: |
+          echo "SENTRY_DSN=${{ secrets.SENTRY_DSN_FUNCTIONS }}" >> .env
+          echo "SENTRY_ENVIRONMENT=production" >> .env
+
       - name: Deploy to Firebase
         run: |
           firebase deploy \
