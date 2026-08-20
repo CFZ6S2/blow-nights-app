@@ -30,7 +30,9 @@ export default function LanguageSelector() {
 
   const languages = [
     { code: 'es', label: 'ES', icon: '🇪🇸' },
-    { code: 'en', label: 'EN', icon: '🇬🇧' }
+    { code: 'en', label: 'EN', icon: '🇬🇧' },
+    { code: 'de', label: 'DE', icon: '🇩🇪' },
+    { code: 'pt', label: 'PT', icon: '🇵🇹' }
   ];
 
   const handleLanguageChange = (code: string) => {
