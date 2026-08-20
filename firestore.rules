@@ -275,8 +275,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    match /{document=**} {
-      allow read, write: if isAdmin();
-    }
+    // Wildcard admin rule removed for security. Access is granted per-collection.
   }
 }

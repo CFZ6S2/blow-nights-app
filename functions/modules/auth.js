@@ -84,6 +84,10 @@ exports.assignRole = onCall({ enforceAppCheck: false }, async (request) => {
     throw new HttpsError("invalid-argument", `Rol inválido: ${role}`);
   }
 
+  if ((role === 'admin' || role === 'superadmin') && auth.token.role !== 'superadmin') {
+    throw new HttpsError("permission-denied", "Solo los superadmins pueden crear cuentas admin o superadmin.");
+  }
+
   try {
     const existingClaims = (await admin.auth().getUser(uid)).customClaims || {};
     const claims = { ...existingClaims, role };

@@ -409,21 +409,7 @@ exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: false }, async 
   }
 
   const maxTickets = promoter.max_tickets || 200;
-  
-  let userDocSnap = null;
-  let currentQuota = 0;
-  if (promoter.userId) {
-    userDocSnap = await db.collection("users").doc(promoter.userId).get();
-    if (userDocSnap.exists) {
-      currentQuota = userDocSnap.data().qr_quota || 0;
-    }
-  } else {
-    currentQuota = promoter.qr_quota || 0;
-  }
 
-  if (currentQuota <= 0) {
-    throw new HttpsError('resource-exhausted', 'Saldo de QRs agotado. Por favor recarga tu saldo.');
-  }
   const issuedSnap = await db.collection("tickets")
     .where("rrpp_id", "==", promoterDoc.id)
     .where("eventId", "==", eventId)
@@ -482,17 +468,22 @@ exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: false }, async 
     purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 
-  const ticketRef = await db.collection("tickets").add(ticketPayload);
+  const ticketRef = db.collection("tickets").doc();
+  const quotaRef = promoter.userId ? db.collection("users").doc(promoter.userId) : promoterDoc.ref;
 
-  if (promoter.userId && userDocSnap && userDocSnap.exists) {
-    await userDocSnap.ref.update({
-      qr_quota: admin.firestore.FieldValue.increment(-1)
-    });
-  } else {
-    await promoterDoc.ref.update({
-      qr_quota: admin.firestore.FieldValue.increment(-1)
-    });
-  }
+  await db.runTransaction(async (tx) => {
+    const quotaDoc = await tx.get(quotaRef);
+    if (!quotaDoc.exists) {
+      throw new HttpsError('not-found', 'Usuario o RRPP no encontrado para verificar cuota.');
+    }
+    const currentQuota = quotaDoc.data().qr_quota || 0;
+    if (currentQuota <= 0) {
+      throw new HttpsError('resource-exhausted', 'Saldo de QRs agotado. Por favor recarga tu saldo.');
+    }
+
+    tx.update(quotaRef, { qr_quota: currentQuota - 1 });
+    tx.set(ticketRef, ticketPayload);
+  });
 
   return {
     success: true,

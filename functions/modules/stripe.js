@@ -435,23 +435,29 @@ exports.stripeWebhook = onRequest(async (req, res) => {
             const cityManagerStripe = cityDoc.exists ? cityDoc.data()?.partner_stripe_account_id : null;
             if (cityManagerStripe) {
               const managerCut = 50 * quantity; // 0.50€ por QR
-              await stripe.transfers.create({
+              const transferData = {
                 amount: managerCut,
                 currency: "eur",
                 destination: cityManagerStripe,
                 description: `QR pack - ${uid}`,
                 transfer_group: session.id,
-              });
-              await db.collection("cities").doc(cityId).collection("earnings").add({
-                amount: managerCut / 100,
-                type: "qr_pack_fee",
-                userId: uid,
-                timestamp: admin.firestore.FieldValue.serverTimestamp(),
-              });
+              };
+              try {
+                await stripe.transfers.create(transferData);
+                await db.collection("cities").doc(cityId).collection("earnings").add({
+                  amount: managerCut / 100,
+                  type: "qr_pack_fee",
+                  userId: uid,
+                  timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                });
+              } catch (err) {
+                console.error("Error en transfer City Manager por QR pack:", err);
+                await db.collection("pending_transfers").add({ ...transferData, status: "pending", error: err.message, timestamp: admin.firestore.FieldValue.serverTimestamp() });
+              }
             }
           }
         } catch (e) {
-          console.error("Error en transfer City Manager por QR pack:", e);
+          console.error("Error leyendo datos para transfer City Manager:", e);
         }
       }
     } else if (session.metadata?.type === "venue_subscription") {
@@ -503,16 +509,22 @@ exports.stripeWebhook = onRequest(async (req, res) => {
           const partnerStripeId = cityDoc.exists ? cityDoc.data()?.partner_stripe_account_id : null;
           if (partnerStripeId) {
             const partnerCutCents = Math.round(session.amount_total * 0.40);
-            await stripe.transfers.create({
+            const transferData = {
               amount: partnerCutCents,
               currency: "eur",
               destination: partnerStripeId,
               description: `40% suscripcion VIP - ${session.customer_email || firebaseUID}`,
               metadata: { city: citySlug, firebaseUID },
-            });
+            };
+            try {
+              await stripe.transfers.create(transferData);
+            } catch (err) {
+              console.error("Error en transfer 40% al socio local:", err);
+              await db.collection("pending_transfers").add({ ...transferData, status: "pending", error: err.message, timestamp: admin.firestore.FieldValue.serverTimestamp() });
+            }
           }
         } catch (e) {
-          console.error("Error en transfer 40% al socio local:", e);
+          console.error("Error leyendo datos del socio local:", e);
         }
       }
     } else if (session.metadata?.type === "ping_pack" || session.metadata?.type === "vip_night") {
@@ -536,24 +548,29 @@ exports.stripeWebhook = onRequest(async (req, res) => {
           if (partnerStripeId) {
             const partnerCutCents = Math.round(session.amount_total * 0.40);
             const amountEur = partnerCutCents / 100;
-
-            await stripe.transfers.create({
+            const transferData = {
               amount: partnerCutCents,
               currency: "eur",
               destination: partnerStripeId,
               description: `40% ${type === 'ping_pack' ? 'Pack Toques' : 'Pase Fuego'} - ${firebaseUID}`,
               metadata: { city: citySlug, firebaseUID, type },
-            });
+            };
 
-            await db.collection("cities").doc(citySlug).collection("earnings").add({
-              amount: amountEur,
-              type: type === 'ping_pack' ? 'micro_ping' : 'vip_night',
-              userId: firebaseUID,
-              timestamp: admin.firestore.FieldValue.serverTimestamp()
-            });
+            try {
+              await stripe.transfers.create(transferData);
+              await db.collection("cities").doc(citySlug).collection("earnings").add({
+                amount: amountEur,
+                type: type === 'ping_pack' ? 'micro_ping' : 'vip_night',
+                userId: firebaseUID,
+                timestamp: admin.firestore.FieldValue.serverTimestamp()
+              });
+            } catch (err) {
+              console.error("Error en transfer 40% de pings al socio local:", err);
+              await db.collection("pending_transfers").add({ ...transferData, status: "pending", error: err.message, timestamp: admin.firestore.FieldValue.serverTimestamp() });
+            }
           }
         } catch (e) {
-          console.error("Error en transfer 40% de pings al socio local:", e);
+          console.error("Error leyendo datos del socio local:", e);
         }
       }
     } else if (isTicket) {
@@ -629,24 +646,30 @@ exports.stripeWebhook = onRequest(async (req, res) => {
           const cityDoc = await db.collection("cities").doc(cityId).get();
           const cityManagerStripe = cityDoc.exists ? cityDoc.data()?.partner_stripe_account_id : null;
           if (cityManagerStripe) {
-            await stripe.transfers.create({
+            const transferData = {
               amount: CITY_MANAGER_CENTS,
               currency: "eur",
               destination: cityManagerStripe,
               description: `CityManager ${cityId} ticket ${eventId}`,
               transfer_group: session.id,
-            });
-            await db.collection("cities").doc(cityId).collection("earnings").add({
-              amount: CITY_MANAGER_CENTS / 100,
-              type: "ticket_fee",
-              venueId,
-              eventId,
-              userId: firebaseUID,
-              timestamp: admin.firestore.FieldValue.serverTimestamp(),
-            });
+            };
+            try {
+              await stripe.transfers.create(transferData);
+              await db.collection("cities").doc(cityId).collection("earnings").add({
+                amount: CITY_MANAGER_CENTS / 100,
+                type: "ticket_fee",
+                venueId,
+                eventId,
+                userId: firebaseUID,
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+              });
+            } catch (err) {
+              console.error("Error en transfer City Manager:", err);
+              await db.collection("pending_transfers").add({ ...transferData, status: "pending", error: err.message, timestamp: admin.firestore.FieldValue.serverTimestamp() });
+            }
           }
         } catch (e) {
-          console.error("Error en transfer City Manager:", e);
+          console.error("Error leyendo datos de City Manager:", e);
         }
       }
 
@@ -655,24 +678,30 @@ exports.stripeWebhook = onRequest(async (req, res) => {
           const ambassadorDoc = await db.collection("users").doc(ambassadorId).get();
           const ambassadorStripe = ambassadorDoc.exists ? ambassadorDoc.data()?.stripeAccountId : null;
           if (ambassadorStripe) {
-            await stripe.transfers.create({
+            const transferData = {
               amount: AMBASSADOR_CENTS,
               currency: "eur",
               destination: ambassadorStripe,
               description: `Ambassador ticket ${eventId} - ${venueId}`,
               transfer_group: session.id,
-            });
-            await db.collection("users").doc(ambassadorId).collection("earnings").add({
-              amount: AMBASSADOR_CENTS / 100,
-              type: "ticket_fee",
-              venueId,
-              eventId,
-              userId: firebaseUID,
-              timestamp: admin.firestore.FieldValue.serverTimestamp(),
-            });
+            };
+            try {
+              await stripe.transfers.create(transferData);
+              await db.collection("users").doc(ambassadorId).collection("earnings").add({
+                amount: AMBASSADOR_CENTS / 100,
+                type: "ticket_fee",
+                venueId,
+                eventId,
+                userId: firebaseUID,
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+              });
+            } catch (err) {
+              console.error("Error en transfer Ambassador:", err);
+              await db.collection("pending_transfers").add({ ...transferData, status: "pending", error: err.message, timestamp: admin.firestore.FieldValue.serverTimestamp() });
+            }
           }
         } catch (e) {
-          console.error("Error en transfer Ambassador:", e);
+          console.error("Error leyendo datos de Ambassador:", e);
         }
       }
     } else {
