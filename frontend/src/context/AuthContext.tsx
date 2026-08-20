@@ -215,9 +215,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const boostExpires = profile?.blackBoostExpires?.toMillis?.() || claims?.blackBoostExpires;
   const hasBlackAccess = isAdmin || isBlack || isPromoLifetime || (typeof boostExpires === 'number' && boostExpires > Date.now());
   
+  const now = useMemo(() => Date.now(), [claims?.pass_expires, claims?.blackBoostExpires]);
+  
   const hasChillAccess = isAdmin || !!claims?.premium || !!profile?.premium
-    || (typeof claims?.pass_expires === 'number' && claims.pass_expires > Date.now())
-    || (typeof claims?.blackBoostExpires === 'number' && claims.blackBoostExpires > Date.now());
+    || (typeof claims?.pass_expires === 'number' && claims.pass_expires > now)
+    || (typeof claims?.blackBoostExpires === 'number' && claims.blackBoostExpires > now);
 
   const value = useMemo(() => ({
     user,

@@ -13,6 +13,7 @@ import { ProfileSkeleton } from '@/components/Skeleton';
 import { useRouter } from 'next/navigation';
 import { useCityRouter } from '@/hooks/useCityRouter';
 import { formatLastSeen } from '@/lib/timeUtils';
+import { useTranslation } from 'react-i18next';
 
 interface ProfileOverlayProps {
   id: string;
@@ -26,6 +27,7 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
   const router = useRouter();
   const { cityPath } = useCityRouter();
   const { user: currentUser, profile: currentProfile } = useAuth();
+  const { t } = useTranslation();
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [activePhoto, setActivePhoto] = useState(0);
@@ -224,7 +226,7 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
                       className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/30"
                     >
                       <span className="material-icons text-white/80 text-3xl">visibility_off</span>
-                      <span className="text-[9px] text-white/70 font-black uppercase tracking-widest mt-2">Contenido NSFW — toca para ver</span>
+                      <span className="text-[9px] text-white/70 font-black uppercase tracking-widest mt-2">{t('overlay.nsfw_reveal')}</span>
                     </button>
                   )}
                   {locked && (
@@ -236,7 +238,7 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
                       >
                         <span className="material-icons text-4xl text-yellow-500">lock</span>
                       </motion.div>
-                      <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] bg-black/40 px-4 py-2 rounded-full backdrop-blur-md border border-white/10">Álbum Privado</p>
+                      <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] bg-black/40 px-4 py-2 rounded-full backdrop-blur-md border border-white/10">{t('overlay.private_album')}</p>
                     </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/10 to-transparent"></div>
@@ -329,37 +331,37 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
                     </div>
                   ) : profile.lastSeen && (
                     <div className="px-2 py-0.5 rounded-full bg-slate-500/10 border border-white/5">
-                      <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Activo {formatLastSeen(profile.lastSeen)}</p>
+                      <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{t('overlay.active_at', { time: formatLastSeen(profile.lastSeen) })}</p>
                     </div>
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="material-icons text-xs text-slate-500">near_me</span>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">A {distance} km de ti</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('overlay.distance', { distance })}</p>
                 </div>
               </div>
               {profile.premium && <span className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-black text-[9px] font-black px-3 py-1 rounded-full uppercase">VIP</span>}
             </div>
 
             <div className="flex flex-wrap gap-2 mb-8">
-              <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-bold text-slate-300 uppercase tracking-wider">{profile.rol === 'party_only' ? 'Solo Fiesta' : profile.rol}</div>
+              <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-bold text-slate-300 uppercase tracking-wider">{profile.rol === 'party_only' ? t('overlay.party_only') : profile.rol}</div>
               <div className="px-4 py-2 rounded-xl bg-fuchsia-500/10 border border-fuchsia-500/10 text-[10px] font-bold text-fuchsia-400 uppercase tracking-wider">{profile.intencion}</div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-10">
               <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex flex-col items-center">
-                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Altura</span>
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{t('overlay.height')}</span>
                 <span className="text-2xl font-black">{profile.altura || '--'} <small className="text-[10px] text-slate-500">cm</small></span>
               </div>
               <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex flex-col items-center">
-                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Peso</span>
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{t('overlay.weight')}</span>
                 <span className="text-2xl font-black">{profile.peso || '--'} <small className="text-[10px] text-slate-500">kg</small></span>
               </div>
             </div>
 
             <div className="space-y-8 pb-32">
               <div className="space-y-4">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Intereses</p>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{t('overlay.interests')}</p>
                 <div className="flex flex-wrap gap-2">
                   {profile.intereses && profile.intereses.map((interes: string, idx: number) => (
                     <span key={idx} className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-slate-300">
@@ -369,9 +371,9 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
                 </div>
               </div>
               <div className="space-y-4">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Sobre mí</p>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{t('overlay.about_me')}</p>
                 <p className="text-slate-300 leading-relaxed text-lg font-medium bg-white/5 p-6 rounded-3xl border border-white/5">
-                  {profile.bio || "Sin descripción por ahora."}
+                  {profile.bio || t('overlay.no_bio')}
                 </p>
               </div>
 
@@ -387,21 +389,21 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
                       <span className="material-icons text-3xl text-yellow-500">lock</span>
                     </div>
                     <div>
-                      <h4 className="text-xl font-black tracking-tight">Álbum Privado</h4>
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{privatePhotos.length} fotos ocultas</p>
+                      <h4 className="text-xl font-black tracking-tight">{t('overlay.private_album')}</h4>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('overlay.hidden_photos', { count: privatePhotos.length })}</p>
                     </div>
                   </div>
                   <p className="text-sm text-slate-400 leading-relaxed mb-8">
-                    Este usuario tiene fotos privadas. Consigue un **Match** o solicítale acceso para verlas.
+                    {t('overlay.private_desc')}
                   </p>
                   <button 
                     onClick={() => {
                       triggerHaptic(15);
-                      alert('Solicitud enviada (Simulación). En una versión futura, esto notificará al usuario.');
+                      alert(t('overlay.access_requested_alert'));
                     }}
                     className="w-full py-5 rounded-2xl bg-white text-black font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-slate-200 transition-all"
                   >
-                    Solicitar Acceso
+                    {t('overlay.request_access')}
                   </button>
                 </motion.div>
               )}
@@ -413,7 +415,7 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-[110]">
           <div className="bg-slate-900/90 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-3 flex gap-3 shadow-[0_25px_60px_rgba(0,0,0,0.8)]">
             <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleLike(true)} className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-yellow-500"><span className="material-icons">star</span></motion.button>
-            <motion.button whileTap={{ scale: 0.95 }} onClick={() => handleLike(false)} className={`flex-1 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all ${hasLiked ? 'bg-slate-800 text-slate-500' : 'bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-white shadow-xl'}`}>{hasLiked ? 'Enviado' : 'Me gusta'}</motion.button>
+            <motion.button whileTap={{ scale: 0.95 }} onClick={() => handleLike(false)} className={`flex-1 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all ${hasLiked ? 'bg-slate-800 text-slate-500' : 'bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-white shadow-xl'}`}>{hasLiked ? t('overlay.sent') : t('overlay.like')}</motion.button>
             <motion.button whileTap={{ scale: 0.9 }} onClick={handleChat} className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-white"><span className="material-icons">chat_bubble</span></motion.button>
           </div>
         </div>
@@ -445,20 +447,20 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
                 >
                   <button 
                     onClick={async () => {
-                      if (confirm('¿Quieres reportar a este usuario por comportamiento inapropiado?')) {
+                      if (confirm(t('overlay.report_confirm'))) {
                         await reportUser(id, 'Comportamiento inapropiado');
-                        alert('Reporte enviado correctamente.');
+                        alert(t('overlay.report_sent'));
                         setShowOptions(false);
                       }
                     }}
                     className="w-full p-4 flex items-center gap-3 text-sm font-bold text-orange-400 hover:bg-orange-500/10 rounded-2xl transition-all text-left"
                   >
-                    <span className="material-icons text-lg">flag</span> Reportar
+                    <span className="material-icons text-lg">flag</span> {t('overlay.report')}
                   </button>
                   <div className="h-px bg-white/5 mx-2" />
                   <button 
                     onClick={async () => {
-                      if (confirm('¿Estás seguro de que quieres bloquear a este usuario? No volverás a ver su perfil ni recibir sus mensajes.')) {
+                      if (confirm(t('overlay.block_confirm'))) {
                         await blockUser(id);
                         onClose();
                         router.push(cityPath());
@@ -466,7 +468,7 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
                     }}
                     className="w-full p-4 flex items-center gap-3 text-sm font-bold text-red-500 hover:bg-red-500/10 rounded-2xl transition-all text-left"
                   >
-                    <span className="material-icons text-lg">block</span> Bloquear
+                    <span className="material-icons text-lg">block</span> {t('overlay.block')}
                   </button>
                 </motion.div>
               )}

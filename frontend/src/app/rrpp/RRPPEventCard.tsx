@@ -5,6 +5,7 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import QRCode from 'react-qr-code';
+import { useTranslation } from 'react-i18next';
 
 interface RRPPEventData {
   promoter: {
@@ -36,6 +37,7 @@ interface RRPPEventData {
 }
 
 export default function RRPPEventCard({ token }: { token: string }) {
+  const { t } = useTranslation();
   const [data, setData] = useState<RRPPEventData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -52,7 +54,7 @@ export default function RRPPEventCard({ token }: { token: string }) {
       const res = await getPromoterStats({ token });
       setData(res.data as RRPPEventData);
     } catch (e: any) {
-      setError(e.message || 'Error al cargar datos');
+      setError(e.message || t('rrpp_event_card.error_loading_data'));
     } finally {
       setLoading(false);
     }
@@ -63,7 +65,7 @@ export default function RRPPEventCard({ token }: { token: string }) {
   }, [token]);
 
   const handleGenerateTicket = async () => {
-    if (!clientName) return alert('Introduce un nombre o alias para el invitado.');
+    if (!clientName) return alert(t('rrpp_event_card.enter_guest_name'));
     setGenerating(true);
     try {
       const generateDirectPromoterTicket = httpsCallable(functions, 'generateDirectPromoterTicket');
@@ -79,56 +81,56 @@ export default function RRPPEventCard({ token }: { token: string }) {
         fetchStats();
       }
     } catch (e: any) {
-      alert('Error generando ticket: ' + e.message);
+      alert(`${t('rrpp_event_card.error')} ` + e.message);
     } finally {
       setGenerating(false);
     }
   };
 
   const handleClose = async () => {
-    if (!confirm('¿Cerrar la noche? Ya no podrás emitir más QRs.')) return;
+    if (!confirm(t('rrpp_event_card.close_night_confirm'))) return;
     try {
       const closePromoterList = httpsCallable(functions, 'closePromoterList');
       await closePromoterList({ token });
       fetchStats();
     } catch (e: any) {
-      alert('Error: ' + e.message);
+      alert(`${t('rrpp_event_card.error')} ` + e.message);
     }
   };
 
   const handleLiquidate = async () => {
-    if (!confirm('¿Confirmas que has liquidado cuentas con el local?')) return;
+    if (!confirm(t('rrpp_event_card.liquidate_confirm'))) return;
     try {
       const liquidatePromoter = httpsCallable(functions, 'liquidatePromoter');
       await liquidatePromoter({ token });
       fetchStats();
     } catch (e: any) {
-      alert('Error: ' + e.message);
+      alert(`${t('rrpp_event_card.error')} ` + e.message);
     }
   };
 
   const handleEliminarFiesta = async () => {
     if (data?.stats.totalSold && data.stats.totalSold > 0) return;
-    if (!confirm('¿Estás seguro de que quieres borrar esta fiesta?')) return;
+    if (!confirm(t('rrpp_event_card.delete_party_confirm'))) return;
     try {
       const deleteParty = httpsCallable(functions, 'deleteRRPPParty');
       await deleteParty({ promoterToken: token });
       window.location.reload();
     } catch (e: any) {
-      alert('Error: ' + e.message);
+      alert(`${t('rrpp_event_card.error')} ` + e.message);
     }
   };
 
   const shareWhatsApp = () => {
     if (!generatedQR) return;
-    const text = `Aquí tienes tu entrada: ${window.location.origin}/pass?id=${generatedQR.id}`;
+    const text = `${t('rrpp_event_card.here_is_your_ticket')} ${window.location.origin}/pass?id=${generatedQR.id}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
   };
 
   const shareScannerLink = () => {
     if (!data) return;
     const url = `${window.location.origin}/door?event=${data.promoter.eventId}&venueId=${data.promoter.venueId}&token=${data.event.scannerToken}&type=venue`;
-    const text = `Enlace del escáner para ${data.event.title}: ${url}`;
+    const text = `${t('rrpp_event_card.scanner_link_for')} ${data.event.title}: ${url}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
   };
 
@@ -149,7 +151,7 @@ export default function RRPPEventCard({ token }: { token: string }) {
     return (
       <div className="bg-red-900/20 border border-red-500/30 rounded-3xl p-6 text-center">
         <span className="material-icons text-3xl text-red-500 mb-2">error_outline</span>
-        <p className="text-sm text-red-300">{error || 'Error cargando evento'}</p>
+        <p className="text-sm text-red-300">{error || t('rrpp_event_card.error_loading_event')}</p>
       </div>
     );
   }
@@ -167,7 +169,7 @@ export default function RRPPEventCard({ token }: { token: string }) {
         <div className="p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h2 className="text-xl font-black leading-tight">{data.event.title || 'Sin título'}</h2>
+              <h2 className="text-xl font-black leading-tight">{data.event.title || t('rrpp_event_card.untitled')}</h2>
               <p className="text-xs text-slate-400 mt-1 mb-2">
                 {data.venue.name}
                 {data.event.date && <> &middot; {formatDate(data.event.date)}</>}
@@ -179,20 +181,20 @@ export default function RRPPEventCard({ token }: { token: string }) {
                   onClick={handleEliminarFiesta}
                   className="text-rose-500 hover:bg-rose-500/10 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 border border-rose-500/20 transition-colors"
                 >
-                  🗑️ Borrar Fiesta
+                  🗑️ {t('rrpp_event_card.delete_party')}
                 </button>
               ) : (
                 <span 
-                  title="No se puede borrar: ya has emitido entradas para este evento"
+                  title={t('rrpp_event_card.cannot_delete')}
                   className="inline-flex text-slate-500 bg-slate-800/50 px-3 py-1.5 rounded-xl text-[10px] font-bold border border-white/5 cursor-not-allowed items-center gap-1"
                 >
-                  🔒 {data.stats.totalSold} QRs Emitidos (No borrable)
+                  🔒 {data.stats.totalSold} {t('rrpp_event_card.qrs_issued')}
                 </span>
               )}
             </div>
             <div className="flex flex-col items-end gap-2">
               <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${data.promoter.is_closed ? 'bg-yellow-500/20 text-yellow-500' : 'bg-green-500/20 text-green-400'}`}>
-                {data.promoter.is_closed ? 'Cerrada' : 'Activa'}
+                {data.promoter.is_closed ? t('rrpp_event_card.closed') : t('rrpp_event_card.active')}
               </span>
             </div>
           </div>
@@ -200,11 +202,11 @@ export default function RRPPEventCard({ token }: { token: string }) {
           <div className="grid grid-cols-2 gap-3 mb-5">
             <div className="bg-black/40 border border-white/5 p-4 rounded-2xl text-center">
               <div className="text-3xl font-black text-fuchsia-400">{data.stats.totalSold}</div>
-              <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">Emitidas</div>
+              <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">{t('rrpp_event_card.issued')}</div>
             </div>
             <div className="bg-black/40 border border-white/5 p-4 rounded-2xl text-center">
               <div className="text-3xl font-black text-green-400">{data.stats.totalEntered}</div>
-              <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">En Puerta</div>
+              <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">{t('rrpp_event_card.at_door')}</div>
             </div>
           </div>
 
@@ -216,11 +218,11 @@ export default function RRPPEventCard({ token }: { token: string }) {
                   className="w-full py-4 bg-fuchsia-600 hover:bg-fuchsia-500 rounded-2xl font-black text-sm shadow-[0_0_30px_-10px_rgba(192,38,211,0.5)] transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                   <span className="material-icons text-lg">qr_code</span>
-                  Emitir Entrada QR
+                  {t('rrpp_event_card.issue_qr_ticket')}
                 </button>
               ) : (
                 <div className="bg-fuchsia-900/20 border border-fuchsia-500/30 p-4 rounded-2xl text-center">
-                  <p className="text-xs text-slate-400 mb-3">Sin saldo de QRs. Recarga para seguir emitiendo.</p>
+                  <p className="text-xs text-slate-400 mb-3">{t('rrpp_event_card.no_qr_balance')}</p>
                   <div className="flex gap-2">
                     <button
                       onClick={async () => {
@@ -231,7 +233,7 @@ export default function RRPPEventCard({ token }: { token: string }) {
                           const { url } = res.data as { url: string };
                           window.location.href = url;
                         } catch(e) {
-                          alert('Error: ' + (e as any).message);
+                          alert(`${t('rrpp_event_card.error')} ` + (e as any).message);
                           setGenerating(false);
                         }
                       }}
@@ -249,7 +251,7 @@ export default function RRPPEventCard({ token }: { token: string }) {
                           const { url } = res.data as { url: string };
                           window.location.href = url;
                         } catch(e) {
-                          alert('Error: ' + (e as any).message);
+                          alert(`${t('rrpp_event_card.error')} ` + (e as any).message);
                           setGenerating(false);
                         }
                       }}
@@ -267,7 +269,7 @@ export default function RRPPEventCard({ token }: { token: string }) {
                 className="w-full py-3 bg-[#25D366] hover:bg-[#1ebe5d] rounded-2xl font-bold uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2"
               >
                 <span className="material-icons text-sm">share</span>
-                Pasar Enlace al Portero
+                {t('rrpp_event_card.share_scanner_link')}
               </button>
 
               <button
@@ -275,14 +277,14 @@ export default function RRPPEventCard({ token }: { token: string }) {
                 className="w-full py-3 bg-yellow-900/30 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-900/50 rounded-2xl font-bold uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2"
               >
                 <span className="material-icons text-sm">lock</span>
-                Cerrar Noche
+                {t('rrpp_event_card.close_night')}
               </button>
             </div>
           ) : (
             <div className="space-y-3">
               <div className="bg-black/40 border border-yellow-500/20 p-4 rounded-2xl text-center">
                 <span className="material-icons text-2xl text-yellow-500 mb-1">lock</span>
-                <p className="text-xs text-slate-400">Listas cerradas. No se pueden emitir más entradas.</p>
+                <p className="text-xs text-slate-400">{t('rrpp_event_card.lists_closed')}</p>
               </div>
               <button
                 onClick={handleLiquidate}
@@ -294,7 +296,7 @@ export default function RRPPEventCard({ token }: { token: string }) {
                 }`}
               >
                 <span className="material-icons text-sm">{data.promoter.liquidated_by_rrpp ? 'check_circle' : 'done_all'}</span>
-                {data.promoter.liquidated_by_rrpp ? 'Pago Confirmado' : 'Confirmar Cobro'}
+                {data.promoter.liquidated_by_rrpp ? t('rrpp_event_card.payment_confirmed') : t('rrpp_event_card.confirm_payment')}
               </button>
             </div>
           )}
@@ -317,28 +319,28 @@ export default function RRPPEventCard({ token }: { token: string }) {
 
               {!generatedQR ? (
                 <>
-                  <h2 className="text-xl font-black mb-6">Nueva Entrada</h2>
+                  <h2 className="text-xl font-black mb-6">{t('rrpp_event_card.new_ticket')}</h2>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Invitado / Alias</label>
+                      <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">{t('rrpp_event_card.guest_alias')}</label>
                       <input
                         type="text"
                         value={clientName}
                         onChange={e => setClientName(e.target.value)}
-                        placeholder="Ej. Marcos amigo"
+                        placeholder={t('rrpp_event_card.guest_alias_placeholder')}
                         className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-fuchsia-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Tipo de Pase</label>
+                      <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">{t('rrpp_event_card.pass_type')}</label>
                       <select
                         value={tierId}
                         onChange={e => setTierId(e.target.value)}
                         className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-fuchsia-500 appearance-none"
                       >
-                        <option value="general">Entrada General</option>
-                        <option value="vip">VIP / Reservado</option>
-                        <option value="promo">Promo Especial</option>
+                        <option value="general">{t('rrpp_event_card.general_admission')}</option>
+                        <option value="vip">{t('rrpp_event_card.vip')}</option>
+                        <option value="promo">{t('rrpp_event_card.special_promo')}</option>
                       </select>
                     </div>
                     <button
@@ -346,15 +348,15 @@ export default function RRPPEventCard({ token }: { token: string }) {
                       disabled={generating}
                       className="w-full py-4 mt-4 bg-white text-black hover:bg-slate-200 rounded-xl font-black uppercase tracking-widest transition-colors"
                     >
-                      {generating ? 'Generando...' : 'Generar QR'}
+                      {generating ? t('rrpp_event_card.generating') : t('rrpp_event_card.generate_qr')}
                     </button>
                   </div>
                 </>
               ) : (
                 <div className="flex flex-col items-center py-4">
                   <div className="text-green-400 mb-2"><span className="material-icons text-5xl">check_circle</span></div>
-                  <h2 className="text-xl font-black mb-1">¡Entrada Lista!</h2>
-                  <p className="text-slate-400 text-sm mb-6">Pase para {generatedQR.name}</p>
+                  <h2 className="text-xl font-black mb-1">{t('rrpp_event_card.ticket_ready')}</h2>
+                  <p className="text-slate-400 text-sm mb-6">{t('rrpp_event_card.pass_for')} {generatedQR.name}</p>
                   <div className="bg-white p-4 rounded-2xl mb-6 shadow-xl">
                     <QRCode value={generatedQR.token} size={200} />
                   </div>
@@ -363,13 +365,13 @@ export default function RRPPEventCard({ token }: { token: string }) {
                     className="w-full py-4 bg-[#25D366] hover:bg-[#1ebe5d] text-white rounded-xl font-black flex items-center justify-center gap-2 mb-3"
                   >
                     <span className="material-icons">share</span>
-                    Compartir por WhatsApp
+                    {t('rrpp_event_card.share_whatsapp')}
                   </button>
                   <button
                     onClick={() => { setGeneratedQR(null); setClientName(''); }}
                     className="text-slate-400 text-sm font-bold underline"
                   >
-                    Generar otra entrada
+                    {t('rrpp_event_card.generate_another')}
                   </button>
                 </div>
               )}

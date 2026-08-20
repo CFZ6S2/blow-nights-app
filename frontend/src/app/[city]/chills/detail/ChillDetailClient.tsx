@@ -10,6 +10,7 @@ import { AnimatePresence } from 'framer-motion';
 import { Chill } from '@/types';
 import ProfileOverlay from '@/components/ProfileOverlay';
 import ChillPaywall from '@/components/ChillPaywall';
+import { useTranslation } from 'react-i18next';
 
 interface ChatMessage {
   id: string;
@@ -21,6 +22,7 @@ interface ChatMessage {
 }
 
 export default function ChillDetailClient({ chillId }: { chillId: string }) {
+  const { t } = useTranslation();
   const { cityPath, router } = useCityRouter();
   const { user, profile, hasChillAccess } = useAuth();
 
@@ -88,7 +90,7 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
     try {
       await requestChillAccess(chillId);
     } catch (e: any) {
-      setError(e.message || 'Error al solicitar acceso');
+      setError(e.message || t('chill.error_requesting'));
     } finally {
       setRequesting(false);
     }
@@ -103,7 +105,7 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
   };
 
   const handleEnd = async () => {
-    if (!confirm('Cerrar el chill? Ya no se aceptaran solicitudes.')) return;
+    if (!confirm(t('chill.confirm_close'))) return;
     try {
       await endChill(chillId);
     } catch (e: any) {
@@ -117,7 +119,7 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
     setMsgText('');
     await addDoc(collection(db, 'chills', chillId, 'messages'), {
       uid: user.uid,
-      nick: profile.nick || 'Anon',
+      nick: profile.nick || t('chill.anon'),
       foto: profile.fotoUrl || '',
       text,
       created_at: serverTimestamp(),
@@ -136,10 +138,10 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
         <span className="material-icons text-6xl text-slate-700 mb-4">explore_off</span>
-        <h1 className="text-xl font-black mb-2">Chill no encontrado</h1>
-        <p className="text-slate-500 text-sm mb-6">Puede haber expirado o sido eliminado.</p>
+        <h1 className="text-xl font-black mb-2">{t('chill.not_found')}</h1>
+        <p className="text-slate-500 text-sm mb-6">{t('chill.expired_or_deleted')}</p>
         <button onClick={() => router.push(cityPath('/chills'))} className="px-6 py-3 bg-fuchsia-600 rounded-xl font-bold text-sm">
-          Volver al Radar
+          {t('chill.back_to_radar')}
         </button>
       </div>
     );
@@ -152,7 +154,7 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
       <div className="max-w-md mx-auto px-4 pt-6">
         <button onClick={() => router.back()} className="flex items-center gap-1 text-slate-500 hover:text-white mb-4 transition-colors">
           <span className="material-icons text-sm">arrow_back</span>
-          <span className="text-xs font-bold">Volver</span>
+          <span className="text-xs font-bold">{t('chill.back')}</span>
         </button>
 
         <div className="bg-slate-900/80 border border-white/5 rounded-3xl p-6 mb-4">
@@ -170,7 +172,7 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
             <div className="flex-1 min-w-0">
               <h1 className="text-xl font-black leading-tight mb-1">{chill.title}</h1>
               <p className="text-xs text-slate-500 font-bold">
-                Organiza: <span className="text-fuchsia-400">{chill.host_nick}</span>
+                {t('chill.organized_by')} <span className="text-fuchsia-400">{chill.host_nick}</span>
               </p>
             </div>
             <div className="flex flex-col items-end gap-1">
@@ -179,7 +181,7 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
                 : spots <= 0 ? 'bg-red-500/20 text-red-400'
                 : 'bg-green-500/20 text-green-400'
               }`}>
-                {chill.status === 'ended' ? 'CERRADO' : spots <= 0 ? 'LLENO' : `${spots} plazas`}
+                {chill.status === 'ended' ? t('chill.status_closed') : spots <= 0 ? t('chill.status_full') : `${spots} ${t('chill.spots')}`}
               </span>
               <span className="text-[10px] text-slate-500 font-bold">
                 {chill.accepted_users.length}/{chill.max_capacity}
@@ -205,16 +207,16 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
             <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 flex items-start gap-3">
               <span className="material-icons text-green-400 mt-0.5">location_on</span>
               <div>
-                <p className="text-xs font-bold text-green-400 mb-1 uppercase tracking-widest">Direccion</p>
-                <p className="text-sm text-white font-bold">{exactAddress || 'Cargando...'}</p>
+                <p className="text-xs font-bold text-green-400 mb-1 uppercase tracking-widest">{t('chill.address')}</p>
+                <p className="text-sm text-white font-bold">{exactAddress || t('chill.loading')}</p>
               </div>
             </div>
           ) : (
             <div className="bg-slate-800/50 border border-white/5 rounded-2xl p-4 flex items-start gap-3">
               <span className="material-icons text-slate-600 mt-0.5">lock</span>
               <div>
-                <p className="text-xs font-bold text-slate-500 mb-1 uppercase tracking-widest">Ubicacion</p>
-                <p className="text-xs text-slate-500">La direccion exacta se revela cuando el anfitrion acepta tu solicitud</p>
+                <p className="text-xs font-bold text-slate-500 mb-1 uppercase tracking-widest">{t('chill.location')}</p>
+                <p className="text-xs text-slate-500">{t('chill.location_hidden')}</p>
               </div>
             </div>
           )}
@@ -225,17 +227,17 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
             {isAccepted ? (
               <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 text-center">
                 <span className="material-icons text-green-400 text-3xl mb-1">check_circle</span>
-                <p className="text-green-400 font-black text-sm">Tienes Pase</p>
+                <p className="text-green-400 font-black text-sm">{t('chill.has_pass')}</p>
               </div>
             ) : isDenied ? (
               <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 text-center">
                 <span className="material-icons text-red-400 text-3xl mb-1">block</span>
-                <p className="text-red-400 font-bold text-sm">Solicitud denegada</p>
+                <p className="text-red-400 font-bold text-sm">{t('chill.request_denied')}</p>
               </div>
             ) : isPending ? (
               <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4 text-center">
                 <span className="material-icons text-yellow-400 text-3xl mb-1 animate-pulse">hourglass_top</span>
-                <p className="text-yellow-400 font-bold text-sm">Esperando aprobacion del anfitrion...</p>
+                <p className="text-yellow-400 font-bold text-sm">{t('chill.waiting_approval')}</p>
               </div>
             ) : (
               <>
@@ -251,7 +253,7 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
                   className="w-full py-5 bg-fuchsia-600 hover:bg-fuchsia-500 disabled:bg-slate-800 disabled:text-slate-600 rounded-2xl font-black text-lg shadow-[0_0_40px_-10px_rgba(192,38,211,0.5)] transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
                   <span className="material-icons">{requesting ? 'sync' : hasChillAccess ? 'vpn_key' : 'lock'}</span>
-                  {requesting ? 'Solicitando...' : hasChillAccess ? 'Pedir Pase' : 'Desbloquear Acceso'}
+                  {requesting ? t('chill.requesting') : hasChillAccess ? t('chill.request_pass') : t('chill.unlock_access')}
                 </button>
                 {error && <p className="text-red-400 text-xs text-center mt-2">{error}</p>}
               </>
@@ -265,25 +267,25 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
             className="w-full py-3 bg-red-900/30 text-red-400 border border-red-500/20 hover:bg-red-900/50 rounded-2xl font-bold uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 mb-4"
           >
             <span className="material-icons text-sm">cancel</span>
-            Cerrar Chill
+            {t('chill.close_chill')}
           </button>
         )}
 
         {(isHost || isAccepted) && (
           <>
             <div className="flex gap-2 mb-4">
-              {(['info', ...(isHost ? ['requests'] as const : []), ...(canChat ? ['chat'] as const : [])] as const).map((t) => (
+              {(['info', ...(isHost ? ['requests'] as const : []), ...(canChat ? ['chat'] as const : [])] as const).map((tabType) => (
                 <button
-                  key={t}
-                  onClick={() => setTab(t as any)}
+                  key={tabType}
+                  onClick={() => setTab(tabType as any)}
                   className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative ${
-                    tab === t
+                    tab === tabType
                       ? 'bg-fuchsia-500 text-white'
                       : 'bg-white/5 text-slate-500 border border-white/5'
                   }`}
                 >
-                  {t === 'info' ? 'Info' : t === 'requests' ? 'Solicitudes' : 'Chat'}
-                  {t === 'requests' && requests.length > 0 && (
+                  {t(tabType === 'info' ? 'chill.tab_info' : tabType === 'requests' ? 'chill.tab_requests' : 'chill.tab_chat')}
+                  {tabType === 'requests' && requests.length > 0 && (
                     <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-[8px] font-black flex items-center justify-center">
                       {requests.length}
                     </span>
@@ -297,7 +299,7 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
                 {requests.length === 0 ? (
                   <div className="text-center py-8">
                     <span className="material-icons text-4xl text-slate-700 mb-2 block">inbox</span>
-                    <p className="text-slate-500 text-sm font-bold">Sin solicitudes pendientes</p>
+                    <p className="text-slate-500 text-sm font-bold">{t('chill.no_requests')}</p>
                   </div>
                 ) : (
                   requests.map((req) => (
@@ -317,7 +319,7 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-black text-sm">{req.user_nick}</p>
-                          {req.user_edad && <p className="text-[10px] text-slate-500 font-bold">{req.user_edad} anos</p>}
+                          {req.user_edad && <p className="text-[10px] text-slate-500 font-bold">{req.user_edad} {t('chill.years_old')}</p>}
                           {req.user_bio && <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">{req.user_bio}</p>}
                         </div>
                       </div>
@@ -326,13 +328,13 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
                           onClick={() => handleRespond(req.user_uid, 'accept')}
                           className="py-3 bg-green-600 hover:bg-green-500 rounded-xl font-black text-xs uppercase tracking-widest transition-all"
                         >
-                          Aceptar
+                          {t('chill.accept')}
                         </button>
                         <button
                           onClick={() => handleRespond(req.user_uid, 'deny')}
                           className="py-3 bg-red-900/40 text-red-400 border border-red-500/20 hover:bg-red-900/60 rounded-xl font-black text-xs uppercase tracking-widest transition-all"
                         >
-                          Denegar
+                          {t('chill.deny')}
                         </button>
                       </div>
                     </div>
@@ -347,8 +349,8 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
                   {messages.length === 0 ? (
                     <div className="text-center py-8">
                       <span className="material-icons text-4xl text-slate-700 mb-2 block">forum</span>
-                      <p className="text-slate-500 text-sm font-bold">Sin mensajes aun</p>
-                      <p className="text-slate-600 text-xs">Empieza la conversacion</p>
+                      <p className="text-slate-500 text-sm font-bold">{t('chill.no_messages')}</p>
+                      <p className="text-slate-600 text-xs">{t('chill.start_conversation')}</p>
                     </div>
                   ) : (
                     messages.map((msg) => {
@@ -389,7 +391,7 @@ export default function ChillDetailClient({ chillId }: { chillId: string }) {
                     value={msgText}
                     onChange={(e) => setMsgText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                    placeholder="Escribe un mensaje..."
+                    placeholder={t('chill.write_message')}
                     className="flex-1 bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-fuchsia-500"
                   />
                   <button

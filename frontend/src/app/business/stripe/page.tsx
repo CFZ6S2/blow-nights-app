@@ -5,8 +5,10 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { useTranslation } from 'react-i18next';
 
 function StripeOnboardingContent() {
+  const { t } = useTranslation();
   const { user, profile, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,7 +29,7 @@ function StripeOnboardingContent() {
   const fetchVenue = async () => {
     try {
       if (!profile?.venueId) {
-        setError('No tienes ningún local asignado.');
+        setError(t('business.stripe.error.no_venue'));
         setIsLoading(false);
         return;
       }
@@ -35,7 +37,7 @@ function StripeOnboardingContent() {
       if (venueSnap.exists()) {
         setVenue({ id: venueSnap.id, ...venueSnap.data() });
       } else {
-        setError('Local no encontrado.');
+        setError(t('business.stripe.error.venue_not_found'));
       }
     } catch (err: any) {
       setError(err.message);
@@ -65,25 +67,25 @@ function StripeOnboardingContent() {
       if (res2.data?.url) {
         window.location.href = res2.data.url;
       } else {
-        setError('No se pudo generar el enlace de Stripe.');
+        setError(t('business.stripe.error.no_link'));
         setIsLinking(false);
       }
     } catch (err: any) {
       console.error(err);
-      setError('Error conectando con Stripe: ' + err.message);
+      setError(t('business.stripe.error.connect_error') + err.message);
       setIsLinking(false);
     }
   };
 
   if (loading || isLoading) {
-    return <div className="flex items-center justify-center min-h-screen text-white">Cargando...</div>;
+    return <div className="flex items-center justify-center min-h-screen text-white">{t('common.loading')}</div>;
   }
 
   return (
     <div className="min-h-screen bg-[#0b0c10] text-white p-6">
       <header className="mb-10 text-center pt-8">
-        <h1 className="text-3xl font-black mb-2 uppercase tracking-widest text-fuchsia-400">Cobros y Ticketing</h1>
-        <p className="text-slate-400 text-sm">Gestiona cómo recibes el dinero de tus entradas</p>
+        <h1 className="text-3xl font-black mb-2 uppercase tracking-widest text-fuchsia-400">{t('business.stripe.title')}</h1>
+        <p className="text-slate-400 text-sm">{t('business.stripe.subtitle')}</p>
       </header>
 
       <main className="max-w-xl mx-auto space-y-6">
@@ -95,13 +97,13 @@ function StripeOnboardingContent() {
 
         {searchParams.get('refresh') && (
           <div className="bg-yellow-900/50 text-yellow-300 p-4 rounded-xl border border-yellow-500/50 mb-4">
-            Has cancelado el proceso o la sesión expiró. Por favor, vuelve a intentarlo.
+            {t('business.stripe.message.cancelled')}
           </div>
         )}
 
         {searchParams.get('return') && (
           <div className="bg-green-900/50 text-green-300 p-4 rounded-xl border border-green-500/50 mb-4">
-            ¡Proceso completado! Stripe está verificando tus datos. Pronto podrás empezar a cobrar entradas.
+            {t('business.stripe.message.success')}
           </div>
         )}
 
@@ -118,19 +120,19 @@ function StripeOnboardingContent() {
                 <div className="flex items-center gap-3 text-green-400 bg-green-400/10 p-4 rounded-xl border border-green-400/20">
                   <span className="material-icons">check_circle</span>
                   <div>
-                    <p className="font-bold">Cuenta de pagos vinculada</p>
+                    <p className="font-bold">{t('business.stripe.account_linked')}</p>
                     <p className="text-xs text-green-400/70">ID: {venue.stripeAccountId}</p>
                   </div>
                 </div>
                 <p className="text-sm text-slate-400">
-                  Todo está listo. Cuando vendas una entrada, el dinero de la venta (descontando los gastos de gestión) se transferirá automáticamente a tu cuenta bancaria a través de Stripe.
+                  {t('business.stripe.description_linked')}
                 </p>
                 <button
                   onClick={handleConnectStripe}
                   disabled={isLinking}
                   className="w-full bg-[#1c1f38] hover:bg-[#23273f] text-white font-bold py-3 rounded-xl transition-all mt-4 border border-[#3b3f68]"
                 >
-                  {isLinking ? 'Cargando...' : 'Actualizar mis datos bancarios'}
+                  {isLinking ? t('common.loading') : t('business.stripe.update_bank_details')}
                 </button>
               </div>
             ) : (
@@ -138,15 +140,15 @@ function StripeOnboardingContent() {
                 <div className="space-y-4">
                   <div className="flex gap-4 items-start">
                     <span className="bg-fuchsia-500/20 text-fuchsia-400 p-2 rounded-lg">1</span>
-                    <p className="text-sm text-slate-300">Conecta tu cuenta bancaria mediante la pasarela segura de Stripe Express.</p>
+                    <p className="text-sm text-slate-300">{t('business.stripe.step_1')}</p>
                   </div>
                   <div className="flex gap-4 items-start">
                     <span className="bg-fuchsia-500/20 text-fuchsia-400 p-2 rounded-lg">2</span>
-                    <p className="text-sm text-slate-300">Vende entradas a través de la App de Blow Nights o enlaces de RRPP.</p>
+                    <p className="text-sm text-slate-300">{t('business.stripe.step_2')}</p>
                   </div>
                   <div className="flex gap-4 items-start">
                     <span className="bg-fuchsia-500/20 text-fuchsia-400 p-2 rounded-lg">3</span>
-                    <p className="text-sm text-slate-300">Recibe el 100% del precio de tu entrada directamente en tu banco (Blow Nights cobra los gastos de gestión al comprador).</p>
+                    <p className="text-sm text-slate-300">{t('business.stripe.step_3')}</p>
                   </div>
                 </div>
 
@@ -156,16 +158,16 @@ function StripeOnboardingContent() {
                   className="w-full bg-[#635BFF] hover:bg-[#4B45FF] text-white font-bold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
                 >
                   {isLinking ? (
-                    'Conectando...'
+                    t('business.stripe.connecting')
                   ) : (
                     <>
                       <span className="material-icons text-xl">account_balance</span>
-                      Configurar Cuenta Bancaria
+                      {t('business.stripe.setup_bank_account')}
                     </>
                   )}
                 </button>
                 <p className="text-center text-xs text-slate-500 mt-2">
-                  El proceso de alta tarda solo 3 minutos. Ten a mano tu DNI/CIF y tu número de cuenta (IBAN).
+                  {t('business.stripe.footer_note')}
                 </p>
               </div>
             )}
@@ -177,8 +179,9 @@ function StripeOnboardingContent() {
 }
 
 export default function StripeOnboardingPage() {
+  const { t } = useTranslation();
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-white">Cargando...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-white">{t('common.loading')}</div>}>
       <StripeOnboardingContent />
     </Suspense>
   );

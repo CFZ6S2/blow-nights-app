@@ -45,9 +45,9 @@ export default function WalletPage() {
         <header className="pt-8 space-y-2">
           <h1 className="text-2xl font-black tracking-tight flex items-center gap-3">
             <span className="material-icons text-yellow-500">confirmation_number</span>
-            Mi Cartera
+            {t('wallet.title')}
           </h1>
-          <p className="text-xs text-slate-500">Tus entradas y pases</p>
+          <p className="text-xs text-slate-500">{t('wallet.subtitle')}</p>
         </header>
 
         <div className="flex gap-2">
@@ -59,7 +59,7 @@ export default function WalletPage() {
                 : 'bg-white/5 border-white/10 text-slate-500'
             }`}
           >
-            Activas ({valid.length})
+            {t('wallet.tab_active')} ({valid.length})
           </button>
           <button
             onClick={() => setTab('used')}
@@ -69,7 +69,7 @@ export default function WalletPage() {
                 : 'bg-white/5 border-white/10 text-slate-500'
             }`}
           >
-            Usadas ({used.length})
+            {t('wallet.tab_used')} ({used.length})
           </button>
         </div>
 
@@ -83,14 +83,14 @@ export default function WalletPage() {
               {tab === 'valid' ? 'confirmation_number' : 'history'}
             </span>
             <p className="text-sm text-slate-500">
-              {tab === 'valid' ? 'No tienes entradas activas' : 'No has usado ninguna entrada aún'}
+              {tab === 'valid' ? t('wallet.empty_active') : t('wallet.empty_used')}
             </p>
             {tab === 'valid' && (
               <button
                 onClick={() => router.push(cityPath('/venues'))}
                 className="px-6 py-3 rounded-2xl bg-fuchsia-600 text-white text-xs font-black uppercase tracking-widest"
               >
-                Ver locales
+                {t('wallet.view_venues')}
               </button>
             )}
           </div>
@@ -128,7 +128,7 @@ export default function WalletPage() {
                     <span className={`text-[10px] font-black uppercase tracking-widest ${
                       ticket.status === 'valid' ? 'text-green-400' : 'text-slate-500'
                     }`}>
-                      {ticket.status === 'valid' ? 'Válida' : 'Usada'}
+                      {ticket.status === 'valid' ? t('wallet.ticket_valid') : t('wallet.ticket_used')}
                     </span>
                     {ticket.purchasedAt && (
                       <p className="text-[9px] text-slate-600 mt-0.5">
@@ -167,7 +167,7 @@ export default function WalletPage() {
                     ? 'bg-green-500/20 text-green-400'
                     : 'bg-slate-800 text-slate-500'
                 }`}>
-                  {selectedTicket.status === 'valid' ? 'Válida' : 'Usada'}
+                  {selectedTicket.status === 'valid' ? t('wallet.ticket_valid') : t('wallet.ticket_used')}
                 </span>
               </div>
 
@@ -183,26 +183,26 @@ export default function WalletPage() {
                 {selectedTicket.status === 'used' && (
                   <div className="text-center py-6 mb-6">
                     <span className="material-icons text-5xl text-slate-600">check_circle</span>
-                    <p className="text-sm text-slate-500 mt-2">Esta entrada ya fue escaneada</p>
+                    <p className="text-sm text-slate-500 mt-2">{t('wallet.ticket_already_scanned')}</p>
                   </div>
                 )}
 
                 <div className="space-y-2 print:hidden">
                   <button onClick={() => window.print()} className="w-full py-3 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-colors">
                     <span className="material-icons text-sm">picture_as_pdf</span>
-                    Descargar PDF / Imprimir
+                    {t('wallet.download_pdf')}
                   </button>
                   <button disabled className="w-full py-3 bg-black border border-white/20 text-slate-500 font-bold rounded-xl text-xs flex items-center justify-center gap-2 opacity-50 cursor-not-allowed">
                     <span className="material-icons text-sm">account_balance_wallet</span>
-                    Añadir a Apple Wallet (Próximamente)
+                    {t('wallet.add_to_apple_wallet')}
                   </button>
                 </div>
 
                 <div className="mt-4 p-4 bg-slate-950 print:bg-white print:border print:border-slate-300 rounded-xl text-[8px] text-slate-500 print:text-slate-800 leading-tight space-y-2 max-h-32 overflow-y-auto print:max-h-none text-left">
-                  <p className="font-bold uppercase text-slate-400 print:text-black">Condiciones de Acceso y Política de Ticketing</p>
-                  <p>1. ACCESO EXCLUSIVO MEDIANTE CÓDIGO QR: El acceso al recinto está condicionado estrictamente a la lectura óptica correcta del código QR emitido. Es responsabilidad única y exclusiva del asistente presentar el código QR en un dispositivo móvil con suficiente batería, pantalla en condiciones óptimas de legibilidad, o impreso en papel de forma clara.</p>
-                  <p>2. INEXISTENCIA DE VALIDACIÓN MANUAL: Por motivos de seguridad y agilidad en el control de accesos, el personal de puerta NO realizará búsquedas manuales por nombre, DNI, apellidos ni justificantes de pago bancario. Si el código QR no puede ser escaneado por falta de batería, pantalla rota, fallo de cobertura o ausencia física del soporte, se denegará el acceso sin derecho a reembolso ni indemnización.</p>
-                  <p>3. UN SOLO USO Y CUSTODIA: Cada entrada cuenta con un identificador criptográfico único. El primer escaneo en el acceso invalida automáticamente el código para usos posteriores. La custodia y confidencialidad del ticket corresponden al comprador.</p>
+                  <p className="font-bold uppercase text-slate-400 print:text-black">{t('wallet.conditions_title')}</p>
+                  <p>{t('wallet.conditions_1')}</p>
+                  <p>{t('wallet.conditions_2')}</p>
+                  <p>{t('wallet.conditions_3')}</p>
                 </div>
               </div>
 
@@ -210,7 +210,7 @@ export default function WalletPage() {
                 onClick={() => setSelectedTicket(null)}
                 className="w-full mt-6 py-4 rounded-2xl bg-white/5 text-slate-400 font-black uppercase tracking-[0.2em] text-xs hover:bg-white/10 transition-all print:hidden"
               >
-                Cerrar
+                {t('wallet.close')}
               </button>
             </motion.div>
           </motion.div>

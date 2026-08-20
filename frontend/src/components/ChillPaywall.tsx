@@ -2,9 +2,11 @@
 
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 
 export default function ChillPaywall({ onClose }: { onClose: () => void }) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   return (
     <motion.div
@@ -28,14 +30,14 @@ export default function ChillPaywall({ onClose }: { onClose: () => void }) {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full mb-4">
             <span className="material-icons text-white/70 text-sm">nightlife</span>
-            <span className="text-[10px] font-black text-white uppercase tracking-widest">Exclusivo Black</span>
+            <span className="text-[10px] font-black text-white uppercase tracking-widest">{t('paywall.exclusive_black')}</span>
           </div>
 
           <h2 className="text-2xl font-black text-white mb-2 leading-tight">
-            Solo para miembros Black
+            {t('paywall.only_black')}
           </h2>
           <p className="text-sm text-slate-400">
-            Los Chills y Afters privados son un beneficio exclusivo de la membresía Black. Sube de nivel para organizar y acceder a estas experiencias.
+            {t('paywall.black_desc')}
           </p>
         </div>
 
@@ -43,18 +45,18 @@ export default function ChillPaywall({ onClose }: { onClose: () => void }) {
           onClick={() => router.push('/premium')}
           className="w-full bg-gradient-to-r from-slate-200 to-white text-black font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-transform uppercase tracking-widest text-[10px] shadow-[0_0_20px_rgba(255,255,255,0.3)] mb-4"
         >
-          Ver planes de membresía
+          {t('paywall.view_plans')}
         </button>
 
         {/* Features list */}
         <div className="space-y-2 mb-4">
           {[
-            'Acceso a chills y afters privados',
-            'Crear tus propias reuniones',
-            'Distintivo VIP en tu perfil',
-            'Pings y Boosts ilimitados',
-          ].map((feature) => (
-            <div key={feature} className="flex items-center gap-2">
+            t('paywall.feat_chills'),
+            t('paywall.feat_create'),
+            t('paywall.feat_vip'),
+            t('paywall.feat_pings'),
+          ].map((feature, idx) => (
+            <div key={idx} className="flex items-center gap-2">
               <span className="material-icons text-slate-100 text-sm">check</span>
               <span className="text-xs text-slate-400">{feature}</span>
             </div>

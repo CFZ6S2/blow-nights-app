@@ -104,7 +104,7 @@ function ChatDetailContent() {
       await sendMessage('', 'image', url);
     } catch (error) {
       console.error("Error uploading image:", error);
-      alert("Error al subir la imagen.");
+      alert(t('chat.detail.upload_error'));
     }
   };
 
@@ -135,7 +135,7 @@ function ChatDetailContent() {
       recorder.timerInterval = timer;
     } catch (err) {
       console.error("Error accessing microphone:", err);
-      alert("No se pudo acceder al micrófono.");
+      alert(t('chat.detail.mic_error'));
     }
   };
 
@@ -269,7 +269,7 @@ function ChatDetailContent() {
                 <button 
                   onClick={async () => { 
                     triggerHaptic(10); 
-                    if (confirm(`¿Quieres dar acceso a tus fotos privadas a ${otherUser.nick}?`)) {
+                    if (confirm(t('chat.detail.confirm_access', { name: otherUser.nick }))) {
                       await grantPrivateAccess(otherUser.id || searchParams.get('otherId'));
                       setShowOptions(false);
                     }
@@ -282,9 +282,9 @@ function ChatDetailContent() {
                 <button 
                   onClick={async () => { 
                     triggerHaptic(10); 
-                    if (confirm('¿Quieres reportar a este usuario?')) {
+                    if (confirm(t('chat.detail.confirm_report'))) {
                       await reportUser(otherUser.id || searchParams.get('otherId'), 'Desde chat');
-                      alert('Reporte enviado.');
+                      alert(t('chat.detail.report_sent'));
                       setShowOptions(false);
                     }
                   }} 
@@ -295,7 +295,7 @@ function ChatDetailContent() {
                 <button 
                   onClick={async () => { 
                     triggerHaptic(10); 
-                    if (confirm('¿Bloquear usuario? No podrán hablarte más.')) {
+                    if (confirm(t('chat.detail.confirm_block'))) {
                       await blockUser(otherUser.id || searchParams.get('otherId'));
                       router.push(cityPath('/chat'));
                     }

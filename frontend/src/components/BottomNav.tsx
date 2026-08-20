@@ -31,7 +31,7 @@ export function BottomNav() {
     ? allItems.filter(item => !superAdminHidden.some(h => item.match.endsWith(`/${h}`)))
     : [...allItems]
   if (isVenueManager) {
-    items.push({ href: "/venue-admin", label: "Mi Local", icon: "storefront", match: "/venue-admin" })
+    items.push({ href: "/venue-admin", label: t('nav.my_venue'), icon: "storefront", match: "/venue-admin" })
   }
   if (isAdmin) {
     items.push({ href: "/admin", label: "Admin", icon: "admin_panel_settings", match: "/admin" })

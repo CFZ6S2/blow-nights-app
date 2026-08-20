@@ -3,8 +3,10 @@ import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Venue } from '@/types';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 export default function VenueConfigTab({ venue }: { venue: Venue }) {
+  const { t } = useTranslation();
   const [name, setName] = useState(venue.name || '');
   const [description, setDescription] = useState(venue.description || '');
   const [address, setAddress] = useState(venue.address || '');
@@ -58,13 +60,13 @@ export default function VenueConfigTab({ venue }: { venue: Venue }) {
           <span className="material-icons text-fuchsia-400">tune</span>
         </div>
         <h3 className="text-lg font-black uppercase tracking-widest text-white">
-          Perfil del Local
+          {t('venue_profile')}
         </h3>
       </div>
       
       <div className="space-y-5">
         <motion.div whileHover={{ scale: 1.01 }} className="group">
-          <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 transition-colors group-focus-within:text-fuchsia-400">Nombre Oficial</label>
+          <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 transition-colors group-focus-within:text-fuchsia-400">{t('official_name')}</label>
           <div className="relative">
             <span className="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm">storefront</span>
             <input
@@ -77,7 +79,7 @@ export default function VenueConfigTab({ venue }: { venue: Venue }) {
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.01 }} className="group">
-          <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 transition-colors group-focus-within:text-fuchsia-400">Descripción / Biografía</label>
+          <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 transition-colors group-focus-within:text-fuchsia-400">{t('description_bio')}</label>
           <textarea
             value={description}
             onChange={e => setDescription(e.target.value)}
@@ -87,7 +89,7 @@ export default function VenueConfigTab({ venue }: { venue: Venue }) {
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.01 }} className="group">
-          <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 transition-colors group-focus-within:text-fuchsia-400">Dirección Física</label>
+          <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 transition-colors group-focus-within:text-fuchsia-400">{t('physical_address')}</label>
           <div className="relative">
             <span className="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm">location_on</span>
             <input
@@ -116,7 +118,7 @@ export default function VenueConfigTab({ venue }: { venue: Venue }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <motion.div whileHover={{ scale: 1.01 }} className="group">
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 transition-colors group-focus-within:text-fuchsia-400">Tipo de Local</label>
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 transition-colors group-focus-within:text-fuchsia-400">{t('venue_type')}</label>
             <div className="relative">
               <span className="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm">category</span>
               <select
@@ -133,7 +135,7 @@ export default function VenueConfigTab({ venue }: { venue: Venue }) {
           </motion.div>
           
           <motion.div whileHover={{ scale: 1.01 }} className="bg-black/20 border border-white/5 rounded-2xl p-4 flex flex-col justify-center">
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">Visibilidad</label>
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">{t('visibility')}</label>
             <label className="flex items-center gap-3 cursor-pointer">
               <div className="relative">
                 <input 
@@ -166,7 +168,7 @@ export default function VenueConfigTab({ venue }: { venue: Venue }) {
           ) : (
             <>
               <span className="material-icons text-sm">save</span>
-              Guardar Configuración
+              {t('save_configuration')}
             </>
           )}
         </motion.button>
@@ -184,7 +186,7 @@ export default function VenueConfigTab({ venue }: { venue: Venue }) {
             onClick={handleDeleteVenue}
             className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-all shadow-md cursor-pointer whitespace-nowrap ml-4"
           >
-            🗑️ Borrar Punto
+            🗑️ {t('delete_point')}
           </button>
         </div>
       </div>

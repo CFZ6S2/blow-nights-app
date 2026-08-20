@@ -6,7 +6,10 @@ import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 export function usePresence(userId: string | undefined, profile: any) {
   const profileRef = useRef(profile);
-  profileRef.current = profile;
+  
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
 
   useEffect(() => {
     if (!userId) return;

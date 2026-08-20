@@ -12,8 +12,10 @@ import { useLikes } from '@/hooks/useLikes';
 import MatchOverlay from '@/components/MatchOverlay';
 import { ProfileSkeleton } from '@/components/Skeleton';
 import { calculateDistance } from '@/lib/geo';
+import { useTranslation } from 'react-i18next';
 
 function PublicProfileContent() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
   const pingVenueId = searchParams.get('pingVenueId');
@@ -57,7 +59,7 @@ function PublicProfileContent() {
               await addDoc(collection(db, 'visits'), {
                 visitorId: currentUser.uid,
                 visitedId: id,
-                visitorNick: currentProfile?.nick || 'Anónimo',
+                visitorNick: currentProfile?.nick || t('profileView.anonymous'),
                 visitorFoto: currentProfile?.fotoUrl || '',
                 timestamp: serverTimestamp()
               });
@@ -116,8 +118,8 @@ function PublicProfileContent() {
 
   if (!profile) return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-      <h2 className="text-2xl font-black mb-4 text-white">Perfil no encontrado</h2>
-      <button onClick={() => router.back()} className="text-fuchsia-500 font-bold uppercase tracking-widest">Volver</button>
+      <h2 className="text-2xl font-black mb-4 text-white">{t('profileView.profileNotFound')}</h2>
+      <button onClick={() => router.back()} className="text-fuchsia-500 font-bold uppercase tracking-widest">{t('profileView.back')}</button>
     </div>
   );
 
@@ -150,9 +152,9 @@ function PublicProfileContent() {
             <div className="flex items-center gap-3 mb-3">
               <span className="text-3xl">🔥</span>
               <div>
-                <p className="text-white text-xs font-bold">{profile.nick} te ha invitado a salir</p>
+                <p className="text-white text-xs font-bold">{profile.nick} {t('profileView.invitedToDate')}</p>
                 <p className="text-orange-400 text-[10px] font-black uppercase tracking-widest mt-0.5">
-                  📍 Estoy en {pingVenue.name}
+                  {t('profileView.imAt')} {pingVenue.name}
                 </p>
               </div>
             </div>
@@ -162,13 +164,13 @@ function PublicProfileContent() {
                 onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${pingVenue.location?.latitude},${pingVenue.location?.longitude}`, '_blank')}
                 className="flex-1 py-2.5 rounded-xl bg-white/10 text-white font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-white/20 transition-all"
               >
-                <span className="material-icons text-sm">map</span> Cómo llegar
+                <span className="material-icons text-sm">map</span> {t('profileView.howToGetThere')}
               </button>
               <button 
                 onClick={() => handleLike()}
                 className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.5)] hover:scale-105 transition-all"
               >
-                <span className="material-icons text-sm">chat</span> Abrir Chat
+                <span className="material-icons text-sm">chat</span> {t('profileView.openChat')}
               </button>
             </div>
           </motion.div>
@@ -246,14 +248,14 @@ function PublicProfileContent() {
                 )}
                 {profile.online && (
                   <div className="px-2 py-0.5 rounded-full bg-green-500/20 border border-green-500/30">
-                    <p className="text-[8px] font-black text-green-400 uppercase tracking-widest">Online</p>
+                    <p className="text-[8px] font-black text-green-400 uppercase tracking-widest">{t('profileView.online')}</p>
                   </div>
                 )}
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <span className="material-icons text-xs text-slate-500">near_me</span>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  A {distance || '0.5'} km de ti
+                  A {distance || '0.5'} {t('profileView.kmFromYou')}
                 </p>
               </div>
             </div>
@@ -261,25 +263,25 @@ function PublicProfileContent() {
           </div>
 
           <div className="flex flex-wrap gap-2 mb-8">
-            <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-bold text-slate-300 uppercase tracking-wider">{profile.rol === 'party_only' ? 'Solo Fiesta' : profile.rol}</div>
+            <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-bold text-slate-300 uppercase tracking-wider">{profile.rol === 'party_only' ? t('profileView.onlyParty') : profile.rol}</div>
             <div className="px-4 py-2 rounded-xl bg-fuchsia-500/10 border border-fuchsia-500/10 text-[10px] font-bold text-fuchsia-400 uppercase tracking-wider">{profile.intencion}</div>
             {profile.complexion && <div className="px-4 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/10 text-[10px] font-bold text-indigo-400 uppercase tracking-wider">{profile.complexion}</div>}
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-10">
             <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex flex-col items-center">
-              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Altura</span>
+              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{t('profileView.height')}</span>
               <span className="text-2xl font-black">{profile.altura || '--'} <small className="text-[10px] text-slate-500">cm</small></span>
             </div>
             <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex flex-col items-center">
-              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Peso</span>
+              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{t('profileView.weight')}</span>
               <span className="text-2xl font-black">{profile.peso || '--'} <small className="text-[10px] text-slate-500">kg</small></span>
             </div>
           </div>
 
           <div className="space-y-8">
             <div className="space-y-4">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Intereses</p>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{t('profileView.interests')}</p>
               <div className="flex flex-wrap gap-2">
                 {intereses.map((interes: string, idx: number) => (
                   <motion.span 
@@ -297,9 +299,9 @@ function PublicProfileContent() {
             </div>
 
             <div className="space-y-4">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Sobre mí</p>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{t('profileView.aboutMe')}</p>
               <p className="text-slate-300 leading-relaxed text-lg font-medium bg-white/5 p-6 rounded-3xl border border-white/5">
-                {profile.bio || "Sin descripción por ahora."}
+                {profile.bio || t('profileView.noDescription')}
               </p>
             </div>
 
@@ -308,10 +310,10 @@ function PublicProfileContent() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <p className="text-[10px] font-black text-yellow-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                    <span className="material-icons text-xs">lock</span> Álbum Privado
+                    <span className="material-icons text-xs">lock</span> {t('profileView.privateAlbum')}
                   </p>
                   {!profile.permittedUsers?.includes(currentUser?.uid) && (
-                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{profile.privatePhotos.length} FOTOS</span>
+                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{profile.privatePhotos.length} {t('profileView.photos')}</span>
                   )}
                 </div>
                 
@@ -337,8 +339,8 @@ function PublicProfileContent() {
                       <span className="material-icons">lock_person</span>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-bold text-white">Contenido Privado</p>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Pide acceso en el chat para ver este álbum</p>
+                      <p className="text-sm font-bold text-white">{t('profileView.privateContent')}</p>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">{t('profileView.requestAccess')}</p>
                     </div>
                   </button>
                 )}
@@ -363,7 +365,7 @@ function PublicProfileContent() {
             onClick={() => handleLike(false)} 
             className={`flex-1 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl ${hasLiked ? 'bg-slate-800 text-slate-500' : 'bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-white shadow-fuchsia-500/20'}`}
           >
-            {hasLiked ? 'Enviado' : 'Me gusta'}
+            {hasLiked ? t('profileView.sent') : t('profileView.like')}
           </motion.button>
           <motion.button 
             whileTap={{ scale: 0.9 }} 

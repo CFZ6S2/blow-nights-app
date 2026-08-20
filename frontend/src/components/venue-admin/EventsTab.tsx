@@ -5,6 +5,7 @@ import { collection, query, orderBy, onSnapshot, doc, setDoc, Timestamp, getDoc 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 interface TicketTier {
   id: string;
@@ -186,6 +187,7 @@ function EventPromoters({ venueId, eventId }: { venueId: string; eventId: string
 }
 
 export default function EventsTab({ venueId }: { venueId: string }) {
+  const { t } = useTranslation();
   const [events, setEvents] = useState<VenueEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -326,22 +328,22 @@ export default function EventsTab({ venueId }: { venueId: string }) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-black">Gestión de Eventos</h2>
+        <h2 className="text-xl font-black">{t('event_management')}</h2>
         <button
           onClick={() => setIsCreating(!isCreating)}
           className="px-4 py-2 bg-fuchsia-600 text-white rounded-full text-xs font-bold uppercase tracking-widest"
         >
-          {isCreating ? 'Cancelar' : '+ Nuevo Evento'}
+          {isCreating ? t('cancel') : `+ ${t('new_event')}`}
         </button>
       </div>
 
       {isCreating && (
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="bg-white/5 border border-white/10 rounded-3xl p-6 space-y-6">
-          <h3 className="text-lg font-bold">Crear Nuevo Evento</h3>
+          <h3 className="text-lg font-bold">{t('create_new_event')}</h3>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-400 mb-1">Título del Evento</label>
+              <label className="block text-xs font-bold text-slate-400 mb-1">{t('event_title')}</label>
               <input 
                 type="text" 
                 value={title} 
@@ -352,7 +354,7 @@ export default function EventsTab({ venueId }: { venueId: string }) {
             </div>
             
             <div>
-              <label className="block text-xs font-bold text-slate-400 mb-1">Fecha y Hora de Inicio</label>
+              <label className="block text-xs font-bold text-slate-400 mb-1">{t('start_date_time')}</label>
               <input 
                 type="datetime-local" 
                 value={startDate} 
@@ -414,7 +416,7 @@ export default function EventsTab({ venueId }: { venueId: string }) {
               disabled={saving}
               className="w-full py-4 bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-2xl font-black uppercase tracking-widest transition-colors mt-6"
             >
-              {saving ? 'Guardando...' : 'Crear Evento y Generar Escáner'}
+              {saving ? 'Guardando...' : t('create_event_and_generate_scanner')}
             </button>
           </div>
         </motion.div>
@@ -447,7 +449,7 @@ export default function EventsTab({ venueId }: { venueId: string }) {
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-black text-fuchsia-400">{evt.stats?.total_sold || 0}</div>
-                  <div className="text-[9px] uppercase tracking-widest text-slate-500">Tickets Vendidos</div>
+                  <div className="text-[9px] uppercase tracking-widest text-slate-500">{t('sold_tickets')}</div>
                 </div>
               </div>
 

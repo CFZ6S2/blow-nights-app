@@ -7,6 +7,7 @@ import { getAnalytics, logEvent } from 'firebase/analytics';
 import app from '@/lib/firebase';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 
 interface LandingPageProps {
   onStart: () => void;
@@ -24,6 +25,7 @@ const fadeUp: any = {
 export default function LandingPage({ onStart }: LandingPageProps) {
   const [onlineCount, setOnlineCount] = useState(0);
   const [venueCount, setVenueCount] = useState(0);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -51,8 +53,8 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         {/* Top nav links */}
         <div className="absolute top-0 left-0 right-0 z-50 px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/business" className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 hover:text-fuchsia-400 transition-colors">Locales</Link>
-            <Link href="/rrpp" className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 hover:text-fuchsia-400 transition-colors">RRPP</Link>
+            <Link href="/business" className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 hover:text-fuchsia-400 transition-colors">{t('landing.nav_venues')}</Link>
+            <Link href="/rrpp" className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 hover:text-fuchsia-400 transition-colors">{t('landing.nav_rrpp')}</Link>
           </div>
         </div>
 
@@ -83,7 +85,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
             </span>
             <span className="text-[11px] font-bold text-slate-400 tracking-wide">
-              {onlineCount > 0 ? `${onlineCount} personas activas ahora` : 'En vivo en tu ciudad'}
+              {onlineCount > 0 ? t('landing.active_now', { count: onlineCount }) : t('landing.live_city')}
             </span>
           </motion.div>
 
@@ -96,8 +98,8 @@ export default function LandingPage({ onStart }: LandingPageProps) {
               </span>
             </h1>
             <p className="text-lg md:text-xl text-slate-400 max-w-xl mx-auto leading-relaxed font-medium">
-              Tu circuito nocturno LGTBIQ+ en vivo.<br className="hidden sm:block" />
-              Locales, entradas, check-in y planes reales en tu ciudad.
+              {t('landing.hero_desc_1')}<br className="hidden sm:block" />
+              {t('landing.hero_desc_2')}
             </p>
           </motion.div>
 
@@ -107,22 +109,22 @@ export default function LandingPage({ onStart }: LandingPageProps) {
               onClick={handleStart}
               className="w-full sm:w-auto px-14 py-5 rounded-2xl bg-white text-black font-[900] text-[13px] uppercase tracking-[0.15em] hover:bg-slate-100 active:scale-[0.97] transition-all shadow-[0_15px_40px_rgba(255,255,255,0.08)]"
             >
-              Entrar gratis
+              {t('landing.enter_free')}
             </button>
             <Link
               href="/rules"
               className="w-full sm:w-auto px-14 py-5 rounded-2xl bg-white/[0.04] text-white/80 border border-white/10 font-bold text-[13px] uppercase tracking-[0.1em] hover:bg-white/[0.08] transition-all backdrop-blur-sm text-center"
             >
-              Cómo funciona
+              {t('landing.how_it_works')}
             </Link>
           </motion.div>
 
           {/* Stats bar */}
           <motion.div variants={fadeUp} className="flex items-center justify-center gap-8 pt-6 text-center">
             {[
-              { value: venueCount > 0 ? `${venueCount}+` : '—', label: 'Locales' },
-              { value: '6', label: 'Tipos de venue' },
-              { value: 'QR', label: 'Entradas digitales' },
+              { value: venueCount > 0 ? `${venueCount}+` : '—', label: t('landing.stat_venues') },
+              { value: '6', label: t('landing.stat_types') },
+              { value: 'QR', label: t('landing.stat_tickets') },
             ].map((s, i) => (
               <div key={i} className="space-y-1">
                 <div className="text-2xl font-[900] tracking-tight text-white">{s.value}</div>
@@ -154,13 +156,13 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             viewport={{ once: true }}
             className="max-w-2xl space-y-4"
           >
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-fuchsia-500">Qué es Blow Nights</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-fuchsia-500">{t('landing.what_is')}</p>
             <h2 className="text-3xl md:text-5xl font-[900] tracking-tight leading-[1.1]">
-              No es una app de citas.<br />
-              <span className="text-slate-500">Es tu circuito nocturno.</span>
+              {t('landing.not_dating')}<br />
+              <span className="text-slate-500">{t('landing.is_circuit')}</span>
             </h2>
             <p className="text-slate-400 text-base leading-relaxed max-w-lg">
-              Blow Nights conecta personas, locales y eventos en tiempo real. Haz check-in en tu garito, compra entradas con QR, y descubre quién sale esta noche — todo desde una sola app.
+              {t('landing.about_desc')}
             </p>
           </motion.div>
 
@@ -169,48 +171,48 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             {[
               {
                 icon: 'nightlife',
-                title: 'Locales en vivo',
-                desc: 'Bares, discotecas, afters, saunas — mira quién hay en cada sitio ahora mismo.',
+                title: t('landing.feat1_title'),
+                desc: t('landing.feat1_desc'),
                 gradient: 'from-fuchsia-500/15 to-purple-500/5',
                 border: 'border-fuchsia-500/15',
                 iconColor: 'text-fuchsia-400',
               },
               {
                 icon: 'confirmation_number',
-                title: 'Entradas QR',
-                desc: 'Compra tu entrada desde la app y enséñala en puerta. Sin colas, sin papel.',
+                title: t('landing.feat2_title'),
+                desc: t('landing.feat2_desc'),
                 gradient: 'from-yellow-500/10 to-amber-500/5',
                 border: 'border-yellow-500/15',
                 iconColor: 'text-yellow-400',
               },
               {
                 icon: 'location_on',
-                title: 'Check-in inteligente',
-                desc: 'Público, fantasma o anónimo. Tú decides cómo apareces en cada local.',
+                title: t('landing.feat3_title'),
+                desc: t('landing.feat3_desc'),
                 gradient: 'from-green-500/10 to-emerald-500/5',
                 border: 'border-green-500/15',
                 iconColor: 'text-green-400',
               },
               {
                 icon: 'map',
-                title: 'Mapa en tiempo real',
-                desc: 'Ve quién está cerca y qué locales tienen ambiente ahora.',
+                title: t('landing.feat4_title'),
+                desc: t('landing.feat4_desc'),
                 gradient: 'from-indigo-500/10 to-blue-500/5',
                 border: 'border-indigo-500/15',
                 iconColor: 'text-indigo-400',
               },
               {
                 icon: 'shield',
-                title: 'Modo Cruising',
-                desc: 'Check-in anónimo, GPS difuso y foto oculta. Privacidad total para zonas 18+.',
+                title: t('landing.feat5_title'),
+                desc: t('landing.feat5_desc'),
                 gradient: 'from-red-500/10 to-rose-500/5',
                 border: 'border-red-500/15',
                 iconColor: 'text-red-400',
               },
               {
                 icon: 'travel_explore',
-                title: 'Multi-ciudad',
-                desc: 'Madrid, Barcelona, Valencia... Blow Nights llega a cada ciudad con su propio circuito.',
+                title: t('landing.feat6_title'),
+                desc: t('landing.feat6_desc'),
                 gradient: 'from-cyan-500/10 to-teal-500/5',
                 border: 'border-cyan-500/15',
                 iconColor: 'text-cyan-400',
@@ -244,28 +246,28 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             viewport={{ once: true }}
             className="text-center space-y-3"
           >
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-fuchsia-500">Cómo funciona</p>
-            <h2 className="text-3xl md:text-5xl font-[900] tracking-tight">Tres toques y estás dentro</h2>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-fuchsia-500">{t('landing.how_it_works')}</p>
+            <h2 className="text-3xl md:text-5xl font-[900] tracking-tight">{t('landing.steps_title')}</h2>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {[
               {
                 step: '01',
-                title: 'Crea tu perfil',
-                desc: 'Google Sign-In, nick y foto. En 30 segundos estás dentro.',
+                title: t('landing.step1_title'),
+                desc: t('landing.step1_desc'),
                 icon: 'person_add',
               },
               {
                 step: '02',
-                title: 'Explora tu ciudad',
-                desc: 'Mira el mapa, elige un local y haz check-in con un toque.',
+                title: t('landing.step2_title'),
+                desc: t('landing.step2_desc'),
                 icon: 'explore',
               },
               {
                 step: '03',
-                title: 'Sal y disfruta',
-                desc: 'Compra entradas, conecta con gente y vive la noche.',
+                title: t('landing.step3_title'),
+                desc: t('landing.step3_desc'),
                 icon: 'celebration',
               },
             ].map((s, i) => (
@@ -302,19 +304,19 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             viewport={{ once: true }}
             className="space-y-3"
           >
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-fuchsia-500">Tipos de locales</p>
-            <h2 className="text-3xl md:text-5xl font-[900] tracking-tight">De la previa al after</h2>
-            <p className="text-slate-400 max-w-lg">Cada tipo de local tiene su franja horaria. Blow Nights organiza tu noche entera.</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-fuchsia-500">{t('landing.venue_types')}</p>
+            <h2 className="text-3xl md:text-5xl font-[900] tracking-tight">{t('landing.venue_title')}</h2>
+            <p className="text-slate-400 max-w-lg">{t('landing.venue_desc')}</p>
           </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {[
-              { icon: 'local_bar', name: 'Bares / Previas', hours: '20:00 – 02:00', tag: null },
-              { icon: 'nightlife', name: 'Discotecas', hours: '01:00 – 06:00', tag: null },
-              { icon: 'wb_twilight', name: 'Afters', hours: '06:00 – 12:00', tag: null },
-              { icon: 'hot_tub', name: 'Saunas', hours: '12:00 – 03:00', tag: '18+' },
-              { icon: 'sensor_door', name: 'Cruising Bars', hours: '22:00 – 06:00', tag: '18+' },
-              { icon: 'park', name: 'Zonas Exteriores', hours: '22:00 – 06:00', tag: '18+' },
+              { icon: 'local_bar', name: t('landing.vtype_bars'), hours: '20:00 – 02:00', tag: null },
+              { icon: 'nightlife', name: t('landing.vtype_clubs'), hours: '01:00 – 06:00', tag: null },
+              { icon: 'wb_twilight', name: t('landing.vtype_afters'), hours: '06:00 – 12:00', tag: null },
+              { icon: 'hot_tub', name: t('landing.vtype_saunas'), hours: '12:00 – 03:00', tag: '18+' },
+              { icon: 'sensor_door', name: t('landing.vtype_cruising'), hours: '22:00 – 06:00', tag: '18+' },
+              { icon: 'park', name: t('landing.vtype_outdoor'), hours: '22:00 – 06:00', tag: '18+' },
             ].map((v, i) => (
               <motion.div
                 key={i}
@@ -354,22 +356,21 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             className="bg-gradient-to-br from-fuchsia-600/10 via-indigo-600/5 to-transparent border border-fuchsia-500/10 rounded-[2rem] p-8 md:p-12 space-y-8"
           >
             <div className="space-y-3">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-fuchsia-400">Para locales</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-fuchsia-400">{t('landing.b2b_tag')}</p>
               <h2 className="text-2xl md:text-4xl font-[900] tracking-tight">
-                ¿Tienes un local LGTBIQ+?
+                {t('landing.b2b_title')}
               </h2>
               <p className="text-slate-400 max-w-lg leading-relaxed">
-                Blow Nights te da un panel de gestión completo: vende entradas, lanza promos flash geolocalizadas,
-                valida QR en puerta y controla la afluencia en tiempo real.
+                {t('landing.b2b_desc')}
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { icon: 'storefront', label: 'Panel de local' },
-                { icon: 'qr_code_scanner', label: 'Escáner QR' },
-                { icon: 'campaign', label: 'Promos flash' },
-                { icon: 'analytics', label: 'Métricas en vivo' },
+                { icon: 'storefront', label: t('landing.b2b_panel') },
+                { icon: 'qr_code_scanner', label: t('landing.b2b_qr') },
+                { icon: 'campaign', label: t('landing.b2b_promos') },
+                { icon: 'analytics', label: t('landing.b2b_metrics') },
               ].map((t, i) => (
                 <div key={i} className="flex items-center gap-3 bg-white/[0.04] border border-white/[0.06] rounded-xl p-4">
                   <span className="material-icons text-fuchsia-400 text-xl">{t.icon}</span>
@@ -382,7 +383,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
               href="/business"
               className="inline-block px-8 py-4 rounded-xl bg-fuchsia-600 text-white font-[800] text-[12px] uppercase tracking-[0.12em] hover:bg-fuchsia-500 active:scale-[0.97] transition-all"
             >
-              Registra tu local
+              {t('landing.b2b_register')}
             </Link>
           </motion.div>
         </div>
@@ -400,18 +401,17 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto">
               <span className="material-icons text-indigo-400 text-3xl">verified_user</span>
             </div>
-            <h2 className="text-3xl md:text-5xl font-[900] tracking-tight">Privacidad de verdad</h2>
+            <h2 className="text-3xl md:text-5xl font-[900] tracking-tight">{t('landing.privacy_title')}</h2>
             <p className="text-slate-400 max-w-lg mx-auto leading-relaxed">
-              Tres modos de visibilidad, GPS difuso en zonas sensibles, filtro NSFW,
-              álbumes privados y check-in anónimo. Tu noche, tus reglas.
+              {t('landing.privacy_desc')}
             </p>
           </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
             {[
-              { icon: 'visibility', label: 'Público', desc: 'Tu perfil y foto visibles', color: 'text-fuchsia-400' },
-              { icon: 'visibility_off', label: 'Fantasma', desc: 'Navega sin dejar rastro', color: 'text-indigo-400' },
-              { icon: 'shield', label: 'Anónimo', desc: 'Solo sumas al +1', color: 'text-red-400' },
+              { icon: 'visibility', label: t('landing.priv_public'), desc: t('landing.priv_public_desc'), color: 'text-fuchsia-400' },
+              { icon: 'visibility_off', label: t('landing.priv_ghost'), desc: t('landing.priv_ghost_desc'), color: 'text-indigo-400' },
+              { icon: 'shield', label: t('landing.priv_anon'), desc: t('landing.priv_anon_desc'), color: 'text-red-400' },
             ].map((m, i) => (
               <motion.div
                 key={i}
@@ -434,10 +434,10 @@ export default function LandingPage({ onStart }: LandingPageProps) {
       {/* ═══ FOOTER ═══ */}
       <footer className="py-16 px-6 border-t border-white/[0.04] text-center space-y-6">
         <div className="flex justify-center gap-8">
-          <Link href="/business" className="text-[10px] font-bold uppercase tracking-[0.15em] text-fuchsia-500 hover:text-fuchsia-400 transition-colors">Para Negocios</Link>
-          <Link href="/terms" className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600 hover:text-white transition-colors">Términos</Link>
-          <Link href="/privacy" className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600 hover:text-white transition-colors">Privacidad</Link>
-          <Link href="/rules" className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600 hover:text-white transition-colors">Normas</Link>
+          <Link href="/business" className="text-[10px] font-bold uppercase tracking-[0.15em] text-fuchsia-500 hover:text-fuchsia-400 transition-colors">{t('landing.footer_business')}</Link>
+          <Link href="/terms" className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600 hover:text-white transition-colors">{t('landing.footer_terms')}</Link>
+          <Link href="/privacy" className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600 hover:text-white transition-colors">{t('landing.footer_privacy')}</Link>
+          <Link href="/rules" className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600 hover:text-white transition-colors">{t('landing.footer_rules')}</Link>
         </div>
         <p className="text-[10px] text-slate-700 font-medium uppercase tracking-[0.15em]">
           &copy; 2026 Blow Nights

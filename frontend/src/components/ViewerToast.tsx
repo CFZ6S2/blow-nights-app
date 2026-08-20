@@ -4,10 +4,12 @@ import { useViewers } from '@/hooks/useViewers';
 import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '@/types';
+import { useTranslation } from 'react-i18next';
 
 export default function ViewerToast() {
   const { user } = useAuth();
   const viewers = useViewers(user?.uid) as User[];
+  const { t } = useTranslation();
 
   if (viewers.length === 0) return null;
 
@@ -29,9 +31,9 @@ export default function ViewerToast() {
             <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-fuchsia-500 rounded-full border-2 border-slate-900 animate-pulse" />
           </div>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-fuchsia-400">¡Actividad en vivo!</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-fuchsia-400">{t('viewer_toast.live_activity')}</p>
             <p className="text-xs font-bold text-white">
-              <span className="text-fuchsia-300">{firstViewer.nick}</span> {viewers.length > 1 ? `y ${viewers.length - 1} más están` : 'está'} viendo tu perfil 👀
+              <span className="text-fuchsia-300">{firstViewer.nick}</span> {viewers.length > 1 ? t('viewer_toast.and_more_viewing', { count: viewers.length - 1 }) : t('viewer_toast.is_viewing')} 👀
             </p>
           </div>
         </div>

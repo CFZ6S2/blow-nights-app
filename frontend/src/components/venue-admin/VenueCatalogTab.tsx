@@ -3,8 +3,10 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Venue } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 export default function VenueCatalogTab({ venue }: { venue: Venue }) {
+  const { t } = useTranslation();
   const [pricing, setPricing] = useState(venue.ticketPricing || {});
   const [saving, setSaving] = useState(false);
 
@@ -73,7 +75,7 @@ export default function VenueCatalogTab({ venue }: { venue: Venue }) {
               <span className="material-icons text-indigo-400">inventory_2</span>
             </div>
             <h3 className="text-lg font-black uppercase tracking-widest text-white">
-              Catálogo de Venta
+              {t('sales_catalog')}
             </h3>
           </div>
           <span className="text-xs font-bold text-slate-500 bg-black/40 px-3 py-1 rounded-full border border-white/5">
@@ -138,7 +140,7 @@ export default function VenueCatalogTab({ venue }: { venue: Venue }) {
             <span className="material-icons text-white">add_circle_outline</span>
           </div>
           <h3 className="text-sm font-black uppercase tracking-widest text-fuchsia-200">
-            Añadir Nuevo Producto
+            {t('add_new_product')}
           </h3>
         </div>
         
@@ -222,7 +224,7 @@ export default function VenueCatalogTab({ venue }: { venue: Venue }) {
           className="w-full py-5 mt-4 rounded-2xl bg-white text-fuchsia-900 text-xs font-black uppercase tracking-[0.2em] disabled:opacity-50 transition-all hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] flex items-center justify-center gap-2"
         >
           <span className="material-icons text-sm">add</span>
-          Crear Producto
+          {t('create_product')}
         </motion.button>
       </motion.div>
     </div>

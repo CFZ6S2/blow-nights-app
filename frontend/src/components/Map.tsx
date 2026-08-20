@@ -21,13 +21,13 @@ import { Search } from 'lucide-react';
 export type EntityType = 'all' | 'bar' | 'club' | 'cruising' | 'sauna' | 'chill';
 export type RadarMode = 'places' | 'users' | 'swipe';
 
-const PLACE_CATEGORIES: { id: EntityType; label: string; icon: string }[] = [
-  { id: 'all', label: 'Todo', icon: '✨' },
-  { id: 'chill', label: 'Chills & Afters', icon: '🟣' },
-  { id: 'bar', label: 'Bares', icon: '🍸' },
-  { id: 'club', label: 'Clubs / Fiestas', icon: '🪩' },
-  { id: 'cruising', label: 'Cruising', icon: '🌲' },
-  { id: 'sauna', label: 'Saunas', icon: '♨️' },
+const PLACE_CATEGORY_KEYS: { id: EntityType; labelKey: string; icon: string }[] = [
+  { id: 'all', labelKey: 'map.cat_all', icon: '✨' },
+  { id: 'chill', labelKey: 'map.cat_chill', icon: '🟣' },
+  { id: 'bar', labelKey: 'map.cat_bar', icon: '🍸' },
+  { id: 'club', labelKey: 'map.cat_club', icon: '🪩' },
+  { id: 'cruising', labelKey: 'map.cat_cruising', icon: '🌲' },
+  { id: 'sauna', labelKey: 'map.cat_sauna', icon: '♨️' },
 ];
 
 // Cambiamos a OpenFreeMap para mayor robustez y velocidad
@@ -830,7 +830,7 @@ export default function MainMap() {
                   <Search className="text-slate-400 w-5 h-5 ml-1" />
                   <input 
                     type="text" 
-                    placeholder={radarFilter.mode === 'places' ? 'Buscar local, fiesta o villa...' : 'Buscar usuarios por nombre...'}
+                    placeholder={radarFilter.mode === 'places' ? t('map.search_place', 'Buscar local, fiesta o villa...') : t('map.search_user', 'Buscar usuarios por nombre...')}
                     value={radarFilter.query}
                     onChange={e => setRadarFilter(prev => ({ ...prev, query: e.target.value }))}
                     className="bg-transparent text-white w-full outline-none text-sm placeholder-slate-500"
@@ -842,19 +842,19 @@ export default function MainMap() {
                     onClick={() => setRadarFilter(prev => ({ ...prev, mode: 'places' }))}
                     className={`flex-1 py-2.5 rounded-lg text-[10px] uppercase font-black transition-all flex items-center justify-center gap-1 ${radarFilter.mode === 'places' ? 'bg-fuchsia-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                   >
-                    <span>📍</span> Lugares
+                    <span>📍</span> {t('map.mode_places', 'Lugares')}
                   </button>
                   <button 
                     onClick={() => setRadarFilter(prev => ({ ...prev, mode: 'users' }))}
                     className={`flex-1 py-2.5 rounded-lg text-[10px] uppercase font-black transition-all flex items-center justify-center gap-1 ${radarFilter.mode === 'users' ? 'bg-fuchsia-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                   >
-                    <span>👥</span> Mapa
+                    <span>👥</span> {t('map.mode_map', 'Mapa')}
                   </button>
                   <button 
                     onClick={() => setRadarFilter(prev => ({ ...prev, mode: 'swipe' }))}
                     className={`flex-1 py-2.5 rounded-lg text-[10px] uppercase font-black transition-all flex items-center justify-center gap-1 ${radarFilter.mode === 'swipe' ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'text-slate-400 hover:text-white'}`}
                   >
-                    <span>🔥</span> Swipe
+                    <span>🔥</span> {t('map.mode_swipe', 'Swipe')}
                   </button>
                 </div>
               </div>
@@ -862,16 +862,16 @@ export default function MainMap() {
               {radarFilter.mode === 'places' ? (
                 // Filtros para LUGARES
                 <div className="space-y-4 py-4">
-                  <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Categoría de Sitio</p>
+                  <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">{t('map.site_category', 'Categoría de Sitio')}</p>
                   <div className="grid grid-cols-2 gap-3">
-                    {PLACE_CATEGORIES.map(cat => (
+                    {PLACE_CATEGORY_KEYS.map(cat => (
                       <button 
                         key={cat.id} 
                         onClick={() => { triggerHaptic(10); setRadarFilter(prev => ({ ...prev, type: cat.id as any })) }}
                         className={`py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${radarFilter.type === cat.id ? "bg-fuchsia-500 text-white shadow-xl shadow-fuchsia-500/20" : "bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10"}`}
                       >
                         <span className="text-lg">{cat.icon}</span>
-                        {cat.label}
+                        {t(cat.labelKey)}
                       </button>
                     ))}
                   </div>
@@ -881,7 +881,7 @@ export default function MainMap() {
                 <>
                   <div className="space-y-6 pt-2">
                 <div className="flex justify-between items-end">
-                  <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Rango de Edad</p>
+                  <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">{t('map.age', 'Rango de Edad')}</p>
                   <p className="text-fuchsia-400 font-black text-lg">{ageRange[0]} - {ageRange[1]}</p>
                 </div>
                 <div className="space-y-4">
@@ -892,7 +892,7 @@ export default function MainMap() {
 
               <div className="space-y-6">
                 <div className="flex justify-between items-end">
-                  <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Distancia Máxima</p>
+                  <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">{t('map.distance', 'Distancia Máxima')}</p>
                   <p className="text-fuchsia-400 font-black text-lg">{distanceFilter} km</p>
                 </div>
                 <div className="space-y-4">
@@ -913,7 +913,7 @@ export default function MainMap() {
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Rol</p>
+                  <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">{t('map.role', 'Rol')}</p>
                   <div className="grid grid-cols-1 gap-2">
                     {["activo", "pasivo", "versátil"].map((r) => (
                       <button key={r} onClick={() => { triggerHaptic(10); setRoleFilter(roleFilter === r ? null : r); }} className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${roleFilter === r ? "bg-fuchsia-500 text-white shadow-xl shadow-fuchsia-500/20" : "bg-white/5 text-slate-400 border border-white/5"}`}>{r}</button>
@@ -921,7 +921,7 @@ export default function MainMap() {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Busco...</p>
+                  <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">{t('map.intent', 'Busco...')}</p>
                   <div className="grid grid-cols-1 gap-2">
                     {["conocer", "quedar"].map((i) => (
                       <button key={i} onClick={() => { triggerHaptic(10); setIntentionFilter(intentionFilter === i ? null : i); }} className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${intentionFilter === i ? "bg-fuchsia-500 text-white shadow-xl shadow-fuchsia-500/20" : "bg-white/5 text-slate-400 border border-white/5"}`}>{i}</button>
@@ -931,7 +931,7 @@ export default function MainMap() {
               </div>
 
                 <div className="space-y-4">
-                  <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Filtros VIP</p>
+                  <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">{t('map.vip_filters', 'Filtros VIP')}</p>
                   <div className="flex flex-col gap-3">
                     <button 
                       onClick={() => {

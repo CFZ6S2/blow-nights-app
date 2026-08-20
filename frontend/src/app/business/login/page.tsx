@@ -7,8 +7,10 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import { Building2, ArrowRight, Lock, Mail } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function BusinessLoginPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,7 +37,7 @@ export default function BusinessLoginPage() {
       if (role === 'venue' || role === 'venueOwner' || role === 'admin' || role === 'superadmin') {
         router.push('/venue-admin');
       } else {
-        setError('Esta cuenta no tiene permisos de gestión de local. Contacta con soporte.');
+        setError(t('business.login.error.no_permissions'));
       }
     }
   };
@@ -49,7 +51,7 @@ export default function BusinessLoginPage() {
       await handleAuthResult(result.user);
     } catch (err: any) {
       console.error(err);
-      setError('Error al iniciar sesión con Google.');
+      setError(t('business.login.error.google_login'));
     } finally {
       setLoading(false);
     }
@@ -69,7 +71,7 @@ export default function BusinessLoginPage() {
       }
     } catch (err: any) {
       console.error(err);
-      setError(isRegistering ? 'Error al crear la cuenta. Intenta con otra contraseña.' : 'Email o contraseña incorrectos.');
+      setError(isRegistering ? t('business.login.error.register_failed') : t('business.login.error.invalid_credentials'));
     } finally {
       setLoading(false);
     }
@@ -91,7 +93,7 @@ export default function BusinessLoginPage() {
         <div className="text-center mb-8 space-y-2">
           <h1 className="text-3xl font-black text-white">BlowNights <span className="text-fuchsia-400">Business</span></h1>
           <p className="text-slate-400 text-sm">
-            {isRegistering ? 'Crea tu cuenta corporativa' : 'Accede a tu panel de gestión'}
+            {isRegistering ? t('business.login.subtitle_register') : t('business.login.subtitle_login')}
           </p>
         </div>
 
@@ -104,7 +106,7 @@ export default function BusinessLoginPage() {
 
           <form onSubmit={handleEmailAuth} className="space-y-4 mb-6">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Email Corporativo</label>
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">{t('business.login.form.email_label')}</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Mail className="w-5 h-5 text-slate-500" />
@@ -121,7 +123,7 @@ export default function BusinessLoginPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Contraseña</label>
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">{t('business.login.form.password_label')}</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Lock className="w-5 h-5 text-slate-500" />
@@ -142,7 +144,7 @@ export default function BusinessLoginPage() {
               disabled={loading}
               className="w-full mt-4 py-4 bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white text-sm font-black uppercase tracking-widest rounded-xl shadow-lg shadow-fuchsia-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {loading ? 'Procesando...' : (isRegistering ? 'Crear Cuenta' : 'Entrar al Panel')}
+              {loading ? t('common.processing') : (isRegistering ? t('business.login.form.submit_register') : t('business.login.form.submit_login'))}
               {!loading && <ArrowRight className="w-4 h-4" />}
             </button>
           </form>
@@ -151,7 +153,7 @@ export default function BusinessLoginPage() {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-800"></div>
             </div>
-            <span className="relative bg-slate-900 px-4 text-xs text-slate-500 font-bold uppercase">O continúa con</span>
+            <span className="relative bg-slate-900 px-4 text-xs text-slate-500 font-bold uppercase">{t('business.login.or_continue_with')}</span>
           </div>
 
           <button
@@ -174,7 +176,7 @@ export default function BusinessLoginPage() {
             onClick={() => setIsRegistering(!isRegistering)}
             className="text-sm text-slate-400 hover:text-white transition-colors"
           >
-            {isRegistering ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Registra tu empresa'}
+            {isRegistering ? t('business.login.toggle_login') : t('business.login.toggle_register')}
           </button>
         </div>
       </motion.div>

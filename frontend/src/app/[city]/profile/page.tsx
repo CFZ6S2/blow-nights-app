@@ -62,7 +62,7 @@ export default function MyProfilePage() {
       }
       setIsDeleting(false);
       setShowDeleteModal(false);
-      alert('Error: ' + (err?.message || 'No se pudo eliminar la cuenta.'));
+      alert('Error: ' + (err?.message || t('profile.delete_error')));
     }
   };
 
@@ -194,11 +194,11 @@ export default function MyProfilePage() {
             </div>
             <p className="text-slate-500 text-xs font-black uppercase tracking-[0.2em] mt-1">
               {profile.role === 'rrpp' ? (
-                <span className="text-fuchsia-400">Promotor / RRPP</span>
+                <span className="text-fuchsia-400">{t('profile.role_promoter')}</span>
               ) : ['admin', 'superadmin', 'cityAdmin', 'venue'].includes(profile.role || '') ? (
-                <span className="text-blue-400">Staff / Oficial</span>
+                <span className="text-blue-400">{t('profile.role_staff')}</span>
               ) : (
-                `${profile.rol === 'party_only' ? 'Solo Fiesta' : profile.rol || ''} ${profile.intencion ? `• ${profile.intencion}` : ''}`
+                `${profile.rol === 'party_only' ? t('profile.role_party_only') : profile.rol || ''} ${profile.intencion ? `• ${profile.intencion}` : ''}`
               )}
             </p>
           </div>
@@ -212,23 +212,23 @@ export default function MyProfilePage() {
             
             <div className="relative z-10 flex flex-col items-center">
               <span className="text-3xl mb-3">🌙</span>
-              <h3 className="text-lg font-black text-white uppercase tracking-wider mb-2">¿Buscas el Circuito General?</h3>
-              <p className="text-xs text-slate-400 font-medium mb-6">Descubre quién sale hoy en Fabrik, Shôko y el resto del ocio comercial.</p>
+              <h3 className="text-lg font-black text-white uppercase tracking-wider mb-2">{t('profile.bridge_title')}</h3>
+              <p className="text-xs text-slate-400 font-medium mb-6">{t('profile.bridge_desc')}</p>
               
               <button 
                 onClick={async () => {
-                  if (confirm('¡Próximamente! Activarás tu cuenta en Dark Nights con tu mismo perfil y compras.')) {
+                  if (confirm(t('profile.bridge_alert'))) {
                      const { updateDoc, doc } = await import('firebase/firestore');
                      const { db } = await import('@/lib/firebase');
                      await updateDoc(doc(db, 'users', user!.uid), {
                        activePlatforms: ['blownights', 'darknights']
                      });
-                     alert("¡Activado!");
+                     alert(t('profile.bridge_activated'));
                   }
                 }}
                 className="w-full bg-white text-black font-black uppercase tracking-widest py-4 rounded-xl hover:bg-slate-200 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center justify-center gap-2"
               >
-                <span>⚡ Pásate a Dark Nights</span>
+                <span>{t('profile.bridge_btn')}</span>
               </button>
             </div>
           </div>
@@ -256,8 +256,8 @@ export default function MyProfilePage() {
         {/* City Selector */}
         <section className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-[2.5rem] space-y-4">
           <div>
-            <h3 className="text-sm font-black uppercase tracking-widest">{t('profile.city', 'Tu Ciudad')}</h3>
-            <p className="text-[10px] text-slate-500 mt-1">{t('profile.city_desc', 'Selecciona tu ciudad para ver contenido local')}</p>
+            <h3 className="text-sm font-black uppercase tracking-widest">{t('profile.city')}</h3>
+            <p className="text-[10px] text-slate-500 mt-1">{t('profile.city_desc')}</p>
           </div>
           <div className="flex gap-2 flex-wrap">
             {CITY_SLUGS.map((c) => (
@@ -316,20 +316,20 @@ export default function MyProfilePage() {
                   <p className="text-[10px] font-black uppercase tracking-widest">{t('profile.gps_blocked')}</p>
                 </div>
                 <p className="text-[9px] leading-relaxed text-slate-400 font-medium">
-                  Has ignorado o bloqueado la solicitud de ubicación varias veces. Para aparecer en el mapa, sigue estos pasos:
+                  {t('profile.gps_blocked_desc')}
                 </p>
                 <div className="bg-black/20 p-4 rounded-xl space-y-2">
                   <p className="text-[8px] text-slate-300 font-bold flex items-center gap-2">
                     <span className="w-4 h-4 rounded-full bg-slate-800 flex items-center justify-center text-[6px]">1</span>
-                    Pulsa el icono <span className="material-icons text-[10px] mx-1">tune</span> o <span className="material-icons text-[10px] mx-1">lock</span> junto a la URL.
+                    {t('profile.gps_step_1_start')} <span className="material-icons text-[10px] mx-1">tune</span> o <span className="material-icons text-[10px] mx-1">lock</span> {t('profile.gps_step_1_end')}
                   </p>
                   <p className="text-[8px] text-slate-300 font-bold flex items-center gap-2">
                     <span className="w-4 h-4 rounded-full bg-slate-800 flex items-center justify-center text-[6px]">2</span>
-                    Selecciona "Restablecer permiso" o activa "Ubicación".
+                    {t('profile.gps_step_2')}
                   </p>
                   <p className="text-[8px] text-slate-300 font-bold flex items-center gap-2">
                     <span className="w-4 h-4 rounded-full bg-slate-800 flex items-center justify-center text-[6px]">3</span>
-                    Refresca la página y pulsa de nuevo en "VOLVERME VISIBLE".
+                    {t('profile.gps_step_3')}
                   </p>
                 </div>
               </motion.div>
@@ -411,7 +411,7 @@ export default function MyProfilePage() {
             >
               <p className="text-[9px] text-red-400/80 font-bold leading-relaxed">
                 <span className="material-icons text-[9px] align-middle mr-1">shield</span>
-                Activo: tus check-ins son siempre anónimos (+1), tu ubicación se difumina a 150m y tu foto no aparece en listados de locales.
+                {t('profile.cruising_mode_active_desc')}
               </p>
             </motion.div>
           )}
@@ -490,14 +490,14 @@ export default function MyProfilePage() {
               if (navigator.share) {
                 await navigator.share({
                   title: 'BLOW NIGHTS',
-                  text: '¡Únete a Blow Nights! Tu circuito nocturno LGTBIQ+ en vivo. 🏳️‍🌈🚀',
+                  text: t('profile.share_text'),
                   url: shareUrl
                 });
               } else if (navigator.clipboard) {
                 await navigator.clipboard.writeText(shareUrl);
-                alert('¡Enlace copiado al portapapeles! Envíalo a tus amigos.');
+                alert(t('profile.share_copied'));
               } else {
-                prompt('Copia este enlace para invitar a tus amigos:', shareUrl);
+                prompt(t('profile.share_prompt'), shareUrl);
               }
             } catch (err) {
               console.log('Error compartiendo', err);
@@ -557,16 +557,16 @@ export default function MyProfilePage() {
                   const file = e.target.files[0];
                   if (file) {
                     triggerHaptic(20);
-                    if (confirm("Sube una foto tuya (selfie) para verificar tu identidad. Esta foto solo será vista por los administradores.")) {
+                    if (confirm(t('profile.verify_prompt'))) {
                       try {
                         if (requestVerification) {
                           const success = await requestVerification(file);
                           if (success) {
-                            alert("¡Solicitud enviada! Revisaremos tu perfil en las próximas 24h.");
+                            alert(t('profile.verify_sent'));
                           }
                         }
                       } catch (err) {
-                        alert("Error al enviar la solicitud. Inténtalo de nuevo.");
+                        alert(t('profile.verify_error'));
                       }
                     }
                   }

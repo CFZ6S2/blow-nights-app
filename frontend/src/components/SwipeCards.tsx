@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { db, functions } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
+import { useTranslation } from 'react-i18next';
 
 interface SwipeCardsProps {
   users: User[];
@@ -20,6 +21,7 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
   const [cards, setCards] = useState<User[]>([]);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [pingLimitExceeded, setPingLimitExceeded] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     // Para el MVP, simplemente cargamos las cartas. En produccion deberíamos filtrar dislikes.
@@ -79,7 +81,7 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
       }
     } catch (e) {
       console.error(e);
-      alert("Error procesando pago");
+      alert(t('swipe.err_payment'));
       setIsProcessingPayment(false);
     }
   };
@@ -88,7 +90,7 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
     if (direction === 'up') {
       const now = new Date().valueOf();
       if (now - lastPingTime < 30000) {
-        alert("Espera 30 segundos entre cada toque para no saturar la app 🔥");
+        alert(t('swipe.err_wait'));
         return;
       }
 
@@ -101,7 +103,7 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
       );
       const snap = await getDocs(q);
       if (!snap.empty) {
-        alert("Ya le has avisado hoy. ¡Dale un respiro!");
+        alert(t('swipe.err_already_pinged'));
         return; // Don't remove card, or maybe remove it. Let's remove it.
       }
 
@@ -134,8 +136,8 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
       <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md rounded-[2.5rem]">
         <div className="bg-slate-900 border border-slate-700 p-8 rounded-3xl text-center shadow-2xl w-full max-w-sm">
           <div className="text-4xl mb-4">🔥</div>
-          <h2 className="text-lg font-black text-white uppercase leading-tight mb-2">¡Has agotado tus 3 toques!</h2>
-          <p className="text-slate-400 text-xs font-medium mb-6">¿Quieres avisar a más gente para que se venga?</p>
+          <h2 className="text-lg font-black text-white uppercase leading-tight mb-2">{t('swipe.limit_title')}</h2>
+          <p className="text-slate-400 text-xs font-medium mb-6">{t('swipe.limit_desc')}</p>
           
           <div className="space-y-3">
             <button 
@@ -143,7 +145,7 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
               disabled={isProcessingPayment}
               className="w-full bg-slate-800 text-white font-bold text-sm tracking-wide py-4 rounded-xl hover:bg-slate-700 transition-all flex items-center justify-between px-4 border border-slate-600"
             >
-              <span>⚡ Pack 3 Toques Extra</span>
+              <span>{t('swipe.pack_extra')}</span>
               <span className="font-black text-orange-400">1,99 €</span>
             </button>
             <button 
@@ -151,12 +153,12 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
               disabled={isProcessingPayment}
               className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black text-sm tracking-wide py-4 rounded-xl hover:scale-105 transition-all shadow-[0_0_15px_rgba(245,158,11,0.5)] flex items-center justify-between px-4"
             >
-              <span>👑 Pase Fuego Ilimitado</span>
+              <span>{t('swipe.pass_unlimited')}</span>
               <span>3,99 €</span>
             </button>
           </div>
 
-          <button onClick={() => setPingLimitExceeded(false)} className="text-slate-500 text-[10px] font-bold uppercase underline mt-6 block w-full tracking-wider">Volver al Radar</button>
+          <button onClick={() => setPingLimitExceeded(false)} className="text-slate-500 text-[10px] font-bold uppercase underline mt-6 block w-full tracking-wider">{t('swipe.back_to_radar')}</button>
         </div>
       </div>
     );
@@ -167,7 +169,7 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
       <AnimatePresence>
         {cards.length === 0 ? (
            <div className="text-center text-slate-500 font-bold uppercase tracking-widest text-[10px]">
-             No hay más perfiles cerca
+             {t('swipe.no_more_profiles')}
            </div>
         ) : (
           cards.map((c, index) => {
@@ -202,10 +204,10 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
                   <h2 className="text-3xl font-black">{c.nick}, {c.edad || '?'}</h2>
                   <div className="flex gap-2 text-[10px] font-black uppercase tracking-widest text-slate-300">
                     <span>
-                      {c.rol === 'activo' ? '🟢 Activo' : c.rol === 'pasivo' ? '🔵 Pasivo' : '🟣 Versátil'}
+                      {c.rol === 'activo' ? t('swipe.role_active') : c.rol === 'pasivo' ? t('swipe.role_passive') : t('swipe.role_versatile')}
                     </span>
                     <span>•</span>
-                    <span>📍 A 800m</span>
+                    <span>{t('swipe.distance')}</span>
                   </div>
                 </div>
 
@@ -222,7 +224,7 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
                     className="w-20 h-20 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 border border-amber-300/50 flex flex-col items-center justify-center hover:scale-110 transition-all shadow-[0_0_20px_rgba(245,158,11,0.5)]"
                   >
                     <span className="material-icons text-white text-3xl">local_fire_department</span>
-                    <span className="text-[8px] font-black uppercase text-white tracking-widest mt-1">¡Vente!</span>
+                    <span className="text-[8px] font-black uppercase text-white tracking-widest mt-1">{t('swipe.come_here')}</span>
                   </button>
                   <button 
                     onClick={() => handleAction(c, 'right')}

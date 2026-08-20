@@ -12,8 +12,10 @@ import { useCity } from '@/context/CityContext';
 import { fuzzCoordinates } from '@/lib/geo';
 import CitySelector from '@/components/CitySelector';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 
 function VenueCounter({ venueId }: { venueId: string }) {
+  const { t } = useTranslation();
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -31,7 +33,7 @@ function VenueCounter({ venueId }: { venueId: string }) {
 
   return (
     <span className="bg-fuchsia-500/20 text-fuchsia-400 text-[10px] font-black px-2 py-0.5 rounded-full">
-      {count} {count === 1 ? 'persona' : 'personas'}
+      {count} {count === 1 ? t('venuesPage.person') : t('venuesPage.people')}
     </span>
   );
 }
@@ -41,6 +43,7 @@ const CRUISING_TYPES = new Set(['sauna', 'cruising_bar', 'outdoor_zone']);
 type VisibilityMode = 'public' | 'ghost' | 'anonymous';
 
 export default function VenuesPage() {
+  const { t } = useTranslation();
   const { user, profile, loading: authLoading } = useAuth();
   const router = useRouter();
   const { cityPath } = useCityRouter();
@@ -165,10 +168,10 @@ export default function VenuesPage() {
       <main className="relative z-10 p-6 md:p-12 max-w-2xl mx-auto space-y-6">
         <header className="pt-8 space-y-3">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-black tracking-tight">¿A dónde sales hoy?</h1>
+            <h1 className="text-2xl font-black tracking-tight">{t('venuesPage.whereTo')}</h1>
             <CitySelector />
           </div>
-          <p className="text-xs text-slate-500">Selecciona tu garito y mira quién va</p>
+          <p className="text-xs text-slate-500">{t('venuesPage.selectVenue')}</p>
         </header>
 
         {activeCheckin && (
@@ -185,8 +188,8 @@ export default function VenuesPage() {
                 <div>
                   <p className="text-sm font-black">{activeCheckin.venueName}</p>
                   <p className="text-[10px] text-slate-500">
-                    {activeCheckin.visibility === 'anonymous' ? 'Modo Anónimo (+1)' :
-                     activeCheckin.visibility === 'ghost' ? 'Modo Fantasma' : 'Visible para todos'}
+                    {activeCheckin.visibility === 'anonymous' ? t('venuesPage.anonMode') :
+                     activeCheckin.visibility === 'ghost' ? t('venuesPage.ghostMode') : t('venuesPage.visibleAll')}
                   </p>
                 </div>
               </div>
@@ -194,7 +197,7 @@ export default function VenuesPage() {
                 onClick={handleCheckout}
                 className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold hover:bg-white/10 transition-all"
               >
-                Salir
+                {t('venuesPage.exit')}
               </button>
             </div>
           </motion.div>
@@ -210,7 +213,7 @@ export default function VenuesPage() {
             }`}
           >
             <span className="material-icons text-sm align-middle mr-1">visibility</span>
-            Público
+            {t('venuesPage.public')}
           </button>
           <button
             onClick={() => setVisibilityMode('ghost')}
@@ -221,7 +224,7 @@ export default function VenuesPage() {
             }`}
           >
             <span className="material-icons text-sm align-middle mr-1">visibility_off</span>
-            Fantasma
+            {t('venuesPage.ghost')}
           </button>
           <button
             onClick={() => setVisibilityMode('anonymous')}
@@ -232,7 +235,7 @@ export default function VenuesPage() {
             }`}
           >
             <span className="material-icons text-sm align-middle mr-1">shield</span>
-            Anónimo
+            {t('venuesPage.anonymous')}
           </button>
         </div>
 
@@ -240,7 +243,7 @@ export default function VenuesPage() {
           <div className="bg-red-500/5 border border-red-500/10 p-3 rounded-2xl">
             <p className="text-[10px] text-red-400/80 font-bold">
               <span className="material-icons text-[10px] align-middle mr-1">info</span>
-              Modo Anónimo: sumas al contador (+1 activo) sin mostrar tu perfil ni foto. GPS difuso a 150m.
+              {t('venuesPage.anonInfo')}
             </p>
           </div>
         )}
@@ -251,19 +254,19 @@ export default function VenuesPage() {
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-xl px-3 py-2.5 appearance-none focus:outline-none focus:border-purple-500 transition-all cursor-pointer font-medium"
           >
-            <option value="all">✨ Todas las categorías</option>
-            <optgroup label="── LOCALES COMERCIALES ──">
-              <option value="club">🪩 Discotecas & Clubs</option>
-              <option value="bar">🍸 Bares & Previas</option>
-              <option value="sauna">🧖 Saunas & Spas</option>
-              <option value="chiringuito">🏖️ Chiringuitos</option>
+            <option value="all">{t('venuesPage.allCategories')}</option>
+            <optgroup label={t('venuesPage.commercialVenues')}>
+              <option value="club">{t('venuesPage.clubs')}</option>
+              <option value="bar">{t('venuesPage.bars')}</option>
+              <option value="sauna">{t('venuesPage.saunas')}</option>
+              <option value="chiringuito">{t('venuesPage.chiringuitos')}</option>
             </optgroup>
-            <optgroup label="── PUNTOS COMUNITARIOS ──">
-              <option value="cruising_outdoor">🌲 Cruising Exterior & Zonas Libres</option>
-              <option value="community_point">📍 Puntos de Encuentro</option>
+            <optgroup label={t('venuesPage.communityPoints')}>
+              <option value="cruising_outdoor">{t('venuesPage.cruising')}</option>
+              <option value="community_point">{t('venuesPage.meetingPoints')}</option>
             </optgroup>
-            <optgroup label="── EVENTOS INDEPENDIENTES ──">
-              <option value="event">🎪 Eventos Independientes</option>
+            <optgroup label={t('venuesPage.independentEvents')}>
+              <option value="event">{t('venuesPage.events')}</option>
             </optgroup>
           </select>
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
@@ -285,8 +288,8 @@ export default function VenuesPage() {
           ) : displayedVenues.length === 0 ? (
             <div className="text-center py-16 space-y-4">
               <span className="material-icons text-5xl text-slate-700">nightlife</span>
-              <p className="text-sm text-slate-500">No hay locales en esta franja todavía</p>
-              <p className="text-[10px] text-slate-600">Los locales se irán sumando pronto</p>
+              <p className="text-sm text-slate-500">{t('venuesPage.noVenues')}</p>
+              <p className="text-[10px] text-slate-600">{t('venuesPage.venuesWillBeAdded')}</p>
             </div>
           ) : (
             displayedVenues.map((venue: any) => (
@@ -314,9 +317,9 @@ export default function VenuesPage() {
                           <span className="bg-red-500/20 text-red-400 text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider">18+</span>
                         )}
                         {venue.ownerId === 'community' ? (
-                          <span className="bg-slate-700/50 text-slate-300 text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider">👥 Añadido por la comunidad</span>
+                          <span className="bg-slate-700/50 text-slate-300 text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider">{t('venuesPage.addedByCommunity')}</span>
                         ) : (
-                          <span className="bg-green-500/20 text-green-400 text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider">✓ Local Verificado</span>
+                          <span className="bg-green-500/20 text-green-400 text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider">{t('venuesPage.verifiedVenue')}</span>
                         )}
                         <VenueCounter venueId={venue.id} />
                       </div>
@@ -335,7 +338,7 @@ export default function VenuesPage() {
 
                   {activeCheckin?.venueId === venue.id ? (
                     <div className="flex items-center gap-2 ml-3">
-                      <span className="text-[10px] font-black text-green-400 uppercase tracking-widest">Aquí</span>
+                      <span className="text-[10px] font-black text-green-400 uppercase tracking-widest">{t('venuesPage.here')}</span>
                       <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                     </div>
                   ) : (
@@ -344,7 +347,7 @@ export default function VenuesPage() {
                       disabled={checkingIn}
                       className="ml-3 px-4 py-2.5 rounded-2xl bg-fuchsia-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-fuchsia-500 transition-all active:scale-95 disabled:opacity-50 flex-shrink-0"
                     >
-                      {checkingIn ? '...' : 'Ir'}
+                      {checkingIn ? '...' : t('venuesPage.go')}
                     </button>
                   )}
                 </div>
@@ -367,7 +370,7 @@ export default function VenuesPage() {
                       href={cityPath(`/venues/detail?id=${venue.id}&type=${venue.type}`)}
                       className="text-[10px] font-black text-yellow-500 uppercase tracking-widest"
                     >
-                      Entradas
+                      {t('venuesPage.tickets')}
                     </Link>
                   </div>
                 ) : null}

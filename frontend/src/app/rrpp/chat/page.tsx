@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRequireRole } from '@/hooks/useRequireRole';
+import { useTranslation } from 'react-i18next';
 import { db } from '@/lib/firebase';
 import {
   collection,
@@ -15,6 +16,7 @@ import {
 } from 'firebase/firestore';
 
 export default function RRPPChatPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { isReady } = useRequireRole(['rrpp', 'admin', 'superadmin'], '/rrpp/register');
   const [messages, setMessages] = useState<any[]>([]);
@@ -65,8 +67,8 @@ export default function RRPPChatPage() {
       <header className="p-4 border-b border-slate-800 bg-slate-900/50 flex items-center gap-3">
         <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse" />
         <div>
-          <h1 className="font-bold text-sm">Canal Directo con Central / Admin</h1>
-          <p className="text-[10px] text-slate-400">Soporte técnico, recargas e incidencias de fiesta</p>
+          <h1 className="font-bold text-sm">{t('rrppChat.directChannel')}</h1>
+          <p className="text-[10px] text-slate-400">{t('rrppChat.supportDesc')}</p>
         </div>
       </header>
 
@@ -93,14 +95,14 @@ export default function RRPPChatPage() {
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Escribe un mensaje al admin..."
+          placeholder={t('rrppChat.placeholder')}
           className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-fuchsia-500"
         />
         <button
           type="submit"
           className="bg-fuchsia-600 hover:bg-fuchsia-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all"
         >
-          Enviar
+          {t('rrppChat.send')}
         </button>
       </form>
     </div>

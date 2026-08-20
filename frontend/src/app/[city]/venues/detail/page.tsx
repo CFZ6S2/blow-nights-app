@@ -9,8 +9,10 @@ import { doc, onSnapshot, collection, query, where, Timestamp, deleteDoc, update
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/lib/firebase';
 import { ShieldCheck, Sparkles, Building2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function VenueDetailPage() {
+  const { t } = useTranslation();
   const { user, profile, loading } = useAuth();
   const router = useRouter();
   const { cityPath } = useCityRouter();
@@ -28,7 +30,7 @@ export default function VenueDetailPage() {
 
   const handleClaimVenue = async () => {
     if (!user) {
-      alert('Debes iniciar sesión para reclamar este local.');
+      alert(t('venueDetail.loginToClaim'));
       router.push('/login');
       return;
     }
@@ -49,7 +51,7 @@ export default function VenueDetailPage() {
       router.push('/venue-admin');
     } catch (error) {
       console.error('Error al reclamar local:', error);
-      alert('Hubo un error al reclamar el local. Inténtalo de nuevo.');
+      alert(t('venueDetail.errorClaiming'));
     } finally {
       setIsClaiming(false);
     }
@@ -104,7 +106,7 @@ export default function VenueDetailPage() {
       }
     } catch (err: any) {
       console.error('Error purchasing ticket:', err);
-      alert(err.message || 'Error al comprar la entrada');
+      alert(err.message || t('venueDetail.errorBuying'));
     } finally {
       setPurchasing(null);
     }
@@ -121,7 +123,7 @@ export default function VenueDetailPage() {
   if (!venueId) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
-        <p className="text-slate-500">No se ha especificado un local</p>
+        <p className="text-slate-500">{t('venueDetail.noVenueSpecified')}</p>
       </div>
     );
   }
@@ -129,7 +131,7 @@ export default function VenueDetailPage() {
   if (!venue) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
-        <p className="text-slate-500">Cargando local...</p>
+        <p className="text-slate-500">{t('venueDetail.loadingVenue')}</p>
       </div>
     );
   }
@@ -146,7 +148,7 @@ export default function VenueDetailPage() {
       <main className="relative z-10 p-6 md:p-12 max-w-2xl mx-auto space-y-6">
         <button onClick={() => router.back()} className="flex items-center gap-2 text-slate-500 hover:text-white transition-colors">
           <span className="material-icons text-sm">arrow_back</span>
-          <span className="text-xs font-bold">Volver</span>
+          <span className="text-xs font-bold">{t('venueDetail.back')}</span>
         </button>
 
         <header className="space-y-4">
@@ -165,13 +167,13 @@ export default function VenueDetailPage() {
           <div className="flex gap-3">
             <div className="bg-fuchsia-500/10 border border-fuchsia-500/20 px-4 py-2 rounded-2xl">
               <span className="text-[10px] font-black text-fuchsia-400 uppercase tracking-widest">
-                {checkinCount} {checkinCount === 1 ? 'persona va' : 'personas van'}
+                {checkinCount} {checkinCount === 1 ? t('venueDetail.personGoes') : t('venueDetail.peopleGo')}
               </span>
             </div>
             {venue.capacity && (
               <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-2xl">
                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                  Aforo: {venue.capacity}
+                  {t('venueDetail.capacity')} {venue.capacity}
                 </span>
               </div>
             )}
@@ -184,7 +186,7 @@ export default function VenueDetailPage() {
 
         {canceled && (
           <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-2xl">
-            <p className="text-xs text-yellow-400 font-bold">Compra cancelada. Puedes intentarlo de nuevo.</p>
+            <p className="text-xs text-yellow-400 font-bold">{t('venueDetail.purchaseCanceled')}</p>
           </div>
         )}
 
@@ -197,8 +199,8 @@ export default function VenueDetailPage() {
         {isCommunitySpot ? (
           <section className="bg-white/5 border border-white/10 p-8 rounded-3xl text-center space-y-3 mt-8">
             <span className="material-icons text-4xl text-slate-700">forum</span>
-            <p className="text-sm text-slate-400">Este es un punto comunitario</p>
-            <p className="text-[10px] text-slate-500">Únete al chat de la comunidad o haz Check-in para dejar saber que estás aquí.</p>
+            <p className="text-sm text-slate-400">{t('venueDetail.communitySpot')}</p>
+            <p className="text-[10px] text-slate-500">{t('venueDetail.joinChat')}</p>
             
             {['club', 'bar', 'sauna', 'chiringuito'].includes(venue.type) && user && (
               <div className="mt-8 pt-6 border-t border-white/10 text-left">
@@ -208,9 +210,9 @@ export default function VenueDetailPage() {
                       <Building2 className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-white">¿Eres el dueño o gerente?</h4>
+                      <h4 className="text-sm font-bold text-white">{t('venueDetail.areYouOwner')}</h4>
                       <p className="text-xs text-slate-300 leading-relaxed">
-                        Este punto fue añadido por la comunidad. Reclámalo para gestionar la venta de entradas, publicar ofertas y acceder a métricas en tiempo real.
+                        {t('venueDetail.claimDescription')}
                       </p>
                     </div>
                   </div>
@@ -220,7 +222,7 @@ export default function VenueDetailPage() {
                     className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-extrabold uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4" />
-                    Reclamar este Local & Gestionar Panel PRO
+                    {t('venueDetail.claimButton')}
                   </button>
                 </div>
               </div>
@@ -229,19 +231,19 @@ export default function VenueDetailPage() {
             {venue.createdBy === user?.uid && (
               <button 
                 onClick={async () => {
-                  if(confirm('¿Seguro que quieres borrar este punto?')) {
+                  if(confirm(t('venueDetail.confirmDelete'))) {
                     try {
                       await deleteDoc(doc(db, 'venues', venue.id));
                       router.push(cityPath('/venues'));
                     } catch (err) {
                       console.error(err);
-                      alert('Error al borrar el punto. Asegúrate de tener conexión.');
+                      alert(t('venueDetail.errorDeleting'));
                     }
                   }
                 }}
                 className="mt-6 px-4 py-3 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl text-xs font-bold w-full active:scale-95 transition-all"
               >
-                Borrar Punto Comunitario
+                {t('venueDetail.deleteCommunitySpot')}
               </button>
             )}
           </section>
@@ -255,13 +257,13 @@ export default function VenueDetailPage() {
                   rel="noopener noreferrer"
                   className="w-full py-4 bg-gradient-to-r from-rose-600 to-orange-500 hover:from-rose-500 hover:to-orange-400 text-white font-black text-sm uppercase tracking-widest rounded-2xl shadow-[0_10px_30px_rgba(225,29,72,0.3)] transition-all flex justify-center items-center gap-2 active:scale-95"
                 >
-                  🎟️ Comprar Entrada Oficial
+                  {t('venueDetail.buyOfficialTicket')}
                 </a>
-                <p className="text-[10px] text-slate-500">Serás redirigido a la taquilla oficial del local</p>
+                <p className="text-[10px] text-slate-500">{t('venueDetail.redirectTaquilla')}</p>
               </section>
             ) : Object.keys(pricing).length > 0 || (venue.ticket_tiers && venue.ticket_tiers.length > 0) ? (
               <section className="space-y-4">
-                <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500">Entradas Disponibles</h2>
+                <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500">{t('venueDetail.availableTickets')}</h2>
 
             {Object.entries(pricing).map(([type, data]: [string, any]) => (
               <motion.div
@@ -279,7 +281,7 @@ export default function VenueDetailPage() {
                       {data.amount ? (data.amount / 100).toFixed(2) : '0.00'}€
                     </p>
                     {data.quota != null && (
-                      <p className="text-[9px] text-slate-600 mt-1">Plazas limitadas: {data.quota}</p>
+                      <p className="text-[9px] text-slate-600 mt-1">{t('venueDetail.limitedSpots')} {data.quota}</p>
                     )}
                   </div>
                   <button
@@ -290,7 +292,7 @@ export default function VenueDetailPage() {
                     {purchasing === type ? (
                       <span className="material-icons text-sm animate-spin">sync</span>
                     ) : (
-                      'Comprar'
+                      t('venueDetail.buy')
                     )}
                   </button>
                 </div>
@@ -313,7 +315,7 @@ export default function VenueDetailPage() {
                       {tier.price.toFixed(2)}€
                     </p>
                     {tier.quota != null && (
-                      <p className="text-[9px] text-slate-600 mt-1">Plazas limitadas: {tier.quota}</p>
+                      <p className="text-[9px] text-slate-600 mt-1">{t('venueDetail.limitedSpots')} {tier.quota}</p>
                     )}
                   </div>
                   <button
@@ -324,7 +326,7 @@ export default function VenueDetailPage() {
                     {purchasing === tier.id ? (
                       <span className="material-icons text-sm animate-spin">sync</span>
                     ) : (
-                      'Comprar'
+                      t('venueDetail.buy')
                     )}
                   </button>
                 </div>
@@ -334,8 +336,8 @@ export default function VenueDetailPage() {
             ) : (
               <section className="bg-white/5 border border-white/10 p-8 rounded-3xl text-center space-y-3">
                 <span className="material-icons text-4xl text-slate-700">local_activity</span>
-                <p className="text-sm text-slate-500">Este local no tiene entradas a la venta</p>
-                <p className="text-[10px] text-slate-600">Puedes hacer check-in desde la pestaña de Locales</p>
+                <p className="text-sm text-slate-500">{t('venueDetail.noTickets')}</p>
+                <p className="text-[10px] text-slate-600">{t('venueDetail.checkInFromVenues')}</p>
               </section>
             )}
           </>
@@ -348,21 +350,21 @@ export default function VenueDetailPage() {
                 <div className="w-12 h-12 bg-purple-600/20 text-purple-400 rounded-full flex items-center justify-center mx-auto mb-2 border border-purple-500/30">
                   <ShieldCheck className="w-6 h-6" />
                 </div>
-                <h3 className="text-base font-bold text-white">Tomar control de {venue?.name}</h3>
+                <h3 className="text-base font-bold text-white">{t('venueDetail.takeControl')} {venue?.name}</h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Accederás de inmediato al panel de administración para configurar tu perfil y probar las herramientas de gestión.
+                  {t('venueDetail.adminAccessInfo')}
                 </p>
               </div>
 
               <div className="space-y-2 text-xs text-slate-300 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
                 <div className="flex items-center gap-2">
-                  <span className="text-emerald-400">✓</span> Escáner de entradas web &lt;300ms
+                  <span className="text-emerald-400">✓</span> {t('venueDetail.scanner')}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-emerald-400">✓</span> Panel de control de RRPPs y comisiones
+                  <span className="text-emerald-400">✓</span> {t('venueDetail.rrppPanel')}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-emerald-400">✓</span> Promociones destacadas en el mapa
+                  <span className="text-emerald-400">✓</span> {t('venueDetail.promotions')}
                 </div>
               </div>
 
@@ -372,14 +374,14 @@ export default function VenueDetailPage() {
                   disabled={isClaiming}
                   className="flex-1 py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-all"
                 >
-                  Cancelar
+                  {t('venueDetail.cancel')}
                 </button>
                 <button
                   onClick={handleClaimVenue}
                   disabled={isClaiming}
                   className="flex-1 py-2.5 px-3 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl transition-all shadow-md disabled:opacity-50"
                 >
-                  {isClaiming ? 'Asignando...' : 'Confirmar y Entrar'}
+                  {isClaiming ? t('venueDetail.assigning') : t('venueDetail.confirmAndEnter')}
                 </button>
               </div>
             </div>

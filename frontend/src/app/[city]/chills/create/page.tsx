@@ -69,7 +69,7 @@ export default function CreateChillPage() {
       });
       // the profile context will update automatically
     } catch (err: any) {
-      setError('Error al comprar créditos');
+      setError(t('chills.create.buy_credits_error'));
     } finally {
       setLoading(false);
     }
@@ -89,12 +89,12 @@ export default function CreateChillPage() {
     }
     
     if (!disclaimerAccepted) {
-      setError('Debes aceptar las Condiciones de Uso y el Descargo de Responsabilidad para crear el evento.');
+      setError(t('chills.create.accept_terms_error'));
       return;
     }
 
     if (type === 'commercial' && (!profile?.qrCredits || profile.qrCredits <= 0)) {
-      setError('No tienes Créditos QR para gestionar la puerta. Compra un pack primero.');
+      setError(t('chills.create.no_credits_error'));
       return;
     }
 
@@ -135,7 +135,7 @@ export default function CreateChillPage() {
       router.push(cityPath(`/chills/manage?id=${docRef.id}`));
     } catch (err: any) {
       console.error("Error creating chill:", err);
-      setError(err.message || 'Error al crear el evento');
+      setError(err.message || t('chills.create.create_error'));
     } finally {
       setLoading(false);
     }
@@ -145,7 +145,7 @@ export default function CreateChillPage() {
     <div className="min-h-screen bg-gray-950 text-white pb-20 pt-8 px-4">
       <div className="max-w-md mx-auto">
         <h1 className="text-2xl font-bold mb-6 bg-gradient-to-r from-fuchsia-500 to-amber-500 bg-clip-text text-transparent text-center">
-          ¿Qué tipo de reunión vas a organizar?
+          {t('chills.create.what_type')}
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -166,9 +166,9 @@ export default function CreateChillPage() {
               </div>
               <div>
                 <h3 className={`font-bold text-lg ${type === 'social' ? 'text-fuchsia-400' : 'text-white'}`}>
-                  🟣 Chill Social (0€)
+                  {t('chills.create.social_title')}
                 </h3>
-                <p className="text-xs text-gray-400 mt-1">Reunión 100% gratuita para amigos y conocidos. Admisión manual, sin venta de entradas.</p>
+                <p className="text-xs text-gray-400 mt-1">{t('chills.create.social_desc')}</p>
               </div>
             </button>
 
@@ -186,9 +186,9 @@ export default function CreateChillPage() {
               </div>
               <div>
                 <h3 className={`font-bold text-lg ${type === 'commercial' ? 'text-amber-400' : 'text-white'}`}>
-                  🟡 After Privado / Cover
+                  {t('chills.create.commercial_title')}
                 </h3>
-                <p className="text-xs text-gray-400 mt-1">Fiesta en villa o piso grande. Fija el precio de la entrada y gestiona el aforo con escáner QR.</p>
+                <p className="text-xs text-gray-400 mt-1">{t('chills.create.commercial_desc')}</p>
               </div>
             </button>
           </div>
@@ -197,8 +197,8 @@ export default function CreateChillPage() {
           {type === 'commercial' && (
             <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-center justify-between">
               <div>
-                <p className="text-sm text-amber-200 font-bold">Saldo SaaS QRs</p>
-                <p className="text-2xl font-black text-amber-500">{profile?.qrCredits || 0} <span className="text-sm font-medium text-amber-500/70">QRs disp.</span></p>
+                <p className="text-sm text-amber-200 font-bold">{t('chills.create.saas_balance')}</p>
+                <p className="text-2xl font-black text-amber-500">{profile?.qrCredits || 0} <span className="text-sm font-medium text-amber-500/70">{t('chills.create.qrs_available')}</span></p>
               </div>
               <button 
                 type="button"
@@ -206,7 +206,7 @@ export default function CreateChillPage() {
                 disabled={loading}
                 className="bg-amber-500 hover:bg-amber-600 text-gray-950 font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm shadow-[0_0_15px_rgba(245,158,11,0.3)] transition"
               >
-                <CreditCard size={16} /> + 20 QRs (10€)
+                <CreditCard size={16} /> {t('chills.create.buy_qrs')}
               </button>
             </div>
           )}
@@ -317,7 +317,7 @@ export default function CreateChillPage() {
                 className="mt-1 w-5 h-5 rounded border-gray-700 bg-gray-800 text-fuchsia-500 focus:ring-fuchsia-500/50"
               />
               <span className="text-xs text-gray-400 leading-relaxed">
-                <strong className="text-white">Acepto las Condiciones de Uso:</strong> Declaro que soy el único responsable de la organización, seguridad y admisión de mi reunión privada. Reconozco que Blow Nights es un mero proveedor técnico de control de accesos y no responde por cancelaciones, transacciones entre particulares ni incidencias en recintos privados.
+                <strong className="text-white">{t('chills.create.terms_strong')}</strong> {t('chills.create.terms_text')}
               </span>
             </label>
           </div>
@@ -340,7 +340,7 @@ export default function CreateChillPage() {
                 : 'bg-gradient-to-r from-fuchsia-600 to-purple-600 shadow-[0_0_20px_rgba(217,70,239,0.3)]'
             }`}
           >
-            {loading ? t('common.loading', 'Cargando...') : type === 'commercial' ? 'Abrir Puertas (Comercial)' : 'Crear Chill Social'}
+            {loading ? t('common.loading', 'Cargando...') : type === 'commercial' ? t('chills.create.open_doors') : t('chills.create.create_social')}
           </button>
         </form>
       </div>

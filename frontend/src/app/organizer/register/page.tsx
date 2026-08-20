@@ -7,8 +7,10 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ArrowLeft, Info, Clock, CalendarDays } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 export default function OrganizerRegisterPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user, profile, loading } = useAuth();
   const [phone, setPhone] = useState('');
@@ -67,11 +69,11 @@ export default function OrganizerRegisterPage() {
       <div className="w-16 h-16 bg-fuchsia-500/20 rounded-full flex items-center justify-center mb-6 mx-auto">
         <Clock className="w-8 h-8 text-fuchsia-500" />
       </div>
-      <h1 className="text-2xl font-black mb-3">Solicitud Enviada</h1>
+      <h1 className="text-2xl font-black mb-3">{t('organizer_register.request_sent')}</h1>
       <p className="text-slate-400 text-sm mb-6">
-        Tu solicitud para ser Organizador de Eventos está pendiente de aprobación. Recibirás acceso cuando un administrador la revise.
+        {t('organizer_register.pending_desc_1')}
       </p>
-      <p className="text-xs text-slate-500">Te notificaremos cuando tu solicitud sea revisada.</p>
+      <p className="text-xs text-slate-500">{t('organizer_register.pending_desc_2')}</p>
     </motion.div>
   );
 
@@ -91,15 +93,15 @@ export default function OrganizerRegisterPage() {
               <CalendarDays className="w-8 h-8 text-indigo-500" />
             </div>
 
-            <h1 className="text-3xl font-black mb-4">Conviértete en Organizador</h1>
+            <h1 className="text-3xl font-black mb-4">{t('organizer_register.become_organizer')}</h1>
 
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-8 text-sm text-slate-300">
               <h3 className="font-bold text-white mb-2 flex items-center gap-2">
                 <Info className="w-4 h-4 text-indigo-500" />
-                Organiza tus propios eventos
+                {t('organizer_register.organize_events')}
               </h3>
               <p className="mb-4">
-                Si quieres organizar fiestas o eventos bajo tu propia marca y vender entradas de forma independiente a los locales, envía tu solicitud y un administrador la revisará.
+                {t('organizer_register.organize_desc')}
               </p>
             </div>
 
@@ -108,12 +110,12 @@ export default function OrganizerRegisterPage() {
                 onClick={() => router.push('/login?redirect=/organizer/register')}
                 className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold uppercase tracking-widest text-sm py-4 rounded-xl hover:from-indigo-500 hover:to-purple-500 transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(79,70,229,0.4)]"
               >
-                Inicia Sesión para Continuar
+                {t('organizer_register.login_to_continue')}
               </button>
             ) : (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Tu Ciudad Base</label>
+                  <label className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('organizer_register.base_city')}</label>
                   <input
                     placeholder="Ej: Madrid, Barcelona, Valencia..."
                     value={city}
@@ -122,7 +124,7 @@ export default function OrganizerRegisterPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Teléfono (WhatsApp)</label>
+                  <label className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('organizer_register.phone')}</label>
                   <input
                     type="tel"
                     placeholder="+34 600 000 000"
@@ -136,7 +138,7 @@ export default function OrganizerRegisterPage() {
                   onClick={handleSubmit}
                   className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold uppercase tracking-widest text-sm py-4 rounded-xl hover:from-indigo-500 transition-all mt-4 disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Enviando...' : 'Enviar Solicitud'}
+                  {isSubmitting ? t('organizer_register.sending') : t('organizer_register.send_request')}
                 </button>
               </div>
             )}

@@ -5,9 +5,11 @@ import { useAuth } from '@/context/AuthContext';
 import { useRequireRole } from '@/hooks/useRequireRole';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/lib/firebase';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 
 export default function RRPPComprarCreditosPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { isReady } = useRequireRole(['rrpp', 'admin', 'superadmin'], '/rrpp/register');
   const [loading, setLoading] = useState(false);
@@ -33,10 +35,10 @@ export default function RRPPComprarCreditosPage() {
       <div className="max-w-md mx-auto pt-8">
         <header className="mb-8 text-center">
           <div className="inline-block px-3 py-1 bg-fuchsia-900/30 text-fuchsia-400 rounded-full text-[10px] font-black tracking-widest uppercase mb-4 border border-fuchsia-500/20">
-            Tienda de Créditos
+            {t('rrppBuyCredits.title')}
           </div>
-          <h1 className="text-3xl font-black mb-2">Recarga QRs</h1>
-          <p className="text-sm text-slate-400">Compra paquetes de entradas para seguir emitiendo en tus fiestas.</p>
+          <h1 className="text-3xl font-black mb-2">{t('rrppBuyCredits.rechargeQrs')}</h1>
+          <p className="text-sm text-slate-400">{t('rrppBuyCredits.buyDesc')}</p>
         </header>
 
         <div className="space-y-4">
@@ -45,8 +47,8 @@ export default function RRPPComprarCreditosPage() {
             className="bg-slate-900 border border-slate-800 rounded-3xl p-6 relative overflow-hidden flex flex-col justify-between"
           >
             <div>
-              <h2 className="text-2xl font-black mb-1">Pack 50 Entradas</h2>
-              <p className="text-slate-400 text-sm mb-4">Válido para cualquier fiesta. 0,50€ por QR.</p>
+              <h2 className="text-2xl font-black mb-1">{t('rrppBuyCredits.pack50')}</h2>
+              <p className="text-slate-400 text-sm mb-4">{t('rrppBuyCredits.pack50Desc')}</p>
               <div className="text-3xl font-black text-fuchsia-400 mb-6">25 €</div>
             </div>
             <button 
@@ -54,7 +56,7 @@ export default function RRPPComprarCreditosPage() {
               disabled={loading}
               className="w-full bg-white hover:bg-slate-200 text-black font-black py-4 rounded-2xl uppercase tracking-widest text-sm transition-colors"
             >
-              {loading ? 'Procesando...' : 'Comprar Ahora'}
+              {loading ? t('rrppBuyCredits.processing') : t('rrppBuyCredits.buyNow')}
             </button>
           </motion.div>
 
@@ -63,11 +65,11 @@ export default function RRPPComprarCreditosPage() {
             className="bg-slate-900 border border-fuchsia-500/30 rounded-3xl p-6 relative overflow-hidden flex flex-col justify-between"
           >
             <div className="absolute top-0 right-0 bg-fuchsia-600 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-widest">
-              Más Popular
+              {t('rrppBuyCredits.mostPopular')}
             </div>
             <div>
-              <h2 className="text-2xl font-black mb-1">Pack 100 Entradas</h2>
-              <p className="text-slate-400 text-sm mb-4">La mejor opción para grandes eventos.</p>
+              <h2 className="text-2xl font-black mb-1">{t('rrppBuyCredits.pack100')}</h2>
+              <p className="text-slate-400 text-sm mb-4">{t('rrppBuyCredits.pack100Desc')}</p>
               <div className="text-3xl font-black text-fuchsia-400 mb-6">50 €</div>
             </div>
             <button 
@@ -75,7 +77,7 @@ export default function RRPPComprarCreditosPage() {
               disabled={loading}
               className="w-full bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-sm transition-colors shadow-[0_0_30px_-10px_rgba(192,38,211,0.5)]"
             >
-              {loading ? 'Procesando...' : 'Comprar Ahora'}
+              {loading ? t('rrppBuyCredits.processing') : t('rrppBuyCredits.buyNow')}
             </button>
           </motion.div>
         </div>

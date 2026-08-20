@@ -159,17 +159,17 @@ export default function ChillsPage() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6">
-          {(['feed', 'mine'] as const).map((t) => (
+          {(['feed', 'mine'] as const).map((tabId) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={tabId}
+              onClick={() => setTab(tabId)}
               className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                tab === t
+                tab === tabId
                   ? 'bg-fuchsia-500 text-white'
                   : 'bg-white/5 text-slate-500 border border-white/5'
               }`}
             >
-              {t === 'feed' ? t('chills.tab_radar') : t('chills.tab_mine')}
+              {tabId === 'feed' ? t('chills.tab_radar') : t('chills.tab_mine')}
             </button>
           ))}
         </div>

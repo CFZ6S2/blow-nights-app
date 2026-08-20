@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { useTranslation } from 'react-i18next';
 
 interface RRPPFooterProps {
   saldoQRs?: number;
@@ -17,6 +18,7 @@ export default function RRPPFooter({ saldoQRs = 0, unreadMessages = 0 }: RRPPFoo
   const { user } = useAuth();
   const [balance, setBalance] = useState(saldoQRs);
   const [unread, setUnread] = useState(unreadMessages);
+  const { t } = useTranslation();
 
   // Hook to fetch the user's actual QR balance and unread messages from support
   useEffect(() => {
@@ -54,7 +56,7 @@ export default function RRPPFooter({ saldoQRs = 0, unreadMessages = 0 }: RRPPFoo
           }`}
         >
           <span className="text-lg">📋</span>
-          <span className="text-[9px] uppercase tracking-wider mt-0.5">Fiestas</span>
+          <span className="text-[9px] uppercase tracking-wider mt-0.5">{t('rrpp_nav.parties')}</span>
         </Link>
 
         {/* 2. Comprar QRs / Saldo */}
@@ -74,7 +76,7 @@ export default function RRPPFooter({ saldoQRs = 0, unreadMessages = 0 }: RRPPFoo
               </span>
             )}
           </div>
-          <span className="text-[9px] uppercase tracking-wider mt-0.5">Saldo QRs</span>
+          <span className="text-[9px] uppercase tracking-wider mt-0.5">{t('rrpp_nav.qr_balance')}</span>
         </Link>
 
         {/* 3. Chat Operativo con Admin */}
@@ -94,7 +96,7 @@ export default function RRPPFooter({ saldoQRs = 0, unreadMessages = 0 }: RRPPFoo
               </span>
             )}
           </div>
-          <span className="text-[9px] uppercase tracking-wider mt-0.5">Soporte</span>
+          <span className="text-[9px] uppercase tracking-wider mt-0.5">{t('rrpp_nav.support')}</span>
         </Link>
 
         {/* 4. Perfil Profesional */}
@@ -107,7 +109,7 @@ export default function RRPPFooter({ saldoQRs = 0, unreadMessages = 0 }: RRPPFoo
           }`}
         >
           <span className="text-lg">👤</span>
-          <span className="text-[9px] uppercase tracking-wider mt-0.5">Mi Cuenta</span>
+          <span className="text-[9px] uppercase tracking-wider mt-0.5">{t('rrpp_nav.account')}</span>
         </Link>
       </div>
     </footer>

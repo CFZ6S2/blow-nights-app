@@ -8,8 +8,10 @@ import { AlertCircle } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
+import { useTranslation } from 'react-i18next';
 
 function TicketViewInner() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
   const { user } = useAuth();
@@ -41,7 +43,7 @@ function TicketViewInner() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center text-fuchsia-400 text-xs font-black uppercase tracking-widest animate-pulse">
-        Cargando Pase...
+        {t('pass.loading_pass')}
       </div>
     );
   }
@@ -50,8 +52,8 @@ function TicketViewInner() {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white p-6">
         <AlertCircle size={48} className="text-red-500 mb-4" />
-        <h1 className="text-xl font-bold">Pase No Encontrado</h1>
-        <p className="text-gray-400 text-center mt-2">Este pase no existe o es inválido.</p>
+        <h1 className="text-xl font-bold">{t('pass.error.not_found_title')}</h1>
+        <p className="text-gray-400 text-center mt-2">{t('pass.error.not_found_desc')}</p>
       </div>
     );
   }
@@ -60,8 +62,8 @@ function TicketViewInner() {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white p-6">
         <AlertCircle size={48} className="text-red-500 mb-4" />
-        <h1 className="text-xl font-bold">Acceso Denegado</h1>
-        <p className="text-gray-400 text-center mt-2">Este pase no te pertenece.</p>
+        <h1 className="text-xl font-bold">{t('pass.error.access_denied_title')}</h1>
+        <p className="text-gray-400 text-center mt-2">{t('pass.error.access_denied_desc')}</p>
       </div>
     );
   }
@@ -86,15 +88,15 @@ function TicketViewInner() {
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-black/30" />
           <span className="absolute top-3 left-3 bg-fuchsia-600/90 backdrop-blur-md text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-lg">
-            Pase Oficial
+            {t('pass.official_pass')}
           </span>
         </div>
 
         {/* 2. Datos del Evento */}
         <div className="px-5 space-y-1">
-          <h1 className="text-xl font-black tracking-tight text-white">{ticket.eventTitle || 'Entrada RRPP'}</h1>
+          <h1 className="text-xl font-black tracking-tight text-white">{ticket.eventTitle || t('pass.default_event_title')}</h1>
           <p className="text-xs text-fuchsia-400 font-semibold flex items-center gap-1">
-            📍 {ticket.venueName || 'Local Verificado'}
+            📍 {ticket.venueName || t('pass.default_venue_name')}
           </p>
           {ticket.eventDate && (
             <p className="text-xs text-slate-400 mt-1 font-medium">
@@ -106,13 +108,13 @@ function TicketViewInner() {
         {/* 3. Desglose de Consumición y Asistente */}
         <div className="mx-5 bg-black/40 border border-white/5 rounded-2xl p-3.5 flex justify-between items-center text-xs shadow-inner shadow-black/50">
           <div>
-            <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider block">Tipo de Pase</span>
-            <span className="font-bold text-emerald-400 tracking-wide">{ticket.tierName || ticket.ticketType || 'Entrada General'}</span>
-            <span className="text-[10px] text-slate-400 block mt-0.5 font-medium">Invitado: {ticket.client_name || 'Anónimo'}</span>
+            <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider block">{t('pass.ticket_type_label')}</span>
+            <span className="font-bold text-emerald-400 tracking-wide">{ticket.tierName || ticket.ticketType || t('pass.default_tier_name')}</span>
+            <span className="text-[10px] text-slate-400 block mt-0.5 font-medium">{t('pass.guest_prefix')}{ticket.client_name || t('pass.anonymous')}</span>
           </div>
           <div className="text-right">
             <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider block">RRPP</span>
-            <span className="font-bold text-slate-300 tracking-wide">{ticket.promoter_name || 'Oficial'}</span>
+            <span className="font-bold text-slate-300 tracking-wide">{ticket.promoter_name || t('pass.official_promoter')}</span>
           </div>
         </div>
 
@@ -129,7 +131,7 @@ function TicketViewInner() {
           {ticket.pinCode && (
             <div className="bg-slate-950/80 border border-slate-800 py-2.5 px-4 rounded-xl inline-block w-full shadow-lg">
               <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest block mb-0.5">
-                PIN de Puerta (Sin Cámara)
+                {t('pass.door_pin')}
               </span>
               <span className="text-2xl font-mono font-black tracking-[0.25em] text-fuchsia-400">
                 #{ticket.pinCode}
@@ -138,7 +140,7 @@ function TicketViewInner() {
           )}
 
           <p className="text-[10px] text-slate-500 leading-tight font-medium px-4">
-            Presenta esta pantalla al llegar a la puerta. No se admiten capturas de pantalla estáticas.
+            {t('pass.presentation_instruction')}
           </p>
         </div>
 
@@ -148,8 +150,9 @@ function TicketViewInner() {
 }
 
 export default function TicketViewPage() {
+  const { t } = useTranslation();
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-fuchsia-400 text-xs font-black uppercase tracking-widest animate-pulse">Cargando Pase...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-fuchsia-400 text-xs font-black uppercase tracking-widest animate-pulse">{t('pass.loading_pass')}</div>}>
       <TicketViewInner />
     </Suspense>
   );

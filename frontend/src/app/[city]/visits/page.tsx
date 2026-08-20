@@ -89,8 +89,8 @@ export default function VisitsPage() {
               <span className="material-icons text-white">chevron_left</span>
             </motion.button>
             <div>
-              <h1 className="text-3xl font-[1000] tracking-tighter leading-none">VISITAS</h1>
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mt-1">Interés real en ti</p>
+              <h1 className="text-3xl font-[1000] tracking-tighter leading-none">{t('visits.title')}</h1>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mt-1">{t('visits.subtitle')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-fuchsia-500/10 border border-fuchsia-500/20 rounded-xl">
@@ -110,8 +110,8 @@ export default function VisitsPage() {
             <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-8">
               <span className="material-icons text-5xl text-slate-700">visibility_off</span>
             </div>
-            <p className="text-xl font-black text-slate-400">Aún no hay visitas</p>
-            <p className="text-sm text-slate-600 mt-2 max-w-[200px] mx-auto">¡Sigue activo en el mapa para atraer miradas!</p>
+            <p className="text-xl font-black text-slate-400">{t('visits.empty_title')}</p>
+            <p className="text-sm text-slate-600 mt-2 max-w-[200px] mx-auto">{t('visits.empty_subtitle')}</p>
           </motion.div>
         ) : (
           <div className="grid gap-3">
@@ -136,7 +136,7 @@ export default function VisitsPage() {
                   <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md z-10 flex items-center justify-center">
                     <div className="flex items-center gap-2 px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-full">
                       <span className="material-icons text-xs text-yellow-500">lock</span>
-                      <p className="text-[8px] font-black text-yellow-500 uppercase tracking-widest">Solo VIP</p>
+                      <p className="text-[8px] font-black text-yellow-500 uppercase tracking-widest">{t('visits.vip_only')}</p>
                     </div>
                   </div>
                 )}
@@ -161,7 +161,7 @@ export default function VisitsPage() {
                   <div className="flex items-center gap-2 mt-1">
                     <span className="material-icons text-[10px] text-slate-500">schedule</span>
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                      {visit.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {visit.timestamp?.toDate().toLocaleDateString() === new Date().toLocaleDateString() ? 'Hoy' : visit.timestamp?.toDate().toLocaleDateString()}
+                      {visit.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {visit.timestamp?.toDate().toLocaleDateString() === new Date().toLocaleDateString() ? t('visits.today') : visit.timestamp?.toDate().toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -191,9 +191,9 @@ export default function VisitsPage() {
               <span className="material-icons text-4xl text-yellow-500">workspace_premium</span>
             </div>
             
-            <h2 className="text-2xl font-[1000] mb-3 tracking-tight">DESCUBRE TUS FANS</h2>
+            <h2 className="text-2xl font-[1000] mb-3 tracking-tight">{t('visits.fans_title')}</h2>
             <p className="text-slate-400 text-sm leading-relaxed mb-8 px-4">
-              Hay <span className="text-white font-bold">{visits.length} personas</span> interesadas en tu perfil. Hazte VIP para verlas todas sin límites.
+              {t('visits.there_are')} <span className="text-white font-bold">{visits.length} {t('visits.people')}</span> {t('visits.fans_promo_text')}
             </p>
             
             <motion.button 
@@ -202,7 +202,7 @@ export default function VisitsPage() {
               onClick={() => { triggerHaptic(20); router.push('/premium'); }}
               className="w-full py-6 rounded-2xl bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black font-black text-xs uppercase tracking-[0.3em] shadow-[0_15px_40px_rgba(234,179,8,0.3)]"
             >
-              Desbloquear ahora
+              {t('visits.unlock_now')}
             </motion.button>
           </motion.div>
         )}

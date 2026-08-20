@@ -142,7 +142,7 @@ export default function Home() {
             <h1 className="font-display text-lg font-black bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500 uppercase tracking-tighter">
               Blow Nights
             </h1>
-            <p className="text-[10px] text-slate-400 font-medium">¡Hola, {profile.nick}! {isAdmin && <span className="text-purple-400 font-black ml-1">[ADMIN]</span>}</p>
+            <p className="text-[10px] text-slate-400 font-medium">{t('city.hello')}, {profile.nick}! {isAdmin && <span className="text-purple-400 font-black ml-1">[ADMIN]</span>}</p>
           </div>
         </div>
         
@@ -150,7 +150,7 @@ export default function Home() {
           <CitySelector />
           {isSuperAdmin && (
             <Link href="/super-admin" prefetch={false} className="bg-fuchsia-600/20 text-fuchsia-400 border border-fuchsia-600/50 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase hover:bg-fuchsia-600/30 transition-all">
-              Panel Maestro
+              {t('city.super_admin')}
             </Link>
           )}
           {isAdmin && (
@@ -172,8 +172,8 @@ export default function Home() {
         {(!profile || profile.edad === null || profile.edad === undefined || isRedirecting) ? null : (
           <section className="space-y-4">
             <div className="flex justify-between items-end">
-              <h2 className="font-display text-xl font-bold">Cerca de ti</h2>
-              <span className="text-xs text-purple-400 font-medium">Ubicación aproximada</span>
+              <h2 className="font-display text-xl font-bold">{t('city.near_you')}</h2>
+              <span className="text-xs text-purple-400 font-medium">{t('city.approx_location')}</span>
             </div>
             <MainMap />
           </section>
@@ -189,8 +189,8 @@ export default function Home() {
               <div className="text-3xl mb-3 group-hover:scale-110 transition-transform relative z-10">
                 <span className="material-icons text-fuchsia-400 text-3xl drop-shadow-[0_0_8px_rgba(192,38,211,0.5)]">nightlife</span>
               </div>
-              <h3 className="font-display font-bold relative z-10">¿A dónde sales?</h3>
-              <p className="text-[10px] text-slate-400 mt-1 relative z-10">Elige tu garito</p>
+              <h3 className="font-display font-bold relative z-10">{t('city.where_going')}</h3>
+              <p className="text-[10px] text-slate-400 mt-1 relative z-10">{t('city.choose_spot')}</p>
               <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-600/10 to-violet-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Link>
           </motion.div>
@@ -203,8 +203,8 @@ export default function Home() {
               <div className="text-3xl mb-3 group-hover:scale-110 transition-transform relative z-10">
                 <span className="material-icons text-yellow-400 text-3xl drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]">confirmation_number</span>
               </div>
-              <h3 className="font-display font-bold relative z-10">Mi Cartera</h3>
-              <p className="text-[10px] text-slate-400 mt-1 relative z-10">Entradas y pases</p>
+              <h3 className="font-display font-bold relative z-10">{t('city.my_wallet')}</h3>
+              <p className="text-[10px] text-slate-400 mt-1 relative z-10">{t('city.tickets_passes')}</p>
               <div className="absolute inset-0 bg-gradient-to-br from-yellow-600/10 to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Link>
           </motion.div>
@@ -215,8 +215,8 @@ export default function Home() {
               className="glass-card flex flex-col p-5 group h-full relative overflow-hidden"
             >
               <div className="text-3xl mb-3 group-hover:scale-110 transition-transform relative z-10">💬</div>
-              <h3 className="font-display font-bold relative z-10">Chats</h3>
-              <p className="text-[10px] text-slate-400 mt-1 relative z-10">Mensajes pendientes</p>
+              <h3 className="font-display font-bold relative z-10">{t('city.chats')}</h3>
+              <p className="text-[10px] text-slate-400 mt-1 relative z-10">{t('city.pending_messages')}</p>
             </Link>
           </motion.div>
 
@@ -226,8 +226,8 @@ export default function Home() {
               className="glass-card flex flex-col p-5 group h-full relative overflow-hidden"
             >
               <div className="text-3xl mb-3 group-hover:scale-110 transition-transform relative z-10">👀</div>
-              <h3 className="font-display font-bold relative z-10">Visitas</h3>
-              <p className="text-[10px] text-slate-400 mt-1 relative z-10">Quién te ha visto</p>
+              <h3 className="font-display font-bold relative z-10">{t('city.visits')}</h3>
+              <p className="text-[10px] text-slate-400 mt-1 relative z-10">{t('city.who_saw_you')}</p>
             </Link>
           </motion.div>
 
@@ -239,8 +239,8 @@ export default function Home() {
               <div className="flex items-center gap-4 relative z-10">
                 <div className="text-3xl group-hover:scale-110 transition-transform">📲</div>
                 <div>
-                  <h3 className="font-display font-bold">Instalar App</h3>
-                  <p className="text-[10px] text-slate-400 mt-1">Lleva Blow Nights en tu pantalla de inicio</p>
+                  <h3 className="font-display font-bold">{t('city.install_app')}</h3>
+                  <p className="text-[10px] text-slate-400 mt-1">{t('city.take_home')}</p>
                 </div>
               </div>
               <span className="material-icons text-slate-400 group-hover:text-white transition-colors relative z-10">download</span>
@@ -259,15 +259,15 @@ export default function Home() {
                 </div>
                 <div>
                   <h3 className={`font-display font-bold ${profile?.premium ? 'text-yellow-400' : ''}`}>
-                    {profile?.premium ? 'Tu Cuenta VIP' : 'Hazte Premium'}
+                    {profile?.premium ? t('city.vip_account') : t('city.go_premium')}
                   </h3>
                   <p className="text-[10px] text-slate-400 mt-1">
-                    {profile?.premium ? 'Disfruta de todas las ventajas' : 'Ver planes y beneficios'}
+                    {profile?.premium ? t('city.enjoy_advantages') : t('city.see_plans')}
                   </p>
                 </div>
               </div>
               {!profile?.premium && (
-                <span className="bg-white text-black text-[9px] font-black px-4 py-2 rounded-full uppercase tracking-tighter relative z-10 shadow-[0_0_15px_rgba(255,255,255,0.3)]">Ver más</span>
+                <span className="bg-white text-black text-[9px] font-black px-4 py-2 rounded-full uppercase tracking-tighter relative z-10 shadow-[0_0_15px_rgba(255,255,255,0.3)]">{t('city.see_more')}</span>
               )}
               {profile?.premium && (
                 <div className="absolute inset-0 animate-shimmer opacity-20" />
@@ -281,13 +281,13 @@ export default function Home() {
           <section className="bg-gradient-to-br from-yellow-500/10 to-transparent p-6 rounded-[2.5rem] border border-yellow-500/20 space-y-6">
             <h3 className="text-xs font-black text-yellow-500 uppercase tracking-[0.2em] flex items-center gap-2">
               <span className="material-icons text-sm">auto_awesome</span>
-              Funciones VIP Activas
+              {t('city.vip_active_features')}
             </h3>
             
             <div className="flex items-center justify-between p-4 bg-black/20 rounded-2xl border border-white/5">
               <div>
-                <p className="text-sm font-bold">Modo Incógnito</p>
-                <p className="text-[10px] text-slate-500">Navega sin dejar rastro</p>
+                <p className="text-sm font-bold">{t('city.incognito_mode')}</p>
+                <p className="text-[10px] text-slate-500">{t('city.navigate_hidden')}</p>
               </div>
               <button 
                 onClick={async () => {
@@ -303,8 +303,8 @@ export default function Home() {
 
             <div className="flex items-center justify-between p-4 bg-black/20 rounded-2xl border border-white/5">
               <div>
-                <p className="text-sm font-bold">Boost Diario</p>
-                <p className="text-[10px] text-slate-500">Más visibilidad en el mapa</p>
+                <p className="text-sm font-bold">{t('city.daily_boost')}</p>
+                <p className="text-[10px] text-slate-500">{t('city.more_visibility')}</p>
               </div>
               <button 
                 disabled={profile.lastBoost && profile.lastBoost.toDate() > boostCooldown}
@@ -322,7 +322,7 @@ export default function Home() {
                   : 'bg-white text-black hover:scale-105'
                 }`}
               >
-                {profile.lastBoost && profile.lastBoost.toDate() > boostCooldown ? 'Usado' : 'Activar Boost'}
+                {profile.lastBoost && profile.lastBoost.toDate() > boostCooldown ? t('city.used') : t('city.activate_boost')}
               </button>
             </div>
           </section>

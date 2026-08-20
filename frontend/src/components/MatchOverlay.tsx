@@ -3,10 +3,12 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useCityRouter } from '@/hooks/useCityRouter';
+import { useTranslation } from 'react-i18next';
 
 export default function MatchOverlay({ matchData, onClose }: { matchData: any, onClose: () => void }) {
   const router = useRouter();
   const { cityPath } = useCityRouter();
+  const { t } = useTranslation();
 
   if (!matchData) return null;
 
@@ -90,7 +92,7 @@ export default function MatchOverlay({ matchData, onClose }: { matchData: any, o
           } drop-shadow-[0_10px_30px_rgba(217,70,239,0.5)]`}>
             {isSuper ? 'SUPER MATCH' : 'MATCH!'}
           </h1>
-          <p className="text-white/60 font-black tracking-[0.5em] uppercase text-[10px] mb-16">Has conectado con alguien especial</p>
+          <p className="text-white/60 font-black tracking-[0.5em] uppercase text-[10px] mb-16">{t('match.connected')}</p>
         </motion.div>
 
         <div className="flex items-center justify-center mb-24 relative">
@@ -151,14 +153,14 @@ export default function MatchOverlay({ matchData, onClose }: { matchData: any, o
               isSuper ? 'bg-yellow-500 text-black' : 'bg-white text-black'
             }`}
           >
-            Hablar ahora
+            {t('match.chat_now')}
           </motion.button>
           
           <button 
             onClick={onClose}
             className="w-full py-4 rounded-[2rem] text-white/40 font-black text-[10px] uppercase tracking-[0.4em] hover:text-white/80 transition-all"
           >
-            Quizás más tarde
+            {t('match.maybe_later')}
           </button>
         </motion.div>
       </motion.div>

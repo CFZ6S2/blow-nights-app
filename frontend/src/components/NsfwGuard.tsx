@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface NsfwGuardProps {
   src: string;
@@ -12,6 +13,7 @@ interface NsfwGuardProps {
 
 export default function NsfwGuard({ src, alt = '', isNsfw = false, nsfwBlur = true, className = '' }: NsfwGuardProps) {
   const [revealed, setRevealed] = useState(false);
+  const { t } = useTranslation();
 
   const shouldBlur = isNsfw && nsfwBlur && !revealed;
 
@@ -28,7 +30,7 @@ export default function NsfwGuard({ src, alt = '', isNsfw = false, nsfwBlur = tr
           className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm"
         >
           <span className="material-icons text-white/80 text-2xl">visibility_off</span>
-          <span className="text-[9px] text-white/70 font-black uppercase tracking-widest mt-1">Toca para ver</span>
+          <span className="text-[9px] text-white/70 font-black uppercase tracking-widest mt-1">{t('nsfw.tap_to_view')}</span>
         </button>
       )}
     </div>

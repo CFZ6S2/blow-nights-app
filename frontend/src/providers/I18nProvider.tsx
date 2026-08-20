@@ -9,6 +9,19 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setTimeout(() => setMounted(true), 0);
+    
+    // Update HTML dir and lang attributes dynamically
+    const updateDOM = () => {
+      document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
+      document.documentElement.lang = i18n.language || 'es';
+    };
+    
+    updateDOM(); // Initial setting
+    i18n.on('languageChanged', updateDOM);
+    
+    return () => {
+      i18n.off('languageChanged', updateDOM);
+    };
   }, []);
 
   if (!mounted) {

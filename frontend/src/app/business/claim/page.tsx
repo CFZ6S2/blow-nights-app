@@ -3,15 +3,17 @@
 import React, { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { useTranslation, Trans } from 'react-i18next';
 
 function ClaimVenueContent() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
-  const venue = searchParams.get('venue') || 'tu local';
+  const venue = searchParams.get('venue') || t('business.claim.default_venue');
   const router = useRouter();
 
   const handleClaim = (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Solicitud de reclamo enviada. Un agente de Blow Nights se pondrá en contacto contigo.');
+    alert(t('business.claim.alert_success'));
     router.push('/');
   };
 
@@ -27,36 +29,38 @@ function ClaimVenueContent() {
         <div className="text-5xl mb-6">🏪</div>
         
         <h1 className="text-2xl font-black mb-4 leading-tight">
-          Reclama el control de <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500">{venue}</span>
+          {t('business.claim.title')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500">{venue}</span>
         </h1>
         
         <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-          Tus promotores (RRPPs) ya están utilizando <strong>Blow Nights</strong> para gestionar listas y accesos en tu local de forma independiente.
+          <Trans i18nKey="business.claim.description">
+            Tus promotores (RRPPs) ya están utilizando <strong>Blow Nights</strong> para gestionar listas y accesos en tu local de forma independiente.
+          </Trans>
         </p>
         
         <div className="bg-amber-900/20 border border-amber-500/20 p-4 rounded-xl mb-8">
-          <h3 className="text-xs font-bold text-amber-500 uppercase tracking-widest mb-2">Al reclamar tu local podrás:</h3>
+          <h3 className="text-xs font-bold text-amber-500 uppercase tracking-widest mb-2">{t('business.claim.benefits_title')}</h3>
           <ul className="space-y-3 text-sm text-slate-300">
             <li className="flex items-start gap-2">
-              <span className="text-amber-500">✓</span> Ver la recaudación en tiempo real.
+              <span className="text-amber-500">✓</span> {t('business.claim.benefits_1')}
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-amber-500">✓</span> Auditar los escaneos de puerta (cero fraude).
+              <span className="text-amber-500">✓</span> {t('business.claim.benefits_2')}
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-amber-500">✓</span> Añadir o bloquear RRPPs en un clic.
+              <span className="text-amber-500">✓</span> {t('business.claim.benefits_3')}
             </li>
           </ul>
         </div>
 
         <form onSubmit={handleClaim} className="space-y-4">
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1 block">Tu Nombre</label>
-            <input required placeholder="Ej: Mario" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-amber-500 outline-none" />
+            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1 block">{t('business.claim.form.name_label')}</label>
+            <input required placeholder={t('business.claim.form.name_placeholder')} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-amber-500 outline-none" />
           </div>
           
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1 block">Teléfono (WhatsApp)</label>
+            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1 block">{t('business.claim.form.phone_label')}</label>
             <input required type="tel" placeholder="+34 600 000 000" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-amber-500 outline-none" />
           </div>
 
@@ -64,12 +68,12 @@ function ClaimVenueContent() {
             type="submit"
             className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-black font-black py-4 rounded-xl shadow-[0_0_20px_-5px_rgba(245,158,11,0.5)] transition-all mt-4"
           >
-            Reclamar Local Ahora
+            {t('business.claim.form.submit')}
           </button>
         </form>
         
         <p className="text-center text-[10px] text-slate-500 mt-6">
-          Proceso gratuito. Un gestor verificará tu identidad como propietario o gerente.
+          {t('business.claim.footer_note')}
         </p>
       </motion.div>
     </div>
@@ -77,8 +81,9 @@ function ClaimVenueContent() {
 }
 
 export default function ClaimVenuePage() {
+  const { t } = useTranslation();
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#07080d] flex items-center justify-center text-xs text-white">Cargando...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[#07080d] flex items-center justify-center text-xs text-white">{t('common.loading')}</div>}>
       <ClaimVenueContent />
     </Suspense>
   );

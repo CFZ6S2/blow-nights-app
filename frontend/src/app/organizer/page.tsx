@@ -7,6 +7,7 @@ import { db, storage } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 interface TicketTier {
   id: string;
@@ -47,6 +48,7 @@ interface Promoter {
 }
 
 function EventPromoters({ eventId }: { eventId: string }) {
+  const { t } = useTranslation();
   const [promoters, setPromoters] = useState<Promoter[]>([]);
   const [newName, setNewName] = useState('');
   const [loading, setLoading] = useState(true);
@@ -113,25 +115,25 @@ function EventPromoters({ eventId }: { eventId: string }) {
 
   return (
     <div className="mt-4 pt-4 border-t border-white/5 space-y-4">
-      <h4 className="text-sm font-bold text-indigo-400">Equipo RRPP</h4>
+      <h4 className="text-sm font-bold text-indigo-400">{t('organizer_page.rrpp_team')}</h4>
       
       <div className="flex gap-2">
         <input 
           type="text" 
           value={newName} 
           onChange={e => setNewName(e.target.value)} 
-          placeholder="Nombre del nuevo RRPP..."
+          placeholder={t('organizer_page.new_rrpp_placeholder')}
           className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
         />
         <button onClick={handleAddPromoter} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold">
-          Añadir
+          {t('organizer_page.add')}
         </button>
       </div>
 
       {loading ? (
-        <div className="text-xs text-slate-500">Cargando...</div>
+        <div className="text-xs text-slate-500">{t('organizer_page.loading')}</div>
       ) : promoters.length === 0 ? (
-        <div className="text-xs text-slate-500">No hay RRPPs asignados a este evento.</div>
+        <div className="text-xs text-slate-500">{t('organizer_page.no_rrpps')}</div>
       ) : (
         <div className="space-y-3 mt-4">
           {promoters.map(p => {
@@ -143,11 +145,11 @@ function EventPromoters({ eventId }: { eventId: string }) {
                 <div>
                   <div className="font-bold text-sm flex items-center gap-2">
                     {p.name}
-                    {p.is_closed && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">CERRADO</span>}
+                    {p.is_closed && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">{t('organizer_page.closed')}</span>}
                   </div>
                   {!p.is_closed && (
                     <button onClick={() => copyLink(p.access_token)} className="text-[10px] text-indigo-400 hover:text-indigo-300 flex items-center mt-1">
-                      <span className="material-icons text-[12px] mr-1">link</span> Copiar Enlace
+                      <span className="material-icons text-[12px] mr-1">link</span> {t('organizer_page.copy_link')}
                     </button>
                   )}
                   {p.is_closed && (
@@ -169,14 +171,14 @@ function EventPromoters({ eventId }: { eventId: string }) {
                       onClick={() => handleClose(p.id)}
                       className="text-[10px] border border-yellow-500/50 text-yellow-500 px-3 py-1.5 rounded-lg hover:bg-yellow-500/20 font-bold uppercase tracking-wider"
                     >
-                      Cerrar Lista
+                      {t('organizer_page.close_list')}
                     </button>
                   ) : (
                     <button 
                       onClick={() => handleLiquidate(p.id, p.liquidated_by_venue)}
                       className={`text-[10px] border px-3 py-1.5 rounded-lg font-bold uppercase tracking-wider ${p.liquidated_by_venue ? 'border-red-500/50 text-red-400 hover:bg-red-500/20' : 'border-green-500/50 text-green-400 hover:bg-green-500/20'}`}
                     >
-                      {p.liquidated_by_venue ? 'Anular Pago' : 'Marcar Pagado'}
+                      {p.liquidated_by_venue ? t('organizer_page.cancel_payment') : t('organizer_page.mark_paid')}
                     </button>
                   )}
                 </div>
@@ -190,6 +192,7 @@ function EventPromoters({ eventId }: { eventId: string }) {
 }
 
 export default function OrganizerDashboard() {
+  const { t } = useTranslation();
   const { user, profile, loading: authLoading } = useAuth();
   const router = useRouter();
   
@@ -364,37 +367,37 @@ export default function OrganizerDashboard() {
       <main className="relative z-10 p-6 md:p-12 max-w-4xl mx-auto space-y-8">
         <header className="pt-8">
           <div className="inline-block px-3 py-1 bg-indigo-900/30 text-indigo-400 rounded-full text-[10px] font-black tracking-widest uppercase mb-4 border border-indigo-500/20">
-            Organizador
+            {t('organizer_page.organizer_badge')}
           </div>
-          <h1 className="text-3xl font-black tracking-tight">Panel de Control</h1>
-          <p className="text-slate-400 mt-2">Gestiona tus eventos independientes y controla tus ventas.</p>
+          <h1 className="text-3xl font-black tracking-tight">{t('organizer_page.dashboard')}</h1>
+          <p className="text-slate-400 mt-2">{t('organizer_page.manage_events_desc')}</p>
         </header>
 
         {events.length > 0 && !isCreating && (
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-gradient-to-br from-indigo-900/40 to-slate-900/40 border border-indigo-500/30 p-6 rounded-3xl">
-              <div className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1">Ingresos Totales</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1">{t('organizer_page.total_revenue')}</div>
               <div className="text-3xl font-black text-white">{totalRevenue.toFixed(2)}€</div>
             </div>
             <div className="bg-gradient-to-br from-purple-900/40 to-slate-900/40 border border-purple-500/30 p-6 rounded-3xl">
-              <div className="text-[10px] font-black uppercase tracking-widest text-purple-400 mb-1">Asistentes Totales</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-purple-400 mb-1">{t('organizer_page.total_attendees')}</div>
               <div className="text-3xl font-black text-white">{totalCheckedIn}</div>
             </div>
           </div>
         )}
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold text-white">Mis Eventos</h2>
+          <h2 className="text-xl font-bold text-white">{t('organizer_page.my_events')}</h2>
           <button
             onClick={() => setIsCreating(!isCreating)}
             className="px-6 py-3 bg-indigo-600 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-indigo-500 transition-colors"
           >
-            {isCreating ? 'Cancelar' : '+ Nuevo Evento'}
+            {isCreating ? t('organizer_page.cancel') : t('organizer_page.new_event')}
           </button>
         </div>
 
         {isCreating && (
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900 border border-indigo-500/30 rounded-3xl p-8 space-y-6">
-            <h3 className="text-xl font-bold">Crear Nuevo Evento</h3>
+            <h3 className="text-xl font-bold">{t('organizer_page.create_event')}</h3>
             
             <div className="space-y-4">
               <div>

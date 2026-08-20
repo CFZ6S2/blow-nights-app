@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 export default function PWAInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [platform, setPlatform] = useState<'ios' | 'android' | 'other'>('other');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     // Detectar plataforma
@@ -72,11 +74,11 @@ export default function PWAInstallPrompt() {
           </div>
           
           <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-black text-white tracking-tight uppercase mb-1">Instala Blow Nights</h4>
+            <h4 className="text-sm font-black text-white tracking-tight uppercase mb-1">{t('pwa.install_title')}</h4>
             <p className="text-[10px] text-slate-400 leading-tight">
               {platform === 'ios' 
-                ? 'Pulsa [Compartir] y luego "Añadir a pantalla de inicio"' 
-                : 'Añade la app a tu pantalla de inicio para una experiencia nativa.'}
+                ? t('pwa.install_ios') 
+                : t('pwa.install_android')}
             </p>
           </div>
 
@@ -86,14 +88,14 @@ export default function PWAInstallPrompt() {
                 onClick={handleInstallAndroid}
                 className="px-6 py-3 rounded-full bg-white text-black font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all"
               >
-                Instalar
+                {t('pwa.install_btn')}
               </button>
             )}
             <button 
               onClick={() => setShowPrompt(false)}
               className="px-6 py-3 rounded-full bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest border border-white/5 hover:bg-white/10 transition-all"
             >
-              Cerrar
+              {t('pwa.close_btn')}
             </button>
           </div>
         </div>

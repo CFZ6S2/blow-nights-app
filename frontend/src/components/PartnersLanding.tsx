@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useTranslation } from 'react-i18next';
 
 // Simple Icons SVG
 const MapIcon = () => (
@@ -21,6 +22,7 @@ const MoonIcon = () => (
 );
 
 export default function PartnersLanding() {
+  const { t } = useTranslation();
   const [hotCities, setHotCities] = useState<any[]>([]);
 
   useEffect(() => {
@@ -48,7 +50,7 @@ export default function PartnersLanding() {
             <span className="font-bold text-xl tracking-tight">Blow Nights</span>
           </div>
           <Link href="mailto:partners@blownights.com" className="px-5 py-2.5 rounded-full bg-white text-black font-semibold text-sm hover:bg-neutral-200 transition-colors">
-            Solicitar Territorio
+            {t('request_territory')}
           </Link>
         </div>
       </header>
@@ -61,7 +63,7 @@ export default function PartnersLanding() {
         <div className="max-w-4xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <span className="inline-block py-1 px-3 rounded-full bg-purple-500/10 text-purple-400 font-medium text-sm mb-6 border border-purple-500/20">
-              Oportunidad para City Managers
+              {t('opportunity_city_managers')}
             </span>
           </motion.div>
           
@@ -69,7 +71,7 @@ export default function PartnersLanding() {
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
             className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-[1.1]"
           >
-            El <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">Sistema Operativo</span><br />del Ocio Nocturno LGTBIQ+
+            El <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">{t('operating_system')}</span><br />{t('lgtbiq_nightlife')}
           </motion.h1>
           
           <motion.p 
@@ -84,10 +86,10 @@ export default function PartnersLanding() {
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Link href="mailto:partners@blownights.com" className="w-full sm:w-auto px-8 py-4 rounded-full bg-gradient-to-r from-purple-600 to-pink-500 text-white font-bold text-lg hover:shadow-[0_0_30px_-5px_rgba(168,85,247,0.5)] transition-all transform hover:scale-105">
-              Contactar al Equipo
+              {t('contact_team')}
             </Link>
             <Link href="#motores" className="w-full sm:w-auto px-8 py-4 rounded-full bg-white/5 text-white font-semibold text-lg border border-white/10 hover:bg-white/10 transition-colors">
-              Ver el Modelo de Negocio
+              {t('view_business_model')}
             </Link>
           </motion.div>
         </div>
@@ -100,7 +102,7 @@ export default function PartnersLanding() {
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-8">
               <span className="inline-block px-3 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-full text-xs font-bold uppercase tracking-widest mb-3">
-                Oportunidades Inmediatas
+                {t('immediate_opportunities')}
               </span>
               <h2 className="text-3xl font-bold">Plazas con tracción listas para operar</h2>
               <p className="text-neutral-400 mt-2 max-w-xl mx-auto text-sm">
@@ -120,7 +122,7 @@ export default function PartnersLanding() {
                     <span className="text-sm font-bold text-green-400">{city.activeVenuesCount || 2} locales activos</span>
                   </div>
                   <Link href={`mailto:partners@blownights.com?subject=Solicitud Franquicia ${city.slug}`} className="block w-full py-3 text-center bg-white/5 hover:bg-purple-600 border border-white/10 hover:border-purple-500 rounded-xl font-bold transition-all">
-                    Solicitar Exclusividad
+                    {t('request_exclusivity')}
                   </Link>
                 </div>
               ))}
@@ -133,7 +135,7 @@ export default function PartnersLanding() {
       <section id="motores" className="py-24 px-6 border-t border-white/10 bg-neutral-950">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">Los 4 Motores de la Plataforma</h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">{t('four_engines_title')}</h2>
             <p className="text-neutral-400 max-w-2xl mx-auto">Infraestructura probada y lista para desplegar en tu ciudad en 48 horas.</p>
           </div>
           
@@ -198,7 +200,7 @@ export default function PartnersLanding() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-purple-400 font-semibold tracking-wider uppercase text-sm mb-2 block">Revenue Split</span>
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">Modelo Económico</h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">{t('economic_model')}</h2>
             <p className="text-neutral-400 max-w-2xl mx-auto">Un modelo diseñado para que el City Manager gane por dos vías: comisión de entradas y suscripciones VIP de usuarios. Todo liquidado automáticamente a tu cuenta bancaria vía Stripe.</p>
           </div>
           
@@ -268,7 +270,7 @@ export default function PartnersLanding() {
       <section className="py-24 px-6 border-t border-white/10 bg-gradient-to-b from-neutral-950 to-neutral-900">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">Proyección Financiera Anual</h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">{t('financial_projection')}</h2>
             <p className="text-neutral-400 max-w-2xl mx-auto">Estimación de rentabilidad para una ciudad con circuito nocturno activo. Un modelo de alto margen (canon de 5.000€/año) que recuperas en el primer cuatrimestre.</p>
           </div>
           
@@ -380,7 +382,7 @@ export default function PartnersLanding() {
       <section className="py-24 px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 to-transparent -z-10" />
         <div className="max-w-4xl mx-auto bg-neutral-900/50 backdrop-blur-xl border border-white/10 p-8 md:p-12 rounded-[2.5rem] text-center">
-          <h2 className="text-3xl font-bold mb-6">Lanzamiento en 48 Horas</h2>
+          <h2 className="text-3xl font-bold mb-6">{t('launch_48h')}</h2>
           <p className="text-neutral-400 text-lg mb-8 max-w-2xl mx-auto">
             Te entregamos la plataforma operativa en tu ciudad (`[ciudad].blownights.com`), vinculada a tu cuenta de Stripe. Arranca ofreciendo un "Piloto sin Fricción" a los garitos 100% gratis la primera sesión para demostrar el valor.
           </p>
@@ -392,7 +394,7 @@ export default function PartnersLanding() {
             </div>
             
             <Link href="mailto:partners@blownights.com" className="w-full md:w-auto px-10 py-5 rounded-2xl bg-white text-black font-bold text-lg hover:bg-neutral-200 transition-colors shadow-xl">
-              Solicitar Entrevista
+              {t('request_interview')}
             </Link>
           </div>
           <p className="mt-6 text-sm text-neutral-500">Solo 1 licencia exclusiva por área metropolitana.</p>
