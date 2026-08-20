@@ -64,17 +64,25 @@ export default function CityManagerDashboard() {
           if (v.subscriptionTier === 'ticketing') mGross += 100;
           if (v.subscriptionTier === 'promo') mGross += 60;
           if (v.subscriptionTier === 'basico') mGross += 30;
-          
-          // Simulamos tickets para el MVP (en un caso real, buscaríamos en orders/tickets)
-          mTickets += Math.floor(Math.random() * 50) + 10;
         });
 
         setVenues(vList);
 
-        // Cálculo de comisión (40% de SaaS)
-        const payout = mGross * 0.40;
+        // 3. Buscar ganancias reales (earnings)
+        const earnQ = query(collection(db, 'cities', cData.id, 'earnings'));
+        const earnSnap = await getDocs(earnQ);
+        let realPayout = 0;
+        let realTickets = 0;
+        
+        earnSnap.forEach(d => {
+          const e = d.data();
+          realPayout += (e.amount || 0);
+          if (e.type === 'ticket_fee') {
+            realTickets++;
+          }
+        });
 
-        // 3. Buscar los eventos independientes de esta ciudad
+        // 4. Buscar los eventos independientes de esta ciudad
         const eQ = query(collection(db, 'events'), where('cityId', '==', cData.id));
         const eSnap = await getDocs(eQ);
         const eList: any[] = [];
@@ -86,8 +94,8 @@ export default function CityManagerDashboard() {
         setMetrics({
           activeVenues: mActive,
           monthlyGrossRevenue: mGross,
-          managerPayoutDue: payout,
-          totalTickets: mTickets
+          managerPayoutDue: realPayout,
+          totalTickets: realTickets
         });
 
       } catch (err) {
@@ -174,7 +182,7 @@ export default function CityManagerDashboard() {
               <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
                 <span className="text-8xl font-black">€</span>
               </div>
-              <p className="text-sm font-bold text-fuchsia-300 mb-1">Tu Comisión Neta (40%)</p>
+              <p className="text-sm font-bold text-fuchsia-300 mb-1">Tu Comisión Neta (50%)</p>
               <p className="text-4xl font-black text-white">{metrics.managerPayoutDue.toFixed(2)} €</p>
               <div className="mt-4 pt-4 border-t border-fuchsia-500/20 flex items-center text-xs text-fuchsia-200/50 font-medium">
                 Se liquida automáticamente en tu cuenta Stripe.

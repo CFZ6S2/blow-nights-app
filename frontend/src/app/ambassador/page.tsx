@@ -124,7 +124,7 @@ export default function AmbassadorDashboard() {
           <h2 className="text-sm font-black uppercase tracking-widest text-slate-300 mb-4">Historial de Comisiones</h2>
           <div className="flex-1 overflow-y-auto space-y-2 no-scrollbar">
             {earnings.length === 0 && (
-              <p className="text-sm text-slate-500">Las comisiones aparecerán aquí cuando se vendan tickets en tus locales.</p>
+              <p className="text-sm text-slate-500">Las comisiones aparecerán aquí cuando se genere actividad en tus ciudades afiliadas.</p>
             )}
             {earnings.map(e => (
               <div key={e.id} className="flex justify-between items-center bg-black/30 p-3 rounded-xl border border-white/5">
