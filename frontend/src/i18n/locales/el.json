@@ -193,7 +193,6 @@
   "landing": {
     "nav_venues": "Χώροι",
     "nav_rrpp": "RRPP",
-    "active_now": "{{count}} άτομα ενεργά τώρα",
     "live_city": "Ζωντανά στην πόλη σου",
     "hero_desc_1": "Το LGTBIQ+ νυχτερινό σου κύκλωμα ζωντανά.",
     "hero_desc_2": "Χώροι, εισιτήρια, check-in και πραγματικά πλάνα στην πόλη σου.",
@@ -253,7 +252,9 @@
     "footer_business": "Για Επιχειρήσεις",
     "footer_terms": "Όροι",
     "footer_privacy": "Απόρρητο",
-    "footer_rules": "Κανόνες"
+    "footer_rules": "Κανόνες",
+    "active_now_one": "{{count}} persona activa ahora",
+    "active_now_other": "{{count}} personas activas ahora"
   },
   "cookie": {
     "text": "Χρησιμοποιούμε απαραίτητα cookies για τη λειτουργία της εφαρμογής και cookies ανάλυσης για να βελτιώσουμε την εμπειρία σου. Μπορείς να τα αποδεχτείς όλα ή να απορρίψεις τα μη απαραίτητα.",
@@ -705,8 +706,6 @@
     "anonymous": "Anónimo"
   },
   "venuesPage": {
-    "person": "persona",
-    "people": "personas",
     "whereTo": "¿A dónde sales hoy?",
     "selectVenue": "Selecciona tu garito y mira quién va",
     "anonMode": "Modo Anónimo (+1)",
@@ -734,7 +733,9 @@
     "verifiedVenue": "✓ Local Verificado",
     "here": "Aquí",
     "go": "Ir",
-    "tickets": "Entradas"
+    "tickets": "Entradas",
+    "people_one": "persona",
+    "people_other": "personas"
   },
   "venueDetail": {
     "loginToClaim": "Debes iniciar sesión para reclamar este local.",
@@ -743,8 +744,6 @@
     "noVenueSpecified": "No se ha especificado un local",
     "loadingVenue": "Cargando local...",
     "back": "Volver",
-    "personGoes": "persona va",
-    "peopleGo": "personas van",
     "capacity": "Aforo:",
     "purchaseCanceled": "Compra cancelada. Puedes intentarlo de nuevo.",
     "communitySpot": "Este es un punto comunitario",
@@ -769,7 +768,9 @@
     "promotions": "Promociones destacadas en el mapa",
     "cancel": "Cancelar",
     "assigning": "Asignando...",
-    "confirmAndEnter": "Confirmar y Entrar"
+    "confirmAndEnter": "Confirmar y Entrar",
+    "peopleGo_one": "persona va",
+    "peopleGo_other": "personas van"
   },
   "visits": {
     "title": "VISITAS",
@@ -780,9 +781,10 @@
     "today": "Hoy",
     "fans_title": "DESCUBRE TUS FANS",
     "there_are": "Hay",
-    "people": "personas",
     "fans_promo_text": "interesadas en tu perfil. Hazte VIP para verlas todas sin límites.",
-    "unlock_now": "Desbloquear ahora"
+    "unlock_now": "Desbloquear ahora",
+    "people_one": "persona",
+    "people_other": "personas"
   },
   "wallet": {
     "title": "Mi Cartera",

@@ -167,7 +167,7 @@ export default function VenueDetailPage() {
           <div className="flex gap-3">
             <div className="bg-fuchsia-500/10 border border-fuchsia-500/20 px-4 py-2 rounded-2xl">
               <span className="text-[10px] font-black text-fuchsia-400 uppercase tracking-widest">
-                {checkinCount} {checkinCount === 1 ? t('venueDetail.personGoes') : t('venueDetail.peopleGo')}
+                {checkinCount} {t('venueDetail.peopleGo', { count: checkinCount })}
               </span>
             </div>
             {venue.capacity && (

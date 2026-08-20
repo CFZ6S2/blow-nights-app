@@ -193,7 +193,6 @@
   "landing": {
     "nav_venues": "Locals",
     "nav_rrpp": "RRPP",
-    "active_now": "{{count}} persones actives ara",
     "live_city": "En viu a la teva ciutat",
     "hero_desc_1": "El teu circuit nocturn LGTBIQ+ en viu.",
     "hero_desc_2": "Locals, entrades, check-in i plans reals a la teva ciutat.",
@@ -253,7 +252,9 @@
     "footer_business": "Per a Negocis",
     "footer_terms": "Termes",
     "footer_privacy": "Privacitat",
-    "footer_rules": "Normes"
+    "footer_rules": "Normes",
+    "active_now_one": "{{count}} persona activa ahora",
+    "active_now_other": "{{count}} personas activas ahora"
   },
   "cookie": {
     "text": "Fem servir galetes essencials per al funcionament de l'app i galetes d'analítica per millorar la teva experiència. Pots acceptar-les totes o rebutjar les no essencials.",
@@ -705,8 +706,6 @@
     "anonymous": "Anònim"
   },
   "venuesPage": {
-    "person": "persona",
-    "people": "persones",
     "whereTo": "On surts avui?",
     "selectVenue": "Selecciona el teu garito i mira qui hi va",
     "anonMode": "Mode Anònim (+1)",
@@ -734,7 +733,9 @@
     "verifiedVenue": "✓ Local Verificat",
     "here": "Aquí",
     "go": "Anar",
-    "tickets": "Entrades"
+    "tickets": "Entrades",
+    "people_one": "persona",
+    "people_other": "personas"
   },
   "venueDetail": {
     "loginToClaim": "Has d'iniciar sessió per reclamar aquest local.",
@@ -743,8 +744,6 @@
     "noVenueSpecified": "No s'ha especificat un local",
     "loadingVenue": "Carregant local...",
     "back": "Tornar",
-    "personGoes": "persona va",
-    "peopleGo": "persones van",
     "capacity": "Aforament:",
     "purchaseCanceled": "Compra cancel·lada. Pots tornar-ho a intentar.",
     "communitySpot": "Aquest és un punt comunitari",
@@ -769,7 +768,9 @@
     "promotions": "Promocions destacades al mapa",
     "cancel": "Cancel·lar",
     "assigning": "Assignant...",
-    "confirmAndEnter": "Confirmar i Entrar"
+    "confirmAndEnter": "Confirmar i Entrar",
+    "peopleGo_one": "persona va",
+    "peopleGo_other": "personas van"
   },
   "visits": {
     "title": "VISITES",
@@ -780,9 +781,10 @@
     "today": "Avui",
     "fans_title": "DESCOBREIX ELS TEUS FANS",
     "there_are": "Hi ha",
-    "people": "persones",
     "fans_promo_text": "interessades en el teu perfil. Fes-te VIP per veure-les totes sense límits.",
-    "unlock_now": "Desbloquejar ara"
+    "unlock_now": "Desbloquejar ara",
+    "people_one": "persona",
+    "people_other": "personas"
   },
   "wallet": {
     "title": "La meva Cartera",

@@ -233,7 +233,6 @@
   "landing": {
     "nav_venues": "Locations",
     "nav_rrpp": "PR",
-    "active_now": "{{count}} Personen jetzt aktiv",
     "live_city": "Live in deiner Stadt",
     "hero_desc_1": "Dein LGBTQ+ Nachtleben live.",
     "hero_desc_2": "Locations, Tickets, Check-in und echte Pläne in deiner Stadt.",
@@ -293,7 +292,9 @@
     "footer_business": "Für Unternehmen",
     "footer_terms": "Bedingungen",
     "footer_privacy": "Privatsphäre",
-    "footer_rules": "Regeln"
+    "footer_rules": "Regeln",
+    "active_now_one": "{{count}} persona activa ahora",
+    "active_now_other": "{{count}} personas activas ahora"
   },
   "cookie": {
     "text": "Wir verwenden essenzielle Cookies für die Funktion der App und Analyse-Cookies, um deine Erfahrung zu verbessern. Du kannst alle akzeptieren oder nicht-essenzielle ablehnen.",
@@ -701,8 +702,6 @@
     "anonymous": "Anonym"
   },
   "venuesPage": {
-    "person": "Person",
-    "people": "Personen",
     "whereTo": "Wohin gehst du heute?",
     "selectVenue": "Wähle deine Location und sieh, wer dorthin geht",
     "anonMode": "Anonymer Modus (+1)",
@@ -730,7 +729,9 @@
     "verifiedVenue": "✓ Verifizierte Location",
     "here": "Hier",
     "go": "Los",
-    "tickets": "Tickets"
+    "tickets": "Tickets",
+    "people_one": "persona",
+    "people_other": "personas"
   },
   "venueDetail": {
     "loginToClaim": "Du musst dich anmelden, um diesen Ort zu beanspruchen.",
@@ -739,8 +740,6 @@
     "noVenueSpecified": "Es wurde keine Location angegeben",
     "loadingVenue": "Location wird geladen...",
     "back": "Zurück",
-    "personGoes": "Person geht",
-    "peopleGo": "Personen gehen",
     "capacity": "Kapazität:",
     "purchaseCanceled": "Kauf abgebrochen. Du kannst es noch einmal versuchen.",
     "communitySpot": "Dies ist ein Community-Ort",
@@ -765,7 +764,9 @@
     "promotions": "Hervorgehobene Aktionen auf der Karte",
     "cancel": "Abbrechen",
     "assigning": "Zuweisen...",
-    "confirmAndEnter": "Bestätigen und Eintreten"
+    "confirmAndEnter": "Bestätigen und Eintreten",
+    "peopleGo_one": "persona va",
+    "peopleGo_other": "personas van"
   },
   "visits": {
     "title": "BESUCHE",
@@ -776,9 +777,10 @@
     "today": "Heute",
     "fans_title": "ENTDECKE DEINE FANS",
     "there_are": "Es gibt",
-    "people": "Personen",
     "fans_promo_text": "die an deinem Profil interessiert sind. Werde VIP, um alle unbegrenzt zu sehen.",
-    "unlock_now": "Jetzt freischalten"
+    "unlock_now": "Jetzt freischalten",
+    "people_one": "persona",
+    "people_other": "personas"
   },
   "wallet": {
     "title": "Meine Brieftasche",

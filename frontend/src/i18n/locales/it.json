@@ -193,7 +193,6 @@
   "landing": {
     "nav_venues": "Locali",
     "nav_rrpp": "RRPP",
-    "active_now": "{{count}} persone attive ora",
     "live_city": "In diretta nella tua città",
     "hero_desc_1": "Il tuo circuito notturno LGTBIQ+ in diretta.",
     "hero_desc_2": "Locali, biglietti, check-in e piani reali nella tua città.",
@@ -253,7 +252,9 @@
     "footer_business": "Per le Aziende",
     "footer_terms": "Termini",
     "footer_privacy": "Privacy",
-    "footer_rules": "Regole"
+    "footer_rules": "Regole",
+    "active_now_one": "{{count}} persona activa ahora",
+    "active_now_other": "{{count}} personas activas ahora"
   },
   "cookie": {
     "text": "Usiamo cookie essenziali per il funzionamento dell'app e cookie analitici per migliorare la tua esperienza. Puoi accettarli tutti o rifiutare quelli non essenziali.",
@@ -705,8 +706,6 @@
     "anonymous": "Anonimo"
   },
   "venuesPage": {
-    "person": "persona",
-    "people": "persone",
     "whereTo": "Dove esci oggi?",
     "selectVenue": "Seleziona il tuo locale e vedi chi ci va",
     "anonMode": "Modalità Anonima (+1)",
@@ -734,7 +733,9 @@
     "verifiedVenue": "✓ Locale Verificato",
     "here": "Qui",
     "go": "Vai",
-    "tickets": "Biglietti"
+    "tickets": "Biglietti",
+    "people_one": "persona",
+    "people_other": "personas"
   },
   "venueDetail": {
     "loginToClaim": "Devi accedere per rivendicare questo locale.",
@@ -743,8 +744,6 @@
     "noVenueSpecified": "Nessun locale specificato",
     "loadingVenue": "Caricamento locale...",
     "back": "Indietro",
-    "personGoes": "persona va",
-    "peopleGo": "persone vanno",
     "capacity": "Capienza:",
     "purchaseCanceled": "Acquisto annullato. Puoi riprovare.",
     "communitySpot": "Questo è un punto comunitario",
@@ -769,7 +768,9 @@
     "promotions": "Promozioni in evidenza sulla mappa",
     "cancel": "Annulla",
     "assigning": "Assegnazione...",
-    "confirmAndEnter": "Conferma ed Entra"
+    "confirmAndEnter": "Conferma ed Entra",
+    "peopleGo_one": "persona va",
+    "peopleGo_other": "personas van"
   },
   "visits": {
     "title": "VISITE",
@@ -780,9 +781,10 @@
     "today": "Oggi",
     "fans_title": "SCOPRI I TUOI FAN",
     "there_are": "Ci sono",
-    "people": "persone",
     "fans_promo_text": "interessate al tuo profilo. Diventa VIP per vederle tutte senza limiti.",
-    "unlock_now": "Sblocca ora"
+    "unlock_now": "Sblocca ora",
+    "people_one": "persona",
+    "people_other": "personas"
   },
   "wallet": {
     "title": "Il Mio Portafoglio",

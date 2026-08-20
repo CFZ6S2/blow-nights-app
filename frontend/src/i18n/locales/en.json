@@ -191,7 +191,6 @@
   "landing": {
     "nav_venues": "Venues",
     "nav_rrpp": "PR",
-    "active_now": "{{count}} people active now",
     "live_city": "Live in your city",
     "hero_desc_1": "Your live LGBTQ+ nightlife circuit.",
     "hero_desc_2": "Venues, tickets, check-in, and real plans in your city.",
@@ -251,7 +250,9 @@
     "footer_business": "For Business",
     "footer_terms": "Terms",
     "footer_privacy": "Privacy",
-    "footer_rules": "Rules"
+    "footer_rules": "Rules",
+    "active_now_one": "{{count}} persona activa ahora",
+    "active_now_other": "{{count}} personas activas ahora"
   },
   "cookie": {
     "text": "We use essential cookies for the app to function and analytics cookies to improve your experience. You can accept all or reject non-essential ones.",
@@ -703,8 +704,6 @@
     "anonymous": "Anonymous"
   },
   "venuesPage": {
-    "person": "person",
-    "people": "people",
     "whereTo": "Where are you going today?",
     "selectVenue": "Select your spot and see who's going",
     "anonMode": "Anonymous Mode (+1)",
@@ -732,7 +731,9 @@
     "verifiedVenue": "✓ Verified Venue",
     "here": "Here",
     "go": "Go",
-    "tickets": "Tickets"
+    "tickets": "Tickets",
+    "people_one": "persona",
+    "people_other": "personas"
   },
   "venueDetail": {
     "loginToClaim": "You must log in to claim this venue.",
@@ -741,8 +742,6 @@
     "noVenueSpecified": "No venue specified",
     "loadingVenue": "Loading venue...",
     "back": "Back",
-    "personGoes": "person is going",
-    "peopleGo": "people are going",
     "capacity": "Capacity:",
     "purchaseCanceled": "Purchase canceled. You can try again.",
     "communitySpot": "This is a community point",
@@ -767,7 +766,9 @@
     "promotions": "Featured promotions on the map",
     "cancel": "Cancel",
     "assigning": "Assigning...",
-    "confirmAndEnter": "Confirm and Enter"
+    "confirmAndEnter": "Confirm and Enter",
+    "peopleGo_one": "persona va",
+    "peopleGo_other": "personas van"
   },
   "visits": {
     "title": "VISITS",
@@ -778,9 +779,10 @@
     "today": "Today",
     "fans_title": "DISCOVER YOUR FANS",
     "there_are": "There are",
-    "people": "people",
     "fans_promo_text": "interested in your profile. Go VIP to see them all with no limits.",
-    "unlock_now": "Unlock now"
+    "unlock_now": "Unlock now",
+    "people_one": "persona",
+    "people_other": "personas"
   },
   "wallet": {
     "title": "My Wallet",

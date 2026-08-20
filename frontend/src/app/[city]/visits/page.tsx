@@ -193,7 +193,7 @@ export default function VisitsPage() {
             
             <h2 className="text-2xl font-[1000] mb-3 tracking-tight">{t('visits.fans_title')}</h2>
             <p className="text-slate-400 text-sm leading-relaxed mb-8 px-4">
-              {t('visits.there_are')} <span className="text-white font-bold">{visits.length} {t('visits.people')}</span> {t('visits.fans_promo_text')}
+              {t('visits.there_are')} <span className="text-white font-bold">{visits.length} {t('visits.people', { count: visits.length })}</span> {t('visits.fans_promo_text')}
             </p>
             
             <motion.button 

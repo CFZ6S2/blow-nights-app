@@ -233,7 +233,6 @@
   "landing": {
     "nav_venues": "Места",
     "nav_rrpp": "RRPP",
-    "active_now": "{{count}} активных людей сейчас",
     "live_city": "В прямом эфире в твоем городе",
     "hero_desc_1": "Твой ночной маршрут LGTBIQ+ в реальном времени.",
     "hero_desc_2": "Заведения, билеты, чекины и реальные планы в твоем городе.",
@@ -293,7 +292,9 @@
     "footer_business": "Для бизнеса",
     "footer_terms": "Условия",
     "footer_privacy": "Приватность",
-    "footer_rules": "Правила"
+    "footer_rules": "Правила",
+    "active_now_one": "{{count}} persona activa ahora",
+    "active_now_other": "{{count}} personas activas ahora"
   },
   "cookie": {
     "text": "Мы используем основные файлы cookie для работы приложения и аналитические файлы cookie для улучшения вашего опыта. Вы можете принять все или отклонить необязательные.",
@@ -705,8 +706,6 @@
     "anonymous": "Анонимный"
   },
   "venuesPage": {
-    "person": "человек",
-    "people": "людей",
     "whereTo": "Куда вы сегодня идете?",
     "selectVenue": "Выберите свое заведение и посмотрите, кто идет",
     "anonMode": "Анонимный режим (+1)",
@@ -734,7 +733,9 @@
     "verifiedVenue": "✓ Проверенное заведение",
     "here": "Здесь",
     "go": "Идти",
-    "tickets": "Билеты"
+    "tickets": "Билеты",
+    "people_one": "persona",
+    "people_other": "personas"
   },
   "venueDetail": {
     "loginToClaim": "Вам необходимо войти в систему, чтобы заявить права на это заведение.",
@@ -743,8 +744,6 @@
     "noVenueSpecified": "Заведение не указано",
     "loadingVenue": "Загрузка заведения...",
     "back": "Назад",
-    "personGoes": "человек идет",
-    "peopleGo": "людей идут",
     "capacity": "Вместимость:",
     "purchaseCanceled": "Покупка отменена. Вы можете попробовать снова.",
     "communitySpot": "Это общественное место",
@@ -769,7 +768,9 @@
     "promotions": "Выделенные акции на карте",
     "cancel": "Отмена",
     "assigning": "Назначение...",
-    "confirmAndEnter": "Подтвердить и войти"
+    "confirmAndEnter": "Подтвердить и войти",
+    "peopleGo_one": "persona va",
+    "peopleGo_other": "personas van"
   },
   "visits": {
     "title": "ВИЗИТЫ",
@@ -780,9 +781,10 @@
     "today": "Сегодня",
     "fans_title": "УЗНАЙТЕ СВОИХ ПОКЛОННИКОВ",
     "there_are": "Есть",
-    "people": "человек",
     "fans_promo_text": "заинтересованы в вашем профиле. Станьте VIP, чтобы видеть всех без ограничений.",
-    "unlock_now": "Разблокировать сейчас"
+    "unlock_now": "Разблокировать сейчас",
+    "people_one": "persona",
+    "people_other": "personas"
   },
   "wallet": {
     "title": "Мой кошелек",

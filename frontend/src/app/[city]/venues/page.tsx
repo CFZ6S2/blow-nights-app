@@ -33,7 +33,7 @@ function VenueCounter({ venueId }: { venueId: string }) {
 
   return (
     <span className="bg-fuchsia-500/20 text-fuchsia-400 text-[10px] font-black px-2 py-0.5 rounded-full">
-      {count} {count === 1 ? t('venuesPage.person') : t('venuesPage.people')}
+      {count} {t('venuesPage.people', { count })}
     </span>
   );
 }
