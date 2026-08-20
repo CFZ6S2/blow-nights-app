@@ -172,14 +172,14 @@ describe('LandingPage', () => {
   
   describe('Venue Types Section', () => {
     it('renders venue types section', () => {
-      render(<LandingPage onStart={() => {}} />, { wrapper: createWrapper() });
+      render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
       expect(screen.getByText('Venue types')).toBeInTheDocument();
       expect(screen.getByText('Explore venues')).toBeInTheDocument();
     });
     
     it('renders all venue type cards', () => {
-      render(<LandingPage onStart={() => {}} />, { wrapper: createWrapper() });
+      render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
       expect(screen.getByText('Bars')).toBeInTheDocument();
       expect(screen.getByText('Clubs')).toBeInTheDocument();
@@ -192,19 +192,19 @@ describe('LandingPage', () => {
   
   describe('B2B Section', () => {
     it('renders B2B tagline', () => {
-      render(<LandingPage onStart={() => {}} />, { wrapper: createWrapper() });
+      render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
       expect(screen.getByText('For venues')).toBeInTheDocument();
     });
     
     it('renders B2B title and description', () => {
-      render(<LandingPage onStart={() => {}} />, { wrapper: createWrapper() });
+      render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
       expect(screen.getByText('Manage your venue')).toBeInTheDocument();
     });
     
     it('renders B2B CTA', () => {
-      render(<LandingPage onStart={() => {}} />, { wrapper: createWrapper() });
+      render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
       expect(screen.getByText('Register')).toBeInTheDocument();
     });
@@ -212,13 +212,13 @@ describe('LandingPage', () => {
   
   describe('Privacy Section', () => {
     it('renders privacy title', () => {
-      render(<LandingPage onStart={() => {}} />, { wrapper: createWrapper() });
+      render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
       expect(screen.getByText('Privacy first')).toBeInTheDocument();
     });
     
     it('renders privacy modes', () => {
-      render(<LandingPage onStart={() => {}} />, { wrapper: createWrapper() });
+      render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
       expect(screen.getByText('Public profile')).toBeInTheDocument();
       expect(screen.getByText('Ghost mode')).toBeInTheDocument();
@@ -228,7 +228,7 @@ describe('LandingPage', () => {
   
   describe('Footer', () => {
     it('renders footer links', () => {
-      render(<LandingPage onStart={() => {}} />, { wrapper: createWrapper() });
+      render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
       expect(screen.getByText('Business')).toBeInTheDocument();
       expect(screen.getByText('Terms')).toBeInTheDocument();
