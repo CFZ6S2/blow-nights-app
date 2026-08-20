@@ -72,9 +72,8 @@ jobs:
         run: |
           firebase deploy \
             --only functions,firestore:rules,firestore:indexes,storage,hosting \
-            --project blow-nights-app \
-            --non-interactive \
-            --token ${{ secrets.FIREBASE_TOKEN }}
+            --project gay-meet-app-mvp-26 \
+            --non-interactive
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
       
@@ -85,8 +84,8 @@ jobs:
         if: success()
         run: |
           echo "✅ Deploy exitoso!"
-          echo "Frontend: https://blow-nights-app.web.app"
-          echo "Functions: https://europe-west1-blow-nights-app.cloudfunctions.net"
+          echo "Frontend: https://gay-meet-app-mvp-26.web.app"
+          echo "Functions: https://europe-west1-gay-meet-app-mvp-26.cloudfunctions.net"
       
       - name: Notify Failure
         if: failure()
@@ -110,13 +109,13 @@ jobs:
       
       - name: Health Check - Frontend
         run: |
-          curl --fail --retry 5 --retry-delay 10 https://blow-nights-app.web.app || exit 1
+          curl --fail --retry 5 --retry-delay 10 https://gay-meet-app-mvp-26.web.app || exit 1
       
       - name: Health Check - Functions
         run: |
           # Verificar que las funciones esten disponibles
           curl --fail --retry 3 --retry-delay 5 \
-            "https://europe-west1-blow-nights-app.cloudfunctions.net/" \
+            "https://europe-west1-gay-meet-app-mvp-26.cloudfunctions.net/" \
             || echo "⚠️ Functions endpoint no disponible (puede ser normal si no hay endpoint publico)"
       
       - name: Check Firestore Rules
@@ -150,6 +149,7 @@ jobs:
       - name: Rollback Deploy
         run: |
           echo "⚠️ Ejecutando rollback al commit anterior..."
-          firebase deploy --only hosting --project blow-nights-app --non-interactive
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}' > /tmp/gcp-key.json
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
+          firebase deploy --only hosting --project gay-meet-app-mvp-26 --non-interactive
+          rm -f /tmp/gcp-key.json
