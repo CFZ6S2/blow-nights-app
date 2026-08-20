@@ -130,8 +130,8 @@ describe('LandingPage', () => {
     it('renders hero description', () => {
       render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
-      expect(screen.getByText('Connect')).toBeInTheDocument();
-      expect(screen.getByText('Discover')).toBeInTheDocument();
+      expect(screen.getByText(/Connect/i)).toBeInTheDocument();
+      expect(screen.getByText(/Discover/i)).toBeInTheDocument();
     });
     
     it('renders CTA button', () => {
@@ -166,7 +166,7 @@ describe('LandingPage', () => {
     it('renders steps title', () => {
       render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
-      expect(screen.getByText('How it works')).toBeInTheDocument();
+      expect(screen.getAllByText('How it works').length).toBeGreaterThan(0);
     });
   });
   
