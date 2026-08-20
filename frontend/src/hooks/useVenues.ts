@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { type PerformanceTrace } from 'firebase/performance';
 import { db } from '@/lib/firebase';
 
 const VENUE_TYPES = {
@@ -30,7 +31,7 @@ export function useVenues(cityId: string | null) {
 
     const q = query(collection(db, 'venues'), ...constraints);
 
-    let perfTrace = null;
+    let perfTrace: PerformanceTrace | null = null;
     if (typeof window !== 'undefined') {
       import('@/lib/perf').then(({ startTrace }) => {
         perfTrace = startTrace('query_venues');
