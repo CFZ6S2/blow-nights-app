@@ -44,6 +44,9 @@ exports.createUserMembershipCheckout = onCall({ enforceAppCheck: true }, async (
     await db.collection('subscriptions').doc(uid).set({ stripeCustomerId: customerId, status: 'incomplete' }, { merge: true });
   }
 
+  const userDoc = await db.collection('users').doc(uid).get();
+  const cityId = userDoc.exists ? userDoc.data().cityId : null;
+
   // Create Checkout Session (subscription mode)
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
@@ -52,7 +55,10 @@ exports.createUserMembershipCheckout = onCall({ enforceAppCheck: true }, async (
     mode: 'subscription',
     success_url: `${origin}/premium?success=true`,
     cancel_url: `${origin}/premium?canceled=true`,
-    metadata: { firebaseUID: uid, type: 'user_membership', tier, period },
+    metadata: { firebaseUID: uid, type: 'user_membership', tier, period, city_slug: cityId || "" },
+    subscription_data: {
+      metadata: { firebaseUID: uid, type: 'user_membership', city_slug: cityId || "" }
+    }
   });
 
   return { sessionId: session.id, url: session.url };
@@ -83,6 +89,9 @@ exports.createBlack8hCheckout = onCall({ enforceAppCheck: true }, async (request
   const priceId = process.env.STRIPE_PRICE_USER_BLACK_8H;
   if (!priceId) throw new HttpsError('failed-precondition', 'Precio Black 8h no configurado.');
 
+  const userDoc = await db.collection('users').doc(uid).get();
+  const cityId = userDoc.exists ? userDoc.data().cityId : null;
+
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
     payment_method_types: ['card'],
@@ -90,7 +99,7 @@ exports.createBlack8hCheckout = onCall({ enforceAppCheck: true }, async (request
     mode: 'payment',
     success_url: `${origin}/premium?black8h_success=true`,
     cancel_url: `${origin}/premium?black8h_canceled=true`,
-    metadata: { firebaseUID: uid, type: 'black_boost' },
+    metadata: { firebaseUID: uid, type: 'black_boost', city_slug: cityId || "" },
   });
 
   return { sessionId: session.id, url: session.url };

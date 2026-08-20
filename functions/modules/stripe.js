@@ -1,6 +1,76 @@
 const { onCall, HttpsError, onRequest } = require("firebase-functions/v2/https");
 const { admin, db, getStripe } = require("../lib/init");
 
+async function executePayoutCascade(stripe, amountCents, cityId, description, transferGroup, type, relatedId, userId, db, admin) {
+  if (!cityId || amountCents <= 0) return;
+  try {
+    const cityDoc = await db.collection("cities").doc(cityId).get();
+    if (!cityDoc.exists) return;
+    const cityData = cityDoc.data();
+    const partnerStripeId = cityData.partner_stripe_account_id || null;
+    const ambassadorId = cityData.ambassadorId || null;
+
+    const ambassadorCents = Math.round(amountCents * 0.25);
+    let ambassadorPaid = false;
+
+    if (ambassadorId) {
+      const ambassadorDoc = await db.collection("users").doc(ambassadorId).get();
+      const ambassadorStripe = ambassadorDoc.exists ? ambassadorDoc.data()?.stripeAccountId : null;
+      if (ambassadorStripe) {
+        const transferData = {
+          amount: ambassadorCents,
+          currency: "eur",
+          destination: ambassadorStripe,
+          description: `Ambassador 25% ${description}`,
+          transfer_group: transferGroup,
+        };
+        try {
+          await stripe.transfers.create(transferData);
+          await db.collection("users").doc(ambassadorId).collection("earnings").add({
+            amount: ambassadorCents / 100,
+            type: type,
+            cityId,
+            relatedId: relatedId || null,
+            userId: userId || null,
+            timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          ambassadorPaid = true;
+        } catch (err) {
+          console.error("Error en transfer Ambassador:", err);
+          await db.collection("pending_transfers").add({ ...transferData, status: "pending", error: err.message, timestamp: admin.firestore.FieldValue.serverTimestamp() });
+        }
+      }
+    }
+
+    const cityManagerCents = Math.ceil((amountCents - ambassadorCents) / 2);
+
+    if (partnerStripeId) {
+      const transferData = {
+        amount: cityManagerCents,
+        currency: "eur",
+        destination: partnerStripeId,
+        description: `CityManager 50% ${description}`,
+        transfer_group: transferGroup,
+      };
+      try {
+        await stripe.transfers.create(transferData);
+        await db.collection("cities").doc(cityId).collection("earnings").add({
+          amount: cityManagerCents / 100,
+          type: type,
+          relatedId: relatedId || null,
+          userId: userId || null,
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      } catch (err) {
+        console.error("Error en transfer City Manager:", err);
+        await db.collection("pending_transfers").add({ ...transferData, status: "pending", error: err.message, timestamp: admin.firestore.FieldValue.serverTimestamp() });
+      }
+    }
+  } catch(e) {
+    console.error("Error en executePayoutCascade", e);
+  }
+}
+
 exports.createCheckoutSession = onCall({ enforceAppCheck: true }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
@@ -800,7 +870,35 @@ exports.stripeWebhook = onRequest(async (req, res) => {
   }
 }
   
-if (event.type === "customer.subscription.deleted") {
+
+  if (event.type === "invoice.payment_succeeded") {
+    const invoice = event.data.object;
+    if (invoice.subscription) {
+      const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+      const isVenueSub = subscription.metadata?.type === "venue_subscription";
+      const isUserSub = subscription.metadata?.type === "user_membership";
+      const citySlug = subscription.metadata?.city_slug || subscription.metadata?.cityId;
+      
+      if (citySlug && invoice.amount_paid > 0) {
+        if (isVenueSub) {
+          const venueId = subscription.metadata?.venueId;
+          const tier = subscription.metadata?.tier;
+          await executePayoutCascade(stripe, invoice.amount_paid, citySlug, `Renovación venue sub ${tier} - ${venueId}`, invoice.id, "venue_subscription_renewal", venueId, null, db, admin);
+        } else if (isUserSub) {
+          const firebaseUID = subscription.metadata?.firebaseUID;
+          await executePayoutCascade(stripe, invoice.amount_paid, citySlug, `Renovación Suscripción Plus - ${firebaseUID}`, invoice.id, "user_membership_renewal", null, firebaseUID, db, admin);
+          
+          if (firebaseUID) {
+            await db.collection("subscriptions").doc(firebaseUID).update({
+              renewalDate: admin.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        }
+      }
+    }
+  }
+
+  if (event.type === "customer.subscription.deleted") {
     const customer = await stripe.customers.retrieve(session.customer);
     const uid = customer.metadata?.firebaseUID;
     const venueId = customer.metadata?.venueId;

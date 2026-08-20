@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { db, functions } from '@/lib/firebase';
@@ -20,6 +21,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   const { user, isAdmin, isSuperAdmin, loading } = useAuth();
   const router = useRouter();
   
@@ -234,7 +236,7 @@ export default function AdminDashboard() {
             <h1 className="text-3xl font-black bg-gradient-to-r from-fuchsia-500 to-indigo-500 bg-clip-text text-transparent">
               ADMIN DASHBOARD
             </h1>
-            <p className="text-slate-400 text-sm">Control optimizado de infraestructura y métricas.</p>
+            <p className="text-slate-400 text-sm">{t('admin.subtitle')}</p>
           </div>
           <div className="flex gap-2">
             {isSuperAdmin && (
@@ -258,8 +260,8 @@ export default function AdminDashboard() {
         
         <div className="flex items-center justify-between p-4 bg-black/50 rounded-xl border border-white/5">
           <div>
-            <h3 className="font-bold">Puente Dark Nights</h3>
-            <p className="text-xs text-slate-400">Permite a los usuarios saltar al circuito general</p>
+            <h3 className="font-bold">{t('admin.dark_nights_bridge')}</h3>
+            <p className="text-xs text-slate-400">{t('admin.dark_nights_desc')}</p>
           </div>
           <button
             onClick={async () => {
@@ -277,26 +279,26 @@ export default function AdminDashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4 mb-8">
-        <StatCard label="Usuarios" value={stats.totalUsers} icon="people" color="from-fuchsia-500/20 to-fuchsia-500/5" border="border-fuchsia-500/20" />
-        <StatCard label="Online" value={stats.onlineUsers} icon="sensors" color="from-emerald-500/20 to-emerald-500/5" border="border-emerald-500/20" />
-        <StatCard label="Premium" value={stats.premiumUsers} icon="star" color="from-amber-500/20 to-amber-500/5" border="border-amber-500/20" />
-        <StatCard label="Reportes" value={stats.pendingReports} icon="report_problem" color="from-rose-500/20 to-rose-500/5" border="border-rose-500/20" />
+        <StatCard label={t('admin.users')} value={stats.totalUsers} icon="people" color="from-fuchsia-500/20 to-fuchsia-500/5" border="border-fuchsia-500/20" />
+        <StatCard label={t('admin.online')} value={stats.onlineUsers} icon="sensors" color="from-emerald-500/20 to-emerald-500/5" border="border-emerald-500/20" />
+        <StatCard label={t('admin.premium')} value={stats.premiumUsers} icon="star" color="from-amber-500/20 to-amber-500/5" border="border-amber-500/20" />
+        <StatCard label={t('admin.reports')} value={stats.pendingReports} icon="report_problem" color="from-rose-500/20 to-rose-500/5" border="border-rose-500/20" />
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
-        <TabButton active={activeTab === 'stats'} onClick={() => setActiveTab('stats')} label="General" icon="dashboard" />
-        <TabButton active={activeTab === 'users'} onClick={() => setActiveTab('users')} label="Usuarios" icon="group" />
-        <TabButton active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} label="Reportes" icon="gavel" />
-        <TabButton active={activeTab === 'verifications'} onClick={() => setActiveTab('verifications')} label="Verificaciones" icon="verified" />
-        <TabButton active={activeTab === 'rrpps'} onClick={() => setActiveTab('rrpps')} label={`RRPP (${rrppApps.length})`} icon="assignment_ind" />
+        <TabButton active={activeTab === 'stats'} onClick={() => setActiveTab('stats')} label={t('admin.general')} icon="dashboard" />
+        <TabButton active={activeTab === 'users'} onClick={() => setActiveTab('users')} label={t('admin.users')} icon="group" />
+        <TabButton active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} label={t('admin.reports')} icon="gavel" />
+        <TabButton active={activeTab === 'verifications'} onClick={() => setActiveTab('verifications')} label={t('admin.verifications')} icon="verified" />
+        <TabButton active={activeTab === 'rrpps'} onClick={() => setActiveTab('rrpps')} label={`${t('admin.rrpp')} (${rrppApps.length})`} icon="assignment_ind" />
       </div>
 
       {/* Content Tabs */}
       <AnimatePresence mode="wait">
         {activeTab === 'rrpps' && (
           <motion.div key="rrpps" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
-            {rrppApps.length === 0 && <p className="text-sm text-slate-500">No hay solicitudes RRPP pendientes.</p>}
+            {rrppApps.length === 0 && <p className="text-sm text-slate-500">{t('admin.no_rrpp')}</p>}
             {rrppApps.map(app => (
               <div key={app.id} className="bg-white/5 backdrop-blur-md border border-fuchsia-500/30 rounded-2xl p-4">
                 <div className="flex justify-between items-start mb-2">
@@ -304,7 +306,7 @@ export default function AdminDashboard() {
                     <p className="font-bold text-white text-lg">{app.nick || 'Sin nick'}</p>
                     <p className="text-xs text-slate-400">{app.email}</p>
                   </div>
-                  <span className="px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded-md text-xs font-bold uppercase">Pendiente</span>
+                  <span className="px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded-md text-xs font-bold uppercase">{t('admin.pending')}</span>
                 </div>
                 <p className="text-sm text-slate-300 mb-1">📞 {app.phone} | 📍 {app.city}</p>
                 <div className="mt-4 flex gap-2">
@@ -342,13 +344,13 @@ export default function AdminDashboard() {
                   <p className="text-3xl font-black text-amber-400">
                     {stats.totalUsers > 0 ? Math.round((stats.premiumUsers / stats.totalUsers) * 100) : 0}%
                   </p>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Conversión Premium</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">{t('admin.conversion_premium')}</p>
                 </div>
                 <div className="bg-slate-900/50 rounded-2xl p-4 border border-white/5 text-center">
                   <p className="text-3xl font-black text-emerald-400">
                     {stats.totalUsers > 0 ? Math.round((stats.onlineUsers / stats.totalUsers) * 100) : 0}%
                   </p>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Usuarios Online</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">{t('admin.users_online')}</p>
                 </div>
               </div>
             </div>
@@ -361,7 +363,7 @@ export default function AdminDashboard() {
               <span className="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">search</span>
               <input 
                 type="text"
-                placeholder="Filtrar por nick..."
+                placeholder={t('admin.filter_nick')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 focus:outline-none focus:border-fuchsia-500/50 transition-colors"
@@ -426,9 +428,9 @@ export default function AdminDashboard() {
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-bold text-rose-400 uppercase">{report.reason}</span>
                   {report.status === 'pending' ? (
-                    <button onClick={() => resolveReport(report.id)} className="bg-emerald-500/20 text-emerald-500 px-3 py-1 rounded-full text-[10px] font-bold">RESOLVER</button>
+                    <button onClick={() => resolveReport(report.id)} className="bg-emerald-500/20 text-emerald-500 px-3 py-1 rounded-full text-[10px] font-bold">{t('admin.resolve')}</button>
                   ) : (
-                    <span className="text-emerald-500 text-[10px] font-bold">RESUELTO</span>
+                    <span className="text-emerald-500 text-[10px] font-bold">{t('admin.resolved')}</span>
                   )}
                 </div>
               </div>
