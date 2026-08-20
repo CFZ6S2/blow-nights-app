@@ -641,3 +641,72 @@ exports.getPromoterStats = onCall({ enforceAppCheck: true }, async (request) => 
     }
   };
 });
+\n
+exports.generateOrganizerQRTicket = onCall({ enforceAppCheck: true }, async (request) => {
+  const { data, auth } = request;
+  if (!auth) throw new HttpsError('unauthenticated', 'Login requerido.');
+
+  const { eventId, clientName, tierId } = data;
+  if (!eventId) throw new HttpsError('invalid-argument', 'Falta el eventId.');
+
+  const organizerId = auth.uid;
+
+  const eventDoc = await db.collection('events').doc(eventId).get();
+  if (!eventDoc.exists) throw new HttpsError('not-found', 'Evento no encontrado.');
+  
+  const eventData = eventDoc.data();
+  if (eventData.organizerId !== organizerId) {
+     throw new HttpsError('permission-denied', 'No eres el organizador de este evento.');
+  }
+
+  const crypto = require('crypto');
+  const qrToken = crypto.randomBytes(32).toString('hex');
+  const pinCode = Math.floor(1000 + Math.random() * 9000).toString();
+
+  const ticketPayload = {
+    userId: null,
+    venueId: eventId, // Para eventos independientes usamos eventId como venueId
+    eventId: eventId,
+    venueOwnerId: organizerId,
+    cityId: eventData.cityId || '',
+    ticketType: tierId || 'general',
+    client_name: clientName || 'Invitado',
+    channel: 'organizer_direct',
+    rrpp_commission: 0,
+    qrToken,
+    pinCode,
+    flyerUrl: eventData.flyerUrl || null,
+    eventTitle: eventData.title || eventData.name || 'Evento',
+    venueName: 'Evento Independiente',
+    eventDate: eventData.date || null,
+    eventTime: eventData.time || null,
+    tierName: tierId || 'Entrada General',
+    status: 'valid',
+    isIndependent: true,
+    purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+
+  const ticketRef = db.collection('tickets').doc();
+  const quotaRef = db.collection('users').doc(organizerId);
+
+  await db.runTransaction(async (tx) => {
+    const quotaDoc = await tx.get(quotaRef);
+    if (!quotaDoc.exists) {
+      throw new HttpsError('not-found', 'Organizador no encontrado.');
+    }
+    const currentQuota = quotaDoc.data().qr_quota || 0;
+    if (currentQuota <= 0) {
+      throw new HttpsError('resource-exhausted', 'Saldo de QRs agotado. Por favor recarga tu saldo.');
+    }
+
+    tx.update(quotaRef, { qr_quota: currentQuota - 1 });
+    tx.set(ticketRef, ticketPayload);
+  });
+
+  return {
+    success: true,
+    ticketId: ticketRef.id,
+    qrToken: qrToken,
+    clientName: ticketPayload.client_name
+  };
+});

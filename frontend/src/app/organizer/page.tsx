@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, orderBy, onSnapshot, doc, setDoc, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '@/lib/firebase';
+import { db, storage, functions } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -199,6 +200,13 @@ export default function OrganizerDashboard() {
   const [events, setEvents] = useState<IndependentEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [buyQRModal, setBuyQRModal] = useState(false);
+  const [buyingQRs, setBuyingQRs] = useState(false);
+  const [issueModalOpen, setIssueModalOpen] = useState<{eventId: string, tiers: TicketTier[]} | null>(null);
+  const [issueClientName, setIssueClientName] = useState('');
+  const [issueTierId, setIssueTierId] = useState('');
+  const [issuingTicket, setIssuingTicket] = useState(false);
+  const [issuedQR, setIssuedQR] = useState<string | null>(null);
 
   // Form State
   const [title, setTitle] = useState('');
@@ -244,6 +252,43 @@ export default function OrganizerDashboard() {
   }, 0);
   
   const totalCheckedIn = events.reduce((sum, evt) => sum + (evt.stats?.total_checked_in || 0), 0);
+
+  const handleBuyQRs = async (quantity: number) => {
+    setBuyingQRs(true);
+    try {
+      const createCheckout = httpsCallable(functions, 'createQRPackageCheckout');
+      const result: any = await createCheckout({
+        quantity,
+        origin: window.location.origin,
+        purchaseType: 'organizer'
+      });
+      if (result.data?.url) {
+        window.location.href = result.data.url;
+      }
+    } catch (e: any) {
+      alert('Error: ' + e.message);
+    } finally {
+      setBuyingQRs(false);
+    }
+  };
+
+  const handleIssueTicket = async () => {
+    if (!issueClientName || !issueTierId || !issueModalOpen) return alert('Rellena todos los campos');
+    setIssuingTicket(true);
+    try {
+      const issueTicket = httpsCallable(functions, 'generateOrganizerQRTicket');
+      const res: any = await issueTicket({
+        eventId: issueModalOpen.eventId,
+        clientName: issueClientName,
+        tierId: issueTierId
+      });
+      setIssuedQR(res.data.qrToken);
+    } catch (e: any) {
+      alert('Error al emitir entrada: ' + e.message);
+    } finally {
+      setIssuingTicket(false);
+    }
+  };
 
   const handleFlyerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -374,7 +419,17 @@ export default function OrganizerDashboard() {
         </header>
 
         {events.length > 0 && !isCreating && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gradient-to-br from-fuchsia-900/40 to-slate-900/40 border border-fuchsia-500/30 p-6 rounded-3xl relative">
+              <div className="text-[10px] font-black uppercase tracking-widest text-fuchsia-400 mb-1">Créditos QR</div>
+              <div className="text-3xl font-black text-white">{(profile as any)?.qr_quota || 0}</div>
+              <button 
+                onClick={() => setBuyQRModal(true)}
+                className="absolute top-1/2 -translate-y-1/2 right-6 bg-fuchsia-600 hover:bg-fuchsia-500 text-white px-4 py-2 rounded-xl text-xs font-bold"
+              >
+                Recargar
+              </button>
+            </div>
             <div className="bg-gradient-to-br from-indigo-900/40 to-slate-900/40 border border-indigo-500/30 p-6 rounded-3xl">
               <div className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1">{t('organizer_page.total_revenue')}</div>
               <div className="text-3xl font-black text-white">{totalRevenue.toFixed(2)}€</div>
@@ -559,12 +614,122 @@ export default function OrganizerDashboard() {
                   </div>
                 </div>
 
+                <div className="pt-4 mt-4 border-t border-white/5 flex gap-2">
+                  <button 
+                    onClick={() => setIssueModalOpen({eventId: evt.id, tiers: evt.ticket_tiers})}
+                    className="flex-1 bg-fuchsia-600 hover:bg-fuchsia-500 text-white py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+                  >
+                    <span className="material-icons text-[16px]">qr_code_scanner</span>
+                    Emitir Entrada (-1 QR)
+                  </button>
+                </div>
                 <EventPromoters eventId={evt.id} />
               </div>
             </div>
           ))}
         </div>
-      </main>
+      
+        {buyQRModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="bg-slate-900 border border-white/10 rounded-3xl p-6 max-w-sm w-full space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold">Comprar Créditos QR</h3>
+                <button onClick={() => setBuyQRModal(false)}><span className="material-icons">close</span></button>
+              </div>
+              <p className="text-sm text-slate-400">Añade saldo a tu cuenta para emitir entradas manualmente. Coste: 1€ por QR.</p>
+              
+              <div className="space-y-3">
+                {[25, 50, 100, 500].map(qty => (
+                  <button 
+                    key={qty}
+                    onClick={() => handleBuyQRs(qty)}
+                    disabled={buyingQRs}
+                    className="w-full flex justify-between items-center bg-white/5 hover:bg-white/10 p-4 rounded-2xl border border-white/5 disabled:opacity-50"
+                  >
+                    <span className="font-bold">{qty} QRs</span>
+                    <span className="text-indigo-400 font-bold">{qty} €</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {issueModalOpen && !issuedQR && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="bg-slate-900 border border-white/10 rounded-3xl p-6 max-w-sm w-full space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold">Emitir Entrada Directa</h3>
+                <button onClick={() => setIssueModalOpen(null)}><span className="material-icons">close</span></button>
+              </div>
+              <p className="text-sm text-slate-400">Esta acción descontará 1 crédito de tu saldo ({(profile as any)?.qr_quota || 0} disponibles).</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">Nombre del Cliente</label>
+                  <input 
+                    type="text" 
+                    value={issueClientName} 
+                    onChange={e => setIssueClientName(e.target.value)}
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none"
+                    placeholder="Ej. Juan Pérez"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">Tipo de Entrada</label>
+                  <select 
+                    value={issueTierId} 
+                    onChange={e => setIssueTierId(e.target.value)}
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none appearance-none"
+                  >
+                    <option value="">Selecciona un tipo...</option>
+                    {issueModalOpen.tiers.map((t: any) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
+              <button
+                onClick={handleIssueTicket}
+                disabled={issuingTicket}
+                className="w-full py-4 bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-2xl font-black uppercase tracking-widest disabled:opacity-50"
+              >
+                {issuingTicket ? 'Emitiendo...' : 'Generar QR'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {issuedQR && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+            <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center space-y-6">
+              <h3 className="text-2xl font-black text-slate-900">¡Entrada Generada!</h3>
+              <p className="text-sm text-slate-600">Muestra este código al portero o hazle captura de pantalla.</p>
+              
+              <div className="bg-slate-100 p-4 rounded-2xl aspect-square flex items-center justify-center border-4 border-slate-200">
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${issuedQR}`} 
+                  alt="Ticket QR" 
+                  className="w-full h-full object-contain mix-blend-multiply" 
+                />
+              </div>
+              
+              <button
+                onClick={() => {
+                  setIssuedQR(null);
+                  setIssueModalOpen(null);
+                  setIssueClientName('');
+                  setIssueTierId('');
+                }}
+                className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+</main>
     </div>
   );
 }
