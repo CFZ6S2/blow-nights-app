@@ -11,8 +11,10 @@ import { useAuth } from '@/context/AuthContext';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import Link from 'next/link';
 import { DEFAULT_CITY } from '@/lib/routes';
+import { useTranslation } from 'react-i18next';
 
 function TicketContent() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
   const { user } = useAuth();
@@ -85,15 +87,15 @@ function TicketContent() {
   }, [chill]);
 
   if (loading) {
-    return <div className="min-h-screen bg-black flex items-center justify-center text-white text-xs font-mono">Generando pase seguro...</div>;
+    return <div className="min-h-screen bg-black flex items-center justify-center text-white text-xs font-mono">{t('ticket.generatingPass')}</div>;
   }
 
   if (!request || !chill) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white p-6">
         <AlertCircle size={48} className="text-red-500 mb-4" />
-        <h1 className="text-xl font-bold">Pase No Encontrado</h1>
-        <p className="text-gray-400 text-center mt-2">Este pase no existe o ha sido purgado del sistema.</p>
+        <h1 className="text-xl font-bold">{t('ticket.passNotFoundTitle')}</h1>
+        <p className="text-gray-400 text-center mt-2">{t('ticket.passNotFoundDesc')}</p>
       </div>
     );
   }
@@ -102,8 +104,8 @@ function TicketContent() {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white p-6">
         <AlertCircle size={48} className="text-red-500 mb-4" />
-        <h1 className="text-xl font-bold">Acceso Denegado</h1>
-        <p className="text-gray-400 text-center mt-2">Este pase no te pertenece.</p>
+        <h1 className="text-xl font-bold">{t('ticket.accessDeniedTitle')}</h1>
+        <p className="text-gray-400 text-center mt-2">{t('ticket.accessDeniedDesc')}</p>
       </div>
     );
   }
@@ -113,8 +115,8 @@ function TicketContent() {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white p-6">
         <AlertCircle size={48} className="text-amber-500 mb-4" />
-        <h1 className="text-xl font-bold">Pase Revocado o Pendiente</h1>
-        <p className="text-gray-400 text-center mt-2">El anfitrión aún no ha aceptado tu solicitud o ha revocado tu acceso.</p>
+        <h1 className="text-xl font-bold">{t('ticket.passRevokedTitle')}</h1>
+        <p className="text-gray-400 text-center mt-2">{t('ticket.passRevokedDesc')}</p>
       </div>
     );
   }
@@ -127,9 +129,9 @@ function TicketContent() {
       <div className="w-full max-w-sm mt-8">
         {/* Etiqueta Superior */}
         <div className="bg-gradient-to-r from-fuchsia-600 to-purple-600 p-4 rounded-t-3xl text-center shadow-[0_0_20px_rgba(217,70,239,0.2)]">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Digital Access Pass</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">{t('ticket.digitalAccessPass')}</span>
           <h1 className="text-xl font-black text-white mt-1">{chill.title}</h1>
-          <p className="text-xs text-white/90 mt-1 capitalize">{chill.type === 'commercial' ? 'Fiesta Privada' : 'Chill Social'}</p>
+          <p className="text-xs text-white/90 mt-1 capitalize">{chill.type === 'commercial' ? t('ticket.privateParty') : t('ticket.socialChill')}</p>
         </div>
 
         {/* Cuerpo del Ticket */}
@@ -141,7 +143,7 @@ function TicketContent() {
                 <div className="w-48 h-48 bg-emerald-500/10 rounded-2xl flex items-center justify-center border-2 border-emerald-500/50 mb-6">
                   <div className="text-center text-emerald-400 font-bold">
                     <CheckCircle2 size={48} className="mx-auto mb-2" />
-                    Pase Validado
+                    {t('ticket.passValidated')}
                   </div>
                 </div>
               ) : (
@@ -153,17 +155,17 @@ function TicketContent() {
               )}
               
               <div className="w-full flex flex-col items-center mb-6">
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">PIN de Acceso</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">{t('ticket.accessPin')}</p>
                 <div className="text-3xl font-black tracking-widest text-white border border-white/10 bg-white/5 px-6 py-2 rounded-xl">
                   #{generatedPin}
                 </div>
               </div>
               <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl mb-6 mt-2 max-w-[240px]">
                 <p className="text-[9px] text-amber-500 font-bold uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
-                  <AlertCircle size={10} /> Aviso al Asistente
+                  <AlertCircle size={10} /> {t('ticket.attendeeNotice')}
                 </p>
                 <p className="text-[10px] text-amber-200/70 text-center leading-tight">
-                  Este pase es un código de acceso digital generado por el anfitrión mediante la tecnología de Blow Nights. La plataforma no organiza este evento privado ni garantiza acuerdos económicos entre particulares. Acceso sujeto al derecho de admisión del anfitrión.
+                  {t('ticket.disclaimer')}
                 </p>
               </div>
             </>
@@ -176,13 +178,13 @@ function TicketContent() {
           {/* Información Desbloqueada */}
           <div className="w-full space-y-4">
             <div>
-              <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Tu Nombre</span>
+              <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider block mb-1">{t('ticket.yourName')}</span>
               <p className="text-sm font-bold">{request.user_nick || request.userName}</p>
             </div>
 
             <div className="pt-4 border-t border-[#23273f]">
-              <span className="text-[9px] text-emerald-400 font-bold uppercase tracking-wider block mb-1">Ubicación Desbloqueada</span>
-              <p className="text-sm font-medium text-gray-200">{exactAddress || 'Cargando dirección...'}</p>
+              <span className="text-[9px] text-emerald-400 font-bold uppercase tracking-wider block mb-1">{t('ticket.unlockedLocation')}</span>
+              <p className="text-sm font-medium text-gray-200">{exactAddress || t('ticket.loadingAddress')}</p>
               
               <a 
                 href={mapsUrl}
@@ -191,13 +193,13 @@ function TicketContent() {
                 className="mt-3 flex items-center justify-center gap-2 w-full bg-[#1e2238] hover:bg-[#282d4a] border border-[#3b3f66] text-white py-3 rounded-xl text-xs font-bold transition-all"
               >
                 <Map size={16} className="text-blue-400" />
-                Abrir en Google Maps
+                {t('ticket.openInMaps')}
               </a>
             </div>
 
             {chill.instructions && (
               <div className="pt-4 border-t border-[#23273f]">
-                <span className="text-[9px] text-amber-400 font-bold uppercase tracking-wider block mb-1">Instrucciones de Llegada</span>
+                <span className="text-[9px] text-amber-400 font-bold uppercase tracking-wider block mb-1">{t('ticket.arrivalInstructions')}</span>
                 <p className="text-xs text-gray-300 italic">"{chill.instructions}"</p>
               </div>
             )}
@@ -210,13 +212,13 @@ function TicketContent() {
           <div className="mt-6 bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/30 rounded-2xl p-5 text-center shadow-lg relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-indigo-500" />
             <UserPlus className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-            <h4 className="text-white font-bold mb-1">¿Quieres ver quién está dentro hoy?</h4>
-            <p className="text-slate-400 text-xs mb-4">Crea tu perfil en 1 clic y entra al Radar de la fiesta.</p>
+            <h4 className="text-white font-bold mb-1">{t('ticket.seeWhoIsInside')}</h4>
+            <p className="text-slate-400 text-xs mb-4">{t('ticket.createProfile')}</p>
             <Link 
               href={`/login?redirect=/ticket?id=${id}`}
               className="inline-block bg-white text-black font-bold uppercase tracking-widest text-[10px] px-6 py-3 rounded-xl hover:bg-slate-200 transition-colors"
             >
-              Crear Perfil Ahora
+              {t('ticket.createProfileBtn')}
             </Link>
           </div>
         )}
@@ -225,13 +227,13 @@ function TicketContent() {
         {user && (
           <div className="mt-6 text-center">
             <Link href={`/${DEFAULT_CITY}/`} className="text-purple-400 text-xs font-bold uppercase tracking-wider hover:text-purple-300">
-              Ver el Radar del Evento &rarr;
+              <span dangerouslySetInnerHTML={{ __html: t('ticket.viewRadar') }} />
             </Link>
           </div>
         )}
 
         <p className="text-[10px] text-gray-600 text-center mt-6">
-          Este pase y la ubicación se autodestruirán al finalizar el evento.
+          {t('ticket.selfDestruct')}
         </p>
 
       </div>

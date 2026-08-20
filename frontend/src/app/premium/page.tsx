@@ -156,13 +156,13 @@ export default function PremiumPage() {
               onClick={() => setPeriod('monthly')}
               className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${period === 'monthly' ? 'bg-white text-black shadow-lg' : 'text-white/70 hover:text-white'}`}
             >
-              Mensual
+              {t('premium.monthly')}
             </button>
             <button 
               onClick={() => setPeriod('yearly')}
               className={`px-6 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-2 ${period === 'yearly' ? 'bg-gradient-to-r from-fuchsia-500 to-indigo-500 text-white shadow-lg' : 'text-white/70 hover:text-white'}`}
             >
-              Anual <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">-40%</span>
+              {t('premium.yearly')} <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">-40%</span>
             </button>
           </div>
         </div>
@@ -186,7 +186,7 @@ export default function PremiumPage() {
         {(isPlus || isBlack) && !isPromoLifetime && (
           <div className="bg-white/10 border border-white/20 p-6 rounded-3xl flex justify-between items-center mb-8 backdrop-blur-sm">
             <div>
-              <p className="text-slate-400 text-xs uppercase tracking-widest font-bold">Plan Actual</p>
+              <p className="text-slate-400 text-xs uppercase tracking-widest font-bold">{t('premium.current_plan')}</p>
               <h3 className={`text-2xl font-black ${isBlack ? 'text-transparent bg-clip-text bg-gradient-to-r from-slate-300 to-white' : 'text-fuchsia-400'}`}>
                 {isBlack ? 'BLACK' : 'PLUS'}
               </h3>
@@ -196,7 +196,7 @@ export default function PremiumPage() {
               disabled={isSubmitting}
               className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl text-sm font-bold transition-all border border-white/10"
             >
-              Gestionar
+              {t('premium.manage')}
             </button>
           </div>
         )}

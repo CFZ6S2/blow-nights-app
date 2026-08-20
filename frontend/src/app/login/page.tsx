@@ -7,8 +7,10 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { DEFAULT_CITY } from '@/lib/routes';
 import { Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 
 function LoginInner() {
+  const { t } = useTranslation();
   const { user, profile, loading: authLoading, loginWithGoogle, loginWithApple } = useAuth();
   const [error, setError] = useState('');
   const [ageConfirmed, setAgeConfirmed] = useState(false);
@@ -80,7 +82,7 @@ function LoginInner() {
           <h1 className="text-5xl font-[1000] tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-500 via-purple-500 to-indigo-500">
             BLOW NIGHTS
           </h1>
-          <p className="text-slate-400 font-medium uppercase text-[10px] tracking-[0.3em]">Tu Circuito Nocturno</p>
+          <p className="text-slate-400 font-medium uppercase text-[10px] tracking-[0.3em]">{t('login.subtitle')}</p>
         </div>
 
         {error && (
@@ -114,7 +116,7 @@ function LoginInner() {
             className="w-full flex items-center justify-center gap-4 bg-white text-black font-[1000] py-6 rounded-2xl hover:bg-slate-200 transition-all duration-300 shadow-xl text-[10px] uppercase tracking-[0.2em] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white"
           >
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
-            Entrar con Google
+            {t('login.google')}
           </button>
 
           <button
@@ -123,7 +125,7 @@ function LoginInner() {
             className="w-full flex items-center justify-center gap-4 bg-black text-white border border-white/20 font-[1000] py-6 rounded-2xl hover:bg-slate-900 transition-all duration-300 shadow-xl text-[10px] uppercase tracking-[0.2em] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-black"
           >
             <span className="material-icons text-xl">apple</span>
-            Entrar con Apple
+            {t('login.apple')}
           </button>
 
           <div className="flex justify-between gap-2 pt-4">

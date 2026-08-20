@@ -17,8 +17,10 @@ import Link from 'next/link';
 import VenueConfigTab from '@/components/venue-admin/VenueConfigTab';
 import VenueCatalogTab from '@/components/venue-admin/VenueCatalogTab';
 import EventsTab from '@/components/venue-admin/EventsTab';
+import { useTranslation } from 'react-i18next';
 
 export default function VenueAdminPage() {
+  const { t } = useTranslation();
   const { user, profile, loading, isAdmin } = useAuth();
   const { isReady: hasRole } = useRequireRole(['venue', 'venueOwner', 'cityAdmin', 'admin', 'superadmin']);
   const router = useRouter();
@@ -156,12 +158,12 @@ export default function VenueAdminPage() {
           <header className="pt-8 space-y-2 mb-8">
             <h1 className="text-2xl font-black tracking-tight flex items-center gap-3">
               <span className="material-icons text-fuchsia-400">storefront</span>
-              Panel de Local
+              {t('venue_admin_title')}
             </h1>
           </header>
           <div className="text-center py-16 space-y-4">
             <span className="material-icons text-5xl text-slate-700">store</span>
-            <p className="text-sm text-slate-500">No tienes locales registrados</p>
+            <p className="text-sm text-slate-500">{t('venue_admin_no_venues')}</p>
             <p className="text-[10px] text-slate-600">Contacta con el administrador para dar de alta tu local</p>
           </div>
         </main>
@@ -275,12 +277,12 @@ export default function VenueAdminPage() {
         )}
 
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-            <button onClick={() => setTab('overview')} className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap border transition-all ${tab === 'overview' ? 'bg-fuchsia-600 border-fuchsia-500 text-white' : 'bg-white/5 border-white/5 text-slate-500'}`}>Resumen</button>
-            <button onClick={() => setTab('config')} className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap border transition-all ${tab === 'config' ? 'bg-fuchsia-600 border-fuchsia-500 text-white' : 'bg-white/5 border-white/5 text-slate-500'}`}>Configuración</button>
-            <button onClick={() => setTab('catalog')} className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap border transition-all ${tab === 'catalog' ? 'bg-fuchsia-600 border-fuchsia-500 text-white' : 'bg-white/5 border-white/5 text-slate-500'}`}>Catálogo</button>
-            <button onClick={() => setTab('events')} className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap border transition-all ${tab === 'events' ? 'bg-fuchsia-600 border-fuchsia-500 text-white' : 'bg-white/5 border-white/5 text-slate-500'}`}>Eventos</button>
-            <button onClick={() => setTab('tickets')} className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap border transition-all ${tab === 'tickets' ? 'bg-fuchsia-600 border-fuchsia-500 text-white' : 'bg-white/5 border-white/5 text-slate-500'}`}>Ticketing</button>
-            <button onClick={() => setTab('promos')} className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap border transition-all ${tab === 'promos' ? 'bg-fuchsia-600 border-fuchsia-500 text-white' : 'bg-white/5 border-white/5 text-slate-500'}`}>Promos</button>
+            <button onClick={() => setTab('overview')} className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap border transition-all ${tab === 'overview' ? 'bg-fuchsia-600 border-fuchsia-500 text-white' : 'bg-white/5 border-white/5 text-slate-500'}`}>{t('tab_overview')}</button>
+            <button onClick={() => setTab('config')} className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap border transition-all ${tab === 'config' ? 'bg-fuchsia-600 border-fuchsia-500 text-white' : 'bg-white/5 border-white/5 text-slate-500'}`}>{t('tab_config')}</button>
+            <button onClick={() => setTab('catalog')} className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap border transition-all ${tab === 'catalog' ? 'bg-fuchsia-600 border-fuchsia-500 text-white' : 'bg-white/5 border-white/5 text-slate-500'}`}>{t('tab_catalog')}</button>
+            <button onClick={() => setTab('events')} className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap border transition-all ${tab === 'events' ? 'bg-fuchsia-600 border-fuchsia-500 text-white' : 'bg-white/5 border-white/5 text-slate-500'}`}>{t('tab_events')}</button>
+            <button onClick={() => setTab('tickets')} className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap border transition-all ${tab === 'tickets' ? 'bg-fuchsia-600 border-fuchsia-500 text-white' : 'bg-white/5 border-white/5 text-slate-500'}`}>{t('tab_ticketing')}</button>
+            <button onClick={() => setTab('promos')} className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap border transition-all ${tab === 'promos' ? 'bg-fuchsia-600 border-fuchsia-500 text-white' : 'bg-white/5 border-white/5 text-slate-500'}`}>{t('tab_promos')}</button>
         </div>
 
         {tab === 'config' && selectedVenue && (

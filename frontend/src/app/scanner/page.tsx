@@ -20,7 +20,10 @@ type ScanResult = {
   };
 };
 
+import { useTranslation } from 'react-i18next';
+
 export default function ScannerPage() {
+  const { t } = useTranslation();
   const { user, profile, loading } = useAuth();
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -143,9 +146,9 @@ export default function ScannerPage() {
         <header className="pt-8 space-y-2">
           <h1 className="text-2xl font-black tracking-tight flex items-center gap-3">
             <span className="material-icons text-fuchsia-400">qr_code_scanner</span>
-            Validar Entradas
+            {t('scanner_title')}
           </h1>
-          <p className="text-xs text-slate-500">Escanea el código QR o introduce el token manualmente</p>
+          <p className="text-xs text-slate-500">{t('scanner_subtitle')}</p>
         </header>
 
         <div className="flex gap-2">
@@ -158,7 +161,7 @@ export default function ScannerPage() {
             }`}
           >
             <span className="material-icons text-sm align-middle mr-1">photo_camera</span>
-            Cámara
+            {t('scanner_camera')}
           </button>
           <button
             onClick={() => { setMode('manual'); stopCamera(); setResult(null); }}
@@ -169,7 +172,7 @@ export default function ScannerPage() {
             }`}
           >
             <span className="material-icons text-sm align-middle mr-1">keyboard</span>
-            Manual
+            {t('scanner_manual')}
           </button>
         </div>
 

@@ -8,10 +8,12 @@ import { motion } from 'framer-motion';
 import { TrendingUp, Building2, Ticket, Users, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRequireRole } from '@/hooks/useRequireRole';
+import { useTranslation } from 'react-i18next';
 
 export default function CityManagerDashboard() {
   const { user, loading: authLoading } = useAuth();
   const { isReady } = useRequireRole(['cityAdmin', 'admin', 'superadmin']);
+  const { t } = useTranslation();
   const router = useRouter();
   const [dataLoading, setDataLoading] = useState(true);
   
@@ -125,10 +127,10 @@ export default function CityManagerDashboard() {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
         <AlertTriangle className="w-16 h-16 text-yellow-500 mb-4" />
-        <h1 className="text-2xl font-bold text-white mb-2">Acceso Denegado</h1>
-        <p className="text-slate-400 max-w-md">No tienes ninguna franquicia territorial asignada a esta cuenta. Si has pagado tu canon, por favor espera a que SuperAdmin active tu plaza.</p>
+        <h1 className="text-2xl font-bold text-white mb-2">{t('city_manager_access_denied')}</h1>
+        <p className="text-slate-400 max-w-md">{t('city_manager_no_franchise')}</p>
         <button onClick={() => router.push('/')} className="mt-8 px-6 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-white font-bold transition-colors">
-          Volver al Inicio
+          {t('city_manager_back_home')}
         </button>
       </div>
     );
@@ -145,14 +147,14 @@ export default function CityManagerDashboard() {
               <Building2 className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-black tracking-tight leading-none">City Manager</h1>
+              <h1 className="text-xl font-black tracking-tight leading-none">{t('city_manager_title')}</h1>
               <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">{cityData.name || cityData.id}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-2 bg-green-500/10 text-green-400 border border-green-500/20 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              Licencia Activa
+              {t('city_manager_active_license')}
             </span>
           </div>
         </div>

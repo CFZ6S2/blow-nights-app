@@ -7,8 +7,10 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ArrowLeft, UserPlus, Info, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 export default function RRPPRegisterPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user, profile, loading } = useAuth();
   const [phone, setPhone] = useState('');
@@ -36,7 +38,7 @@ export default function RRPPRegisterPage() {
   }
 
   const handleSubmit = async () => {
-    if (!phone || !city) return alert('Por favor, introduce tu teléfono y ciudad.');
+    if (!phone || !city) return alert(t('rrpp.register.alertFillFields'));
     setIsSubmitting(true);
     try {
       const { httpsCallable } = await import('firebase/functions');
@@ -56,7 +58,7 @@ export default function RRPPRegisterPage() {
       }, 3000);
     } catch (error: any) {
       console.error(error);
-      alert('Error al enviar la solicitud: ' + (error.message || 'Error desconocido'));
+      alert(t('rrpp.register.alertError') + (error.message || t('rrpp.register.unknownError')));
     } finally {
       setIsSubmitting(false);
     }
@@ -67,11 +69,11 @@ export default function RRPPRegisterPage() {
       <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mb-6 mx-auto">
         <Clock className="w-8 h-8 text-yellow-500" />
       </div>
-      <h1 className="text-2xl font-black mb-3">Solicitud Enviada</h1>
+      <h1 className="text-2xl font-black mb-3">{t('rrpp.register.pendingTitle')}</h1>
       <p className="text-slate-400 text-sm mb-6">
-        Tu solicitud para ser RRPP independiente está pendiente de aprobación. Recibirás acceso cuando un administrador la revise.
+        {t('rrpp.register.pendingDescription')}
       </p>
-      <p className="text-xs text-slate-500">Te notificaremos cuando tu solicitud sea revisada.</p>
+      <p className="text-xs text-slate-500">{t('rrpp.register.pendingNotify')}</p>
     </motion.div>
   );
 
@@ -81,7 +83,7 @@ export default function RRPPRegisterPage() {
         {!submitted && !alreadyPending && (
           <button onClick={() => router.back()} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 text-sm font-bold uppercase tracking-wider">
             <ArrowLeft className="w-4 h-4" />
-            Volver
+            {t('rrpp.register.back')}
           </button>
         )}
 
@@ -91,18 +93,18 @@ export default function RRPPRegisterPage() {
               <UserPlus className="w-8 h-8 text-fuchsia-500" />
             </div>
 
-            <h1 className="text-3xl font-black mb-4">Conviértete en RRPP</h1>
+            <h1 className="text-3xl font-black mb-4">{t('rrpp.register.title')}</h1>
 
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-8 text-sm text-slate-300">
               <h3 className="font-bold text-white mb-2 flex items-center gap-2">
                 <Info className="w-4 h-4 text-fuchsia-500" />
-                ¿Qué tipo de RRPP eres?
+                {t('rrpp.register.infoTitle')}
               </h3>
               <p className="mb-4">
-                Si trabajas para un <strong>local o discoteca en concreto</strong>, no necesitas registrarte aquí. Pídele al mánager o dueño del local que te dé de alta desde su panel de control.
+                {t('rrpp.register.infoP1_1')}<strong>{t('rrpp.register.infoP1_2')}</strong>{t('rrpp.register.infoP1_3')}
               </p>
               <p>
-                Si eres <strong>independiente</strong> y quieres usar la app para gestionar tus propias listas o fiestas privadas, envía tu solicitud y un administrador la revisará.
+                {t('rrpp.register.infoP2_1')}<strong>{t('rrpp.register.infoP2_2')}</strong>{t('rrpp.register.infoP2_3')}
               </p>
             </div>
 
@@ -111,24 +113,24 @@ export default function RRPPRegisterPage() {
                 onClick={() => router.push('/login?redirect=/rrpp/register')}
                 className="w-full bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white font-bold uppercase tracking-widest text-sm py-4 rounded-xl hover:from-fuchsia-500 hover:to-purple-500 transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(192,38,211,0.4)]"
               >
-                Inicia Sesión para Continuar
+                {t('rrpp.register.loginToContinue')}
               </button>
             ) : (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Tu Ciudad</label>
+                  <label className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('rrpp.register.cityLabel')}</label>
                   <input
-                    placeholder="Ej: Madrid, Barcelona, Valencia..."
+                    placeholder={t('rrpp.register.cityPlaceholder')}
                     value={city}
                     onChange={e => setCity(e.target.value)}
                     className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-4 text-sm focus:border-fuchsia-500 outline-none transition-colors"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Teléfono (WhatsApp)</label>
+                  <label className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('rrpp.register.phoneLabel')}</label>
                   <input
                     type="tel"
-                    placeholder="+34 600 000 000"
+                    placeholder={t('rrpp.register.phonePlaceholder')}
                     value={phone}
                     onChange={e => setPhone(e.target.value)}
                     className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-4 text-sm focus:border-fuchsia-500 outline-none transition-colors"
@@ -139,7 +141,7 @@ export default function RRPPRegisterPage() {
                   onClick={handleSubmit}
                   className="w-full bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white font-bold uppercase tracking-widest text-sm py-4 rounded-xl hover:from-fuchsia-500 transition-all mt-4 disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Enviando...' : 'Enviar Solicitud'}
+                  {isSubmitting ? t('rrpp.register.submitting') : t('rrpp.register.submitBtn')}
                 </button>
               </div>
             )}

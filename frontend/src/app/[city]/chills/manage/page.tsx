@@ -11,6 +11,7 @@ import { Chill, ChillRequest } from '@/types';
 import { useTranslation } from 'react-i18next';
 
 function ChillManageContent() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
   const { user, profile } = useAuth();
@@ -152,8 +153,8 @@ function ChillManageContent() {
     <div className="max-w-xl mx-auto p-4 space-y-4 text-white bg-[#0a0b12] min-h-screen">
       {/* Delegación de Puerta */}
       <div className="bg-[#121422] border border-[#2b2f4c] rounded-xl p-4 mt-8">
-        <span className="text-[10px] font-bold uppercase text-[#a855f7] tracking-wider block">Delegación de Puerta</span>
-        <h3 className="text-sm font-extrabold mt-1">Enlace para el Portero / Amigo</h3>
+        <span className="text-[10px] font-bold uppercase text-[#a855f7] tracking-wider block">{t('chills_manage.door_delegation')}</span>
+        <h3 className="text-sm font-extrabold mt-1">{t('chills_manage.door_link_title')}</h3>
         <p className="text-xs text-gray-400 mt-1">
           Pásale este enlace por WhatsApp a quien controle el acceso. Podrá escanear sin registrarse.
         </p>

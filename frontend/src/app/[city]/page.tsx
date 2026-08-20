@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -28,6 +29,7 @@ const MainMap = dynamic(() => import('@/components/Map'), {
 });
 
 export default function Home() {
+  const { t } = useTranslation();
   const { user, profile, isAdmin, isSuperAdmin, isCityAdmin, loading, logout } = useAuth();
   const { cityPath, router } = useCityRouter();
   const boostCooldown = useMemo(() => new Date(Date.now() - 24*60*60*1000), []);

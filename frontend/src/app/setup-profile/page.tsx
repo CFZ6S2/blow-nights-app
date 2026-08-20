@@ -9,8 +9,10 @@ import { DEFAULT_CITY, CITY_SLUGS } from '@/lib/routes';
 import { doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
+import { useTranslation } from 'react-i18next';
 
 export default function SetupProfilePage() {
+  const { t } = useTranslation();
   const { user, profile, loading } = useAuth();
   const router = useRouter();
 
@@ -239,10 +241,10 @@ export default function SetupProfilePage() {
             </div>
             <div>
               <h1 className="text-4xl font-[1000] tracking-tighter text-white">
-                {currentStep === 1 ? 'TU IDENTIDAD' : currentStep === 2 ? 'MÁS SOBRE TI' : 'TU GALERÍA'}
+                {currentStep === 1 ? t('setup.step1') : currentStep === 2 ? t('setup.step2') : t('setup.step3')}
               </h1>
               <p className="text-slate-500 text-xs font-black uppercase tracking-[0.2em] mt-2">
-                Paso {currentStep} de {totalSteps}
+                {t('setup.step_prefix')}{currentStep}{t('setup.step_infix')}{totalSteps}
               </p>
             </div>
           </header>

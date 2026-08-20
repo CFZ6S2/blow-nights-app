@@ -7,8 +7,10 @@ import { collection, doc, setDoc, updateDoc, getDocs, query, where, onSnapshot, 
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/lib/firebase';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 export default function SuperAdminPage() {
+  const { t } = useTranslation();
   const { user, isSuperAdmin, loading } = useAuth();
   const router = useRouter();
   
@@ -636,21 +638,21 @@ export default function SuperAdminPage() {
             <span className="material-icons">arrow_back</span>
           </button>
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-fuchsia-400">Panel Maestro</h1>
-            <p className="text-xs text-slate-400">SuperAdmin Global</p>
+            <h1 className="text-2xl font-black tracking-tight text-fuchsia-400">{t('super_admin_title')}</h1>
+            <p className="text-xs text-slate-400">{t('super_admin_subtitle')}</p>
           </div>
         </div>
 
         <div className="flex gap-2 overflow-x-auto no-scrollbar border-b border-white/10 pb-2">
-          <button onClick={() => setActiveTab('usuarios')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'usuarios' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Usuarios</button>
-          <button onClick={() => setActiveTab('roles')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'roles' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Gestionar Roles</button>
-          <button onClick={() => setActiveTab('ciudades')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'ciudades' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Plazas y Licencias</button>
-          <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'partners' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Partners Asociados</button>
-          <button onClick={() => setActiveTab('facturacion')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'facturacion' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Facturación Central</button>
-          <button onClick={() => setActiveTab('locales')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'locales' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Directorio Locales</button>
-          <button onClick={() => setActiveTab('eventos')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'eventos' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400'}`}>Eventos Independientes</button>
-          <button onClick={() => setActiveTab('rrpps')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'rrpps' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Red de RRPPs</button>
-          <button onClick={() => setActiveTab('organizadores')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'organizadores' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400'}`}>Organizadores</button>
+          <button onClick={() => setActiveTab('usuarios')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'usuarios' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>{t('tab_users')}</button>
+          <button onClick={() => setActiveTab('roles')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'roles' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>{t('tab_roles')}</button>
+          <button onClick={() => setActiveTab('ciudades')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'ciudades' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>{t('tab_cities')}</button>
+          <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'partners' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>{t('tab_partners')}</button>
+          <button onClick={() => setActiveTab('facturacion')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'facturacion' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>{t('tab_billing')}</button>
+          <button onClick={() => setActiveTab('locales')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'locales' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>{t('tab_venues')}</button>
+          <button onClick={() => setActiveTab('eventos')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'eventos' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400'}`}>{t('tab_events')}</button>
+          <button onClick={() => setActiveTab('rrpps')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'rrpps' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>{t('tab_rrpps')}</button>
+          <button onClick={() => setActiveTab('organizadores')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'organizadores' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400'}`}>{t('tab_organizers')}</button>
         </div>
       </header>
 

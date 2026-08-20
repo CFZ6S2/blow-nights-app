@@ -7,8 +7,10 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, collectionGroup, query, where, getDocs, updateDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/lib/firebase';
+import { useTranslation } from 'react-i18next';
 
 function DoorScannerContent() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const eventId = searchParams.get('event');
   const token = searchParams.get('token');
@@ -296,8 +298,8 @@ function DoorScannerContent() {
     return (
       <div className="min-h-screen bg-[#090a10] text-white flex flex-col items-center justify-center p-6 text-center">
         <div className="text-4xl mb-3">⛔</div>
-        <h1 className="text-xl font-bold text-red-400">Acceso No Autorizado</h1>
-        <p className="text-xs text-gray-400 mt-2">El enlace del escáner no es válido o ha expirado.</p>
+        <h1 className="text-xl font-bold text-red-400">{t('door_unauthorized')}</h1>
+        <p className="text-xs text-gray-400 mt-2">{t('door_invalid_link')}</p>
       </div>
     );
   }

@@ -4,8 +4,10 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { DEFAULT_CITY } from '@/lib/routes';
 import { Building2, QrCode, TrendingUp, Users, CheckCircle2, ArrowRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function BusinessLandingPage() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-fuchsia-500/30">
       {/* Navbar */}
@@ -19,13 +21,13 @@ export default function BusinessLandingPage() {
           </div>
           <div className="flex items-center gap-4">
             <Link href={`/${DEFAULT_CITY}/`} className="text-sm font-semibold text-slate-400 hover:text-white hidden md:block transition-colors">
-              App de Usuarios
+              {t('business.userApp')}
             </Link>
             <Link
               href="/business/login"
               className="px-6 py-2.5 bg-white text-slate-950 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-slate-200 transition-all"
             >
-              Acceso a Locales
+              {t('business.venueAccess')}
             </Link>
           </div>
         </div>
@@ -42,16 +44,16 @@ export default function BusinessLandingPage() {
             >
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-fuchsia-500/10 border border-fuchsia-500/20 text-fuchsia-400 text-xs font-bold uppercase tracking-wider">
                 <SparklesIcon className="w-4 h-4" />
-                El SaaS Definitivo para Ocio Nocturno
+                {t('business.definitiveSaas')}
               </div>
               <h1 className="text-5xl lg:text-7xl font-black leading-[1.1] tracking-tight">
-                Controla tu local.<br />
+                {t('business.controlVenue')}<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-indigo-400">
-                  Multiplica tus ingresos.
+                  {t('business.multiplyRevenue')}
                 </span>
               </h1>
               <p className="text-lg text-slate-400 max-w-xl leading-relaxed">
-                Software integral de ticketing, escáner en puerta ultarrápido (&lt;300ms), control de aforos en tiempo real y cuadre automático de RRPPs.
+                {t('business.softwareDescription')}
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -59,10 +61,10 @@ export default function BusinessLandingPage() {
                   href="/business/login"
                   className="px-8 py-4 bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white text-sm font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-fuchsia-500/20 transition-all flex items-center justify-center gap-2"
                 >
-                  Entrar a tu Panel <ArrowRight className="w-4 h-4" />
+                  {t('business.enterPanel')} <ArrowRight className="w-4 h-4" />
                 </Link>
                 <button className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white text-sm font-black uppercase tracking-widest border border-white/10 rounded-2xl transition-all flex items-center justify-center">
-                  Solicitar Demostración
+                  {t('business.requestDemo')}
                 </button>
               </div>
             </motion.div>
@@ -78,20 +80,20 @@ export default function BusinessLandingPage() {
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-fuchsia-500 to-indigo-500" />
                 <div className="flex items-center justify-between mb-8">
                   <div>
-                    <h3 className="text-xl font-black">Facturación Hoy</h3>
-                    <p className="text-slate-400 text-sm mt-1">Actualizado hace 2 min</p>
+                    <h3 className="text-xl font-black">{t('business.revenueToday')}</h3>
+                    <p className="text-slate-400 text-sm mt-1">{t('business.updatedAgo')}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-3xl font-black text-emerald-400">€ 4,250.00</p>
-                    <p className="text-emerald-500/80 text-sm font-bold mt-1">+18.5% vs ayer</p>
+                    <p className="text-emerald-500/80 text-sm font-bold mt-1">{t('business.vsYesterday')}</p>
                   </div>
                 </div>
                 
                 <div className="space-y-4">
                   {[
-                    { label: 'Entradas Vendidas', value: '342 / 500', icon: QrCode, color: 'text-fuchsia-400' },
-                    { label: 'Comisiones RRPP', value: '€ 450.00', icon: Users, color: 'text-indigo-400' },
-                    { label: 'Aforo Actual', value: '68%', icon: TrendingUp, color: 'text-amber-400' },
+                    { label: t('business.ticketsSold'), value: '342 / 500', icon: QrCode, color: 'text-fuchsia-400' },
+                    { label: t('business.rrppCommissions'), value: '€ 450.00', icon: Users, color: 'text-indigo-400' },
+                    { label: t('business.currentCapacity'), value: '68%', icon: TrendingUp, color: 'text-amber-400' },
                   ].map((stat, i) => (
                     <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
                       <div className="flex items-center gap-3">
@@ -118,10 +120,10 @@ export default function BusinessLandingPage() {
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
             <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
-              El fin de las capturas de pantalla y el fraude en puerta.
+              {t('business.endOfFraud')}
             </h2>
             <p className="text-slate-400 text-lg">
-              La tecnología de <span className="text-white font-bold">QR Dinámico</span> que utilizan los grandes festivales, ahora integrada en tu suscripción.
+              {t('business.dynamicQrTech1')} <span className="text-white font-bold">{t('business.dynamicQr')}</span> {t('business.dynamicQrTech2')}
             </p>
           </div>
 
@@ -131,14 +133,14 @@ export default function BusinessLandingPage() {
               <div className="absolute top-0 left-0 w-full h-1 bg-red-500/50" />
               <h3 className="text-xl font-bold text-slate-300 mb-6 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center text-sm">✕</span>
-                Ticketing Tradicional (PDFs)
+                {t('business.traditionalTicketing')}
               </h3>
               <ul className="space-y-4">
                 {[
-                  'Clientes pasando capturas por WhatsApp',
-                  'Reventa pirata en la cola de tu local',
-                  'El portero pierde tiempo discutiendo',
-                  'Pérdida de ingresos por duplicados'
+                  t('business.cons1'),
+                  t('business.cons2'),
+                  t('business.cons3'),
+                  t('business.cons4')
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-slate-400 text-sm">
                     <span className="text-red-500/50 shrink-0 mt-0.5">•</span>
@@ -153,14 +155,14 @@ export default function BusinessLandingPage() {
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-teal-400 shadow-[0_0_20px_rgba(52,211,153,0.8)]" />
               <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm shadow-[0_0_15px_currentColor]">✓</span>
-                QR Dinámico Blow Nights
+                {t('business.dynamicQrBn')}
               </h3>
               <ul className="space-y-4">
                 {[
-                  'El código QR muta cada 15 segundos',
-                  'Las capturas caducan antes de llegar a puerta',
-                  'Escáner ultra-rápido (< 300ms) sin fricción',
-                  'Bloqueo atómico: 1 entrada = 1 persona real'
+                  t('business.pros1'),
+                  t('business.pros2'),
+                  t('business.pros3'),
+                  t('business.pros4')
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-emerald-100/80 text-sm font-medium">
                     <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
@@ -177,21 +179,21 @@ export default function BusinessLandingPage() {
       <section className="py-24 bg-slate-900 border-t border-white/5">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-            <h2 className="text-4xl font-black tracking-tight">Planes diseñados para escalar</h2>
-            <p className="text-slate-400">Desde posicionamiento orgánico hasta el control total de tu puerta.</p>
+            <h2 className="text-4xl font-black tracking-tight">{t('business.plansToScale')}</h2>
+            <p className="text-slate-400">{t('business.plansDescription')}</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {/* Plan Radar */}
             <div className="bg-slate-950 border border-slate-800 rounded-3xl p-8 hover:border-slate-700 transition-all">
-              <h3 className="text-2xl font-black">Plan Radar</h3>
-              <p className="text-slate-400 text-sm mt-2 mb-6">Perfecto para darte a conocer.</p>
+              <h3 className="text-2xl font-black">{t('business.planRadarTitle')}</h3>
+              <p className="text-slate-400 text-sm mt-2 mb-6">{t('business.planRadarDesc')}</p>
               <div className="mb-8">
                 <span className="text-4xl font-black">39€</span>
                 <span className="text-slate-500 font-medium">/mes</span>
               </div>
               <ul className="space-y-4 mb-8">
-                {['Perfil verificado en el mapa', 'Destacado por encima de puntos gratuitos', 'Estadísticas básicas de visitas', 'Soporte estándar'].map((feature, i) => (
+                {[t('business.radarFeat1'), t('business.radarFeat2'), t('business.radarFeat3'), t('business.radarFeat4')].map((feature, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-slate-300 font-medium">
                     <CheckCircle2 className="w-5 h-5 text-slate-600 shrink-0" />
                     {feature}
@@ -199,7 +201,7 @@ export default function BusinessLandingPage() {
                 ))}
               </ul>
               <Link href="/business/login" className="block w-full py-4 text-center rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold transition-all">
-                Empezar con Radar
+                {t('business.startRadarBtn')}
               </Link>
             </div>
 
@@ -207,23 +209,23 @@ export default function BusinessLandingPage() {
             <div className="relative bg-gradient-to-b from-fuchsia-900/40 to-slate-950 border-2 border-fuchsia-500/50 rounded-3xl p-8 shadow-2xl shadow-fuchsia-900/20 transform md:-translate-y-4">
               <div className="absolute top-0 inset-x-0 flex justify-center -translate-y-1/2">
                 <span className="bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full">
-                  El más popular
+                  {t('business.mostPopular')}
                 </span>
               </div>
-              <h3 className="text-2xl font-black text-white">Plan Venue PRO</h3>
-              <p className="text-fuchsia-200/60 text-sm mt-2 mb-6">Control absoluto de tu negocio.</p>
+              <h3 className="text-2xl font-black text-white">{t('business.planProTitle')}</h3>
+              <p className="text-fuchsia-200/60 text-sm mt-2 mb-6">{t('business.planProDesc')}</p>
               <div className="mb-8">
                 <span className="text-4xl font-black text-white">89€</span>
                 <span className="text-fuchsia-200/50 font-medium">/mes</span>
               </div>
               <ul className="space-y-4 mb-8">
                 {[
-                  'Todo lo del Plan Radar',
-                  'Venta de entradas (Ticketing)',
-                  'App de escáner en puerta <300ms',
-                  'Panel de comisiones para RRPPs',
-                  'Métricas financieras en tiempo real',
-                  'Soporte prioritario 24/7'
+                  t('business.proFeat1'),
+                  t('business.proFeat2'),
+                  t('business.proFeat3'),
+                  t('business.proFeat4'),
+                  t('business.proFeat5'),
+                  t('business.proFeat6')
                 ].map((feature, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-fuchsia-100/80 font-medium">
                     <CheckCircle2 className="w-5 h-5 text-fuchsia-400 shrink-0" />
@@ -232,7 +234,7 @@ export default function BusinessLandingPage() {
                 ))}
               </ul>
               <Link href="/business/login" className="block w-full py-4 text-center rounded-2xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white font-bold transition-all shadow-lg shadow-fuchsia-500/25">
-                Activar Plan PRO
+                {t('business.startProBtn')}
               </Link>
             </div>
           </div>
@@ -241,7 +243,7 @@ export default function BusinessLandingPage() {
 
       {/* Footer */}
       <footer className="py-8 border-t border-white/5 text-center">
-        <p className="text-slate-600 text-xs font-medium">© {new Date().getFullYear()} BlowNights Business. Todos los derechos reservados.</p>
+        <p className="text-slate-600 text-xs font-medium">© {new Date().getFullYear()} BlowNights Business. {t('business.allRightsReserved')}</p>
       </footer>
 
       {/* Floating WhatsApp Button */}
@@ -255,7 +257,7 @@ export default function BusinessLandingPage() {
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.82 9.82 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
         </svg>
         <span className="absolute right-full mr-4 bg-slate-900 text-white text-sm px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-slate-700 shadow-xl">
-          Escríbenos por WhatsApp
+          {t('business.writeUsOnWhatsapp')}
         </span>
       </a>
     </div>

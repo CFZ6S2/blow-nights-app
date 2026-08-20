@@ -11,6 +11,7 @@ import { Chill } from '@/types';
 import CitySelector from '@/components/CitySelector';
 import CreateChillModal from '@/components/CreateChillModal';
 import ChillPaywall from '@/components/ChillPaywall';
+import { useTranslation } from 'react-i18next';
 
 function timeLeft(expiresAt: any): string {
   if (!expiresAt) return '';
@@ -94,6 +95,7 @@ function ChillCard({ chill, userLat, userLng, onClick }: {
 }
 
 export default function ChillsPage() {
+  const { t } = useTranslation();
   const { user, profile, loading: authLoading, hasChillAccess } = useAuth();
   const { cityPath, router } = useCityRouter();
   const { citySlug, currentCity } = useCity();
@@ -167,7 +169,7 @@ export default function ChillsPage() {
                   : 'bg-white/5 text-slate-500 border border-white/5'
               }`}
             >
-              {t === 'feed' ? 'Radar' : 'Mis Chills'}
+              {t === 'feed' ? t('chills.tab_radar') : t('chills.tab_mine')}
             </button>
           ))}
         </div>
@@ -178,13 +180,13 @@ export default function ChillsPage() {
             {sorted.length === 0 ? (
               <div className="text-center py-16">
                 <span className="material-icons text-5xl text-slate-700 mb-4 block">nightlife</span>
-                <p className="text-slate-500 font-bold text-sm">No hay chills activos en {currentCity?.name || 'tu ciudad'}</p>
-                <p className="text-slate-600 text-xs mt-1">Se el primero en crear uno</p>
+                <p className="text-slate-500 font-bold text-sm">{t('chills.no_active')}{currentCity?.name || t('chills.your_city')}</p>
+                <p className="text-slate-600 text-xs mt-1">{t('chills.be_first')}</p>
                 <button
                   onClick={handleCreateClick}
                   className="mt-6 px-6 py-3 bg-fuchsia-600 hover:bg-fuchsia-500 rounded-xl font-black text-sm transition-all"
                 >
-                  Crear Chill
+                  {t('chills.create_chill')}
                 </button>
               </div>
             ) : (
@@ -209,12 +211,12 @@ export default function ChillsPage() {
             {myChills.length === 0 ? (
               <div className="text-center py-16">
                 <span className="material-icons text-5xl text-slate-700 mb-4 block">home</span>
-                <p className="text-slate-500 font-bold text-sm">No tienes chills activos</p>
+                <p className="text-slate-500 font-bold text-sm">{t('chills.no_mine')}</p>
                 <button
                   onClick={handleCreateClick}
                   className="mt-6 px-6 py-3 bg-fuchsia-600 hover:bg-fuchsia-500 rounded-xl font-black text-sm transition-all"
                 >
-                  Crear Chill
+                  {t('chills.create_chill')}
                 </button>
               </div>
             ) : (

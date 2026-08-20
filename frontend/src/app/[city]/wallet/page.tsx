@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useCityRouter } from '@/hooks/useCityRouter';
@@ -10,6 +11,7 @@ import { functions } from '@/lib/firebase';
 import QRCodeSVG from 'react-qr-code';
 
 export default function WalletPage() {
+  const { t } = useTranslation();
   const { user, profile, loading } = useAuth();
   const { cityPath, router } = useCityRouter();
   const { tickets, valid, used, loading: ticketsLoading } = useTickets(user?.uid);

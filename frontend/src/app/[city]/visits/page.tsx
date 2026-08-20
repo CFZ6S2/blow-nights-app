@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -11,6 +12,7 @@ import { ChatSkeleton } from '@/components/Skeleton';
 import ProfileOverlay from '@/components/ProfileOverlay';
 
 export default function VisitsPage() {
+  const { t } = useTranslation();
   const { user, profile, loading: authLoading } = useAuth();
   const { isReady } = useRequireAuth();
   const [visits, setVisits] = useState<any[]>([]);
