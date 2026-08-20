@@ -9,7 +9,8 @@ import {
   collection, query, where, onSnapshot, doc, addDoc, updateDoc,
   serverTimestamp, Timestamp, orderBy, getDocs, limit,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '@/lib/firebase';
 import { useCity } from '@/context/CityContext';
 import CitySelector from '@/components/CitySelector';
 import Link from 'next/link';
@@ -33,6 +34,38 @@ export default function VenueAdminPage() {
   const [sendingPromo, setSendingPromo] = useState(false);
   const [promoSent, setPromoSent] = useState(false);
   const [tab, setTab] = useState<'overview' | 'config' | 'catalog' | 'tickets' | 'promos' | 'events'>('overview');
+  const [checkingOut, setCheckingOut] = useState(false);
+
+  const handleSubscription = async (tier: string) => {
+    if (!selectedVenue || checkingOut) return;
+    setCheckingOut(true);
+    try {
+      const createVenueSubscriptionCheckout = httpsCallable(functions, 'createVenueSubscriptionCheckout');
+      const origin = window.location.origin;
+      const result = await createVenueSubscriptionCheckout({ venueId: selectedVenue.id, tier, origin });
+      window.location.href = (result.data as any).url;
+    } catch (err) {
+      console.error(err);
+      alert('Error iniciando checkout');
+    } finally {
+      setCheckingOut(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    if (!selectedVenue || checkingOut) return;
+    setCheckingOut(true);
+    try {
+      const createStripePortalSession = httpsCallable(functions, 'createStripePortalSession');
+      const result = await createStripePortalSession({ venueId: selectedVenue.id });
+      window.location.href = (result.data as any).url;
+    } catch (err) {
+      console.error(err);
+      alert('Error abriendo el portal de Stripe');
+    } finally {
+      setCheckingOut(false);
+    }
+  };
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
@@ -194,47 +227,51 @@ export default function VenueAdminPage() {
               <h2 className="text-lg font-black">{selectedVenue?.name}</h2>
               <p className="text-[10px] text-slate-500">{selectedVenue?.address || 'Sin dirección'}</p>
             </div>
-            <Link
-              href="/scanner"
-              className="px-4 py-3 rounded-2xl bg-fuchsia-600 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
-            >
-              <span className="material-icons text-sm">qr_code_scanner</span>
-              Escanear
-            </Link>
+            <div className="flex items-center gap-2">
+              {selectedVenue?.subscriptionTier && !isAdmin && (
+                <button
+                  onClick={handleManageSubscription}
+                  disabled={checkingOut}
+                  className="px-4 py-3 rounded-2xl border border-white/10 hover:bg-white/5 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors"
+                >
+                  <span className="material-icons text-sm">settings</span>
+                  Gestionar Plan
+                </button>
+              )}
+              {(selectedVenue?.subscriptionTier === 'ticketing' || isAdmin) && (
+                <Link
+                  href="/scanner"
+                  className="px-4 py-3 rounded-2xl bg-fuchsia-600 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                >
+                  <span className="material-icons text-sm">qr_code_scanner</span>
+                  Escanear
+                </Link>
+              )}
+            </div>
           </div>
         </header>
 
-        {selectedVenue && !selectedVenue.isVerified && selectedVenue.ownerId !== 'community' && !isAdmin && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden bg-gradient-to-r from-purple-950 via-indigo-950 to-slate-900 border-2 border-purple-500/60 rounded-2xl p-4 md:p-5 shadow-2xl">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="flex items-start gap-3.5">
-                <div className="p-2.5 bg-purple-600/30 border border-purple-400/40 rounded-xl text-purple-300 shrink-0">
-                  <span className="material-icons text-sm">lock</span>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="bg-purple-500/20 text-purple-300 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border border-purple-500/40">
-                      Modo Previsualización
-                    </span>
-                  </div>
-                  <h3 className="text-sm md:text-base font-black text-white">
-                    Activa tu Suscripción PRO para publicar cambios en vivo
-                  </h3>
-                  <p className="text-xs text-slate-300 max-w-xl">
-                    Estás explorando tu panel de control. Para habilitar el distintivo de <strong>Local Verificado</strong> en el mapa, activar el lector de puerta <code className="text-purple-300">/door</code> y emitir entradas, suscribe tu local.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => alert(`Redirigiendo a la pasarela de pago segura de Stripe para activar el Plan PRO de "${selectedVenue.name}" (89€/mes).`)}
-                className="w-full md:w-auto px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black uppercase tracking-wider rounded-xl shadow-lg transition-all shrink-0 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span className="material-icons text-sm">credit_card</span>
-                Activar Plan PRO (39€ / 89€)
-              </button>
+        {selectedVenue && !selectedVenue.subscriptionTier && selectedVenue.ownerId !== 'community' && !isAdmin && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-slate-900 border border-slate-700 p-4 rounded-xl flex flex-col items-center text-center">
+              <h3 className="font-black text-lg">Básico</h3>
+              <p className="text-xl font-black text-fuchsia-400">30€<span className="text-sm text-slate-500">/mes</span></p>
+              <p className="text-xs text-slate-400 mt-2 mb-4">Presencia en el mapa y configuración básica.</p>
+              <button onClick={() => handleSubscription('basico')} disabled={checkingOut} className="w-full mt-auto py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-bold">Activar</button>
             </div>
-          </motion.div>
+            <div className="bg-gradient-to-br from-fuchsia-900/40 to-indigo-900/40 border border-fuchsia-500/50 p-4 rounded-xl flex flex-col items-center text-center">
+              <h3 className="font-black text-lg">Promo</h3>
+              <p className="text-xl font-black text-fuchsia-400">60€<span className="text-sm text-slate-500">/mes</span></p>
+              <p className="text-xs text-slate-400 mt-2 mb-4">Envía notificaciones push promocionales a usuarios cercanos.</p>
+              <button onClick={() => handleSubscription('promo')} disabled={checkingOut} className="w-full mt-auto py-2 bg-fuchsia-600 hover:bg-fuchsia-500 rounded-lg text-sm font-bold shadow-[0_0_15px_rgba(217,70,239,0.5)]">Activar</button>
+            </div>
+            <div className="bg-slate-900 border border-slate-700 p-4 rounded-xl flex flex-col items-center text-center">
+              <h3 className="font-black text-lg">Ticketing</h3>
+              <p className="text-xl font-black text-fuchsia-400">100€<span className="text-sm text-slate-500">/mes</span></p>
+              <p className="text-xs text-slate-400 mt-2 mb-4">Gestión de eventos, RRPP y escáner de entradas.</p>
+              <button onClick={() => handleSubscription('ticketing')} disabled={checkingOut} className="w-full mt-auto py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-bold">Activar</button>
+            </div>
+          </div>
         )}
 
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
@@ -258,7 +295,15 @@ export default function VenueAdminPage() {
 
         {tab === 'events' && selectedVenue && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-            <EventsTab venueId={selectedVenue.id} />
+            {selectedVenue.subscriptionTier === 'ticketing' || isAdmin ? (
+              <EventsTab venueId={selectedVenue.id} />
+            ) : (
+              <div className="text-center p-8 bg-slate-900 border border-slate-800 rounded-2xl">
+                <h3 className="text-xl font-black mb-2">Requiere Tier Ticketing</h3>
+                <p className="text-slate-400 mb-6">Mejora tu plan a Ticketing (100€/mes) para organizar eventos y vender entradas.</p>
+                <button onClick={() => handleSubscription('ticketing')} disabled={checkingOut} className="px-6 py-2 bg-fuchsia-600 rounded-xl font-bold">Actualizar Plan</button>
+              </div>
+            )}
           </motion.div>
         )}
 
@@ -308,7 +353,13 @@ export default function VenueAdminPage() {
 
         {tab === 'tickets' && (
           <div className="space-y-3">
-            {tickets.length === 0 ? (
+            {selectedVenue?.subscriptionTier !== 'ticketing' && !isAdmin ? (
+              <div className="text-center p-8 bg-slate-900 border border-slate-800 rounded-2xl">
+                <h3 className="text-xl font-black mb-2">Requiere Tier Ticketing</h3>
+                <p className="text-slate-400 mb-6">Mejora tu plan a Ticketing (100€/mes) para gestionar validación de entradas.</p>
+                <button onClick={() => handleSubscription('ticketing')} disabled={checkingOut} className="px-6 py-2 bg-fuchsia-600 rounded-xl font-bold">Actualizar Plan</button>
+              </div>
+            ) : tickets.length === 0 ? (
               <div className="text-center py-16">
                 <span className="material-icons text-5xl text-slate-700">receipt_long</span>
                 <p className="text-sm text-slate-500 mt-4">No hay entradas vendidas</p>
@@ -337,56 +388,64 @@ export default function VenueAdminPage() {
 
         {tab === 'promos' && (
           <div className="space-y-6">
-            <section className="bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4">
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">
-                <span className="material-icons text-sm align-middle mr-1 text-yellow-500">campaign</span>
-                Nueva Promoción Flash
-              </h3>
-              <textarea
-                value={promoText}
-                onChange={(e) => setPromoText(e.target.value)}
-                placeholder='Ej: "2x1 en copas durante los próximos 45 minutos"'
-                rows={3}
-                maxLength={200}
-                className="w-full bg-black/30 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-fuchsia-500/50 resize-none"
-              />
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <label className="text-[10px] text-slate-500 font-bold">Radio:</label>
-                  <select
-                    value={promoRadius}
-                    onChange={(e) => setPromoRadius(Number(e.target.value))}
-                    className="bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-                  >
-                    <option value={1}>1 km</option>
-                    <option value={3}>3 km</option>
-                    <option value={5}>5 km</option>
-                    <option value={10}>10 km</option>
-                    <option value={25}>25 km</option>
-                  </select>
+            {['promo', 'ticketing'].includes(selectedVenue?.subscriptionTier) || isAdmin ? (
+              <section className="bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4">
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">
+                  <span className="material-icons text-sm align-middle mr-1 text-yellow-500">campaign</span>
+                  Nueva Promoción Flash
+                </h3>
+                <textarea
+                  value={promoText}
+                  onChange={(e) => setPromoText(e.target.value)}
+                  placeholder='Ej: "2x1 en copas durante los próximos 45 minutos"'
+                  rows={3}
+                  maxLength={200}
+                  className="w-full bg-black/30 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-fuchsia-500/50 resize-none"
+                />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <label className="text-[10px] text-slate-500 font-bold">Radio:</label>
+                    <select
+                      value={promoRadius}
+                      onChange={(e) => setPromoRadius(Number(e.target.value))}
+                      className="bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                    >
+                      <option value={1}>1 km</option>
+                      <option value={3}>3 km</option>
+                      <option value={5}>5 km</option>
+                      <option value={10}>10 km</option>
+                      <option value={25}>25 km</option>
+                    </select>
+                  </div>
+                  <span className="text-[9px] text-slate-600">{promoText.length}/200</span>
                 </div>
-                <span className="text-[9px] text-slate-600">{promoText.length}/200</span>
+                <button
+                  onClick={sendPromotion}
+                  disabled={!promoText.trim() || sendingPromo}
+                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-yellow-500 to-amber-600 text-black text-xs font-black uppercase tracking-[0.2em] disabled:opacity-50 transition-all active:scale-95"
+                >
+                  {sendingPromo ? 'Enviando...' : 'Enviar Push a Usuarios Cercanos'}
+                </button>
+                <AnimatePresence>
+                  {promoSent && (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="text-xs text-green-400 font-bold text-center"
+                    >
+                      Promoción enviada correctamente
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </section>
+            ) : (
+              <div className="text-center p-8 bg-slate-900 border border-slate-800 rounded-2xl">
+                <h3 className="text-xl font-black mb-2">Requiere Tier Promo</h3>
+                <p className="text-slate-400 mb-6">Mejora tu plan a Promo o Ticketing (desde 60€/mes) para enviar notificaciones push promocionales a los usuarios cercanos.</p>
+                <button onClick={() => handleSubscription('promo')} disabled={checkingOut} className="px-6 py-2 bg-fuchsia-600 rounded-xl font-bold">Actualizar Plan</button>
               </div>
-              <button
-                onClick={sendPromotion}
-                disabled={!promoText.trim() || sendingPromo}
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-yellow-500 to-amber-600 text-black text-xs font-black uppercase tracking-[0.2em] disabled:opacity-50 transition-all active:scale-95"
-              >
-                {sendingPromo ? 'Enviando...' : 'Enviar Push a Usuarios Cercanos'}
-              </button>
-              <AnimatePresence>
-                {promoSent && (
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="text-xs text-green-400 font-bold text-center"
-                  >
-                    Promoción enviada correctamente
-                  </motion.p>
-                )}
-              </AnimatePresence>
-            </section>
+            )}
           </div>
         )}
       </main>

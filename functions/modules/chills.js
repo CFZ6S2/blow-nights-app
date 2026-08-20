@@ -7,9 +7,8 @@ exports.createChill = onCall({ enforceAppCheck: false }, async (request) => {
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
   const isPremium = auth.token.premium === true;
-  const hasPass = auth.token.pass_expires && auth.token.pass_expires > Date.now();
-  if (!isPremium && !hasPass) {
-    throw new HttpsError("permission-denied", "Necesitas ser VIP o tener un Pase para crear un chill.");
+  if (!isPremium && auth.token.role !== "admin") {
+    throw new HttpsError("permission-denied", "Necesitas ser miembro Black para crear un chill.");
   }
 
   const { title, description, exact_address, approx_lat, approx_lng, max_capacity, city_slug, tags } = data;
@@ -76,9 +75,11 @@ exports.requestChillAccess = onCall({ enforceAppCheck: false }, async (request) 
   if (chill.pending_users.includes(auth.uid)) throw new HttpsError("already-exists", "Ya tienes una solicitud pendiente.");
 
   const isPremium = auth.token.premium === true;
-  const hasPass = auth.token.pass_expires && auth.token.pass_expires > Date.now();
-  if (!isPremium && !hasPass) {
-    throw new HttpsError("permission-denied", "Necesitas ser VIP o tener un Pase para solicitar acceso a chills.");
+  const hasOldPass = auth.token.pass_expires && auth.token.pass_expires > Date.now();
+  const hasBlackBoost = auth.token.blackBoostExpires && auth.token.blackBoostExpires > Date.now();
+  
+  if (!isPremium && !hasOldPass && !hasBlackBoost && auth.token.role !== "admin") {
+    throw new HttpsError("permission-denied", "Necesitas ser miembro Black o tener un Pase Black 8h para solicitar acceso a chills.");
   }
 
   const userDoc = await db.collection("users").doc(auth.uid).get();

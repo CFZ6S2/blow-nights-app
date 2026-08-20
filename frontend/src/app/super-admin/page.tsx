@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { collection, doc, setDoc, updateDoc, getDocs, query, where, onSnapshot, collectionGroup, deleteDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc, getDocs, query, where, onSnapshot, collectionGroup, deleteDoc, orderBy, limit } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/lib/firebase';
 import { motion } from 'framer-motion';
@@ -12,10 +12,11 @@ export default function SuperAdminPage() {
   const { user, isSuperAdmin, loading } = useAuth();
   const router = useRouter();
   
-  const [activeTab, setActiveTab] = useState<'roles' | 'ciudades' | 'facturacion' | 'locales' | 'partners' | 'rrpps' | 'usuarios'>('usuarios');
+  const [activeTab, setActiveTab] = useState<'roles' | 'ciudades' | 'facturacion' | 'locales' | 'eventos' | 'partners' | 'rrpps' | 'usuarios' | 'organizadores'>('usuarios');
 
-  // --- LOCALES STATE ---
+  // --- LOCALES & EVENTOS STATE ---
   const [venues, setVenues] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [newVenueName, setNewVenueName] = useState('');
   const [newVenueType, setNewVenueType] = useState('club');
   const [newVenueLat, setNewVenueLat] = useState('');
@@ -53,6 +54,10 @@ export default function SuperAdminPage() {
   // --- RRPP APPLICATIONS STATE ---
   const [rrppApplications, setRrppApplications] = useState<any[]>([]);
   const [processingRrpp, setProcessingRrpp] = useState<string | null>(null);
+
+  // --- ORGANIZER APPLICATIONS STATE ---
+  const [organizerApps, setOrganizerApps] = useState<any[]>([]);
+  const [processingOrganizer, setProcessingOrganizer] = useState<string | null>(null);
 
   // --- ROLES STATE ---
   const [roleSearchEmail, setRoleSearchEmail] = useState('');
@@ -121,6 +126,12 @@ export default function SuperAdminPage() {
       setRrppApplications(r);
     }, errNoop);
 
+    const unsubOrganizerApps = onSnapshot(query(collection(db, 'organizer_applications'), where('status', '==', 'pending')), (snap) => {
+      const o: any[] = [];
+      snap.forEach(d => o.push({ id: d.id, ...d.data() }));
+      setOrganizerApps(o);
+    }, errNoop);
+
     const unsubPromoters = onSnapshot(collectionGroup(db, 'promoters'), (snap) => {
       const p: any[] = [];
       snap.forEach(d => {
@@ -143,7 +154,7 @@ export default function SuperAdminPage() {
       errNoop
     );
 
-    return () => { unsubVenues(); unsubCities(); unsubPartners(); unsubApps(); unsubRrppApps(); unsubPromoters(); unsubRoles(); };
+    return () => { unsubVenues(); unsubCities(); unsubPartners(); unsubApps(); unsubRrppApps(); unsubOrganizerApps(); unsubPromoters(); unsubRoles(); };
   }, [isSuperAdmin]);
 
   useEffect(() => {
@@ -151,12 +162,15 @@ export default function SuperAdminPage() {
     const fetchRecentUsers = async () => {
       setLoadingAllUsers(true);
       try {
-        const { orderBy, limit } = await import('firebase/firestore');
         const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(150));
         const snap = await getDocs(q);
         const u: any[] = [];
         snap.forEach(d => u.push({ id: d.id, ...d.data() }));
         setAllUsers(u);
+        
+        const qEvents = query(collection(db, 'events'), orderBy('created_at', 'desc'));
+        const snapEvents = await getDocs(qEvents);
+        setEvents(snapEvents.docs.map(d => ({ id: d.id, ...d.data() })));
       } catch (e) {
         console.error(e);
       } finally {
@@ -511,6 +525,25 @@ export default function SuperAdminPage() {
     }
   };
 
+  // --- ORGANIZER APPLICATIONS LOGIC ---
+  const handleOrganizerApplication = async (applicationId: string, action: 'approve' | 'reject') => {
+    const label = action === 'approve' ? 'aprobar' : 'rechazar';
+    if (!confirm(`¿Seguro que quieres ${label} esta solicitud de Organizador?`)) return;
+    setProcessingOrganizer(applicationId);
+    try {
+      const approveOrganizer = httpsCallable(functions, 'approveOrganizer');
+      await approveOrganizer({ applicationId, action });
+      alert(action === 'approve' ? 'Organizador aprobado correctamente.' : 'Solicitud rechazada.');
+    } catch (e: any) {
+      console.error(e);
+      alert('Error: ' + (e.message || 'Error procesando solicitud'));
+    } finally {
+      setProcessingOrganizer(null);
+    }
+  };
+
+
+
   // --- ROLES LOGIC ---
   const ROLE_OPTIONS = [
     { value: 'venue', label: 'Venue Manager', icon: 'storefront', color: 'text-blue-400', redirect: '/venue-admin' },
@@ -519,6 +552,7 @@ export default function SuperAdminPage() {
     { value: 'superadmin', label: 'Super Admin', icon: 'shield', color: 'text-fuchsia-400', redirect: '/super-admin' },
     { value: 'door', label: 'Portero', icon: 'sensor_door', color: 'text-orange-400', redirect: '/door' },
     { value: 'ambassador', label: 'Ambassador', icon: 'handshake', color: 'text-yellow-400', redirect: '/ambassador' },
+    { value: 'event_organizer', label: 'Organizador', icon: 'calendar_month', color: 'text-indigo-400', redirect: '/organizer' },
   ];
 
   const handleRoleSearch = async () => {
@@ -614,7 +648,9 @@ export default function SuperAdminPage() {
           <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'partners' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Partners Asociados</button>
           <button onClick={() => setActiveTab('facturacion')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'facturacion' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Facturación Central</button>
           <button onClick={() => setActiveTab('locales')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'locales' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Directorio Locales</button>
+          <button onClick={() => setActiveTab('eventos')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'eventos' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400'}`}>Eventos Independientes</button>
           <button onClick={() => setActiveTab('rrpps')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'rrpps' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Red de RRPPs</button>
+          <button onClick={() => setActiveTab('organizadores')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'organizadores' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400'}`}>Organizadores</button>
         </div>
       </header>
 
@@ -1268,6 +1304,51 @@ export default function SuperAdminPage() {
         </div>
       )}
 
+      {activeTab === 'eventos' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold">Eventos Independientes</h2>
+          </div>
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-800/50">
+                <tr>
+                  <th className="p-4 font-bold text-slate-400">Evento</th>
+                  <th className="p-4 font-bold text-slate-400">Organizador</th>
+                  <th className="p-4 font-bold text-slate-400">Fecha</th>
+                  <th className="p-4 font-bold text-slate-400">Tickets</th>
+                  <th className="p-4 font-bold text-slate-400">Estado</th>
+                  <th className="p-4 font-bold text-slate-400">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/50">
+                {events.map(e => {
+                  const owner = allUsers.find(u => u.uid === e.organizerId);
+                  return (
+                    <tr key={e.id} className="hover:bg-slate-800/30 transition-colors">
+                      <td className="p-4 font-bold">{e.title}</td>
+                      <td className="p-4">{owner?.email || e.organizerId}</td>
+                      <td className="p-4">{e.start_date?.toDate?.()?.toLocaleDateString() || ''}</td>
+                      <td className="p-4">{e.stats?.total_sold || 0}</td>
+                      <td className="p-4">
+                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${e.status === 'active' ? 'bg-green-500/10 text-green-400' : 'bg-slate-800 text-slate-400'}`}>
+                          {e.status || 'active'}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <button onClick={() => {
+                          if (confirm('¿Borrar evento?')) deleteDoc(doc(db, 'events', e.id)).then(() => setEvents(events.filter(evt => evt.id !== e.id)));
+                        }} className="text-red-400 hover:text-red-300">Borrar</button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {activeTab === 'partners' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <section className="bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4">
@@ -1448,6 +1529,51 @@ export default function SuperAdminPage() {
             </div>
           </section>
         </div>
+        </div>
+      )}
+
+      {activeTab === 'organizadores' && (
+        <div className="space-y-8">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-900 border-2 border-indigo-500/50 rounded-3xl p-6 shadow-2xl">
+              <div className="flex items-start gap-4">
+                <span className="text-4xl">🎪</span>
+                <div className="w-full">
+                  <h2 className="text-xl font-black text-white tracking-tight leading-none mb-1">Solicitudes de Organizadores Pendientes ({organizerApps.length})</h2>
+                  <p className="text-sm text-slate-400 mb-4">Revisa y aprueba o rechaza las solicitudes para organizar eventos independientes.</p>
+                  <div className="space-y-3">
+                    {organizerApps.length === 0 && <p className="text-sm text-slate-500">No hay solicitudes de organizadores pendientes.</p>}
+                    {organizerApps.map(app => (
+                      <div key={app.id} className="bg-black/30 rounded-xl p-4 border border-white/10">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="font-bold text-white text-lg">{app.nick || 'Sin nick'}</p>
+                            <p className="text-xs text-slate-400">{app.email}</p>
+                          </div>
+                          <span className="px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded-md text-xs font-bold uppercase">Pendiente</span>
+                        </div>
+                        <p className="text-sm text-slate-300 mb-1">📞 {app.phone} | 📍 {app.city}</p>
+                        <div className="mt-4 flex gap-2">
+                          <button
+                            onClick={() => handleOrganizerApplication(app.id, 'approve')}
+                            disabled={processingOrganizer === app.id}
+                            className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-xs font-bold uppercase transition-colors disabled:opacity-50"
+                          >
+                            {processingOrganizer === app.id ? '...' : 'Aprobar'}
+                          </button>
+                          <button
+                            onClick={() => handleOrganizerApplication(app.id, 'reject')}
+                            disabled={processingOrganizer === app.id}
+                            className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-xs font-bold uppercase transition-colors disabled:opacity-50"
+                          >
+                            Rechazar
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
         </div>
       )}
     </div>

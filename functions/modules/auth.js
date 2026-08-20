@@ -79,7 +79,7 @@ exports.assignRole = onCall({ enforceAppCheck: false }, async (request) => {
     throw new HttpsError("invalid-argument", "uid y role son obligatorios.");
   }
 
-  const validRoles = ['user', 'venue', 'venueOwner', 'cityAdmin', 'admin', 'superadmin', 'rrpp', 'door', 'ambassador', 'pending_rrpp'];
+  const validRoles = ['user', 'venue', 'venueOwner', 'cityAdmin', 'admin', 'superadmin', 'rrpp', 'door', 'ambassador', 'pending_rrpp', 'event_organizer', 'pending_organizer'];
   if (!validRoles.includes(role)) {
     throw new HttpsError("invalid-argument", `Rol inválido: ${role}`);
   }
@@ -116,6 +116,13 @@ exports.deleteUserData = onCall({ enforceAppCheck: false }, async (request) => {
     if (!snap.empty) await batch.commit();
   };
 
+  const deleteByArrayField = async (col, field) => {
+    const snap = await db.collection(col).where(field, "array-contains", uid).get();
+    const batch = db.batch();
+    snap.docs.forEach((d) => batch.delete(d.ref));
+    if (!snap.empty) await batch.commit();
+  };
+
   await Promise.all([
     deleteByField("likes", "fromId"),
     deleteByField("likes", "toId"),
@@ -127,7 +134,7 @@ exports.deleteUserData = onCall({ enforceAppCheck: false }, async (request) => {
     deleteByField("tickets", "userId"),
     deleteByField("chill_requests", "user_uid"),
     deleteByField("reports", "reportedBy"),
-    deleteByField("matches", "users"),
+    deleteByArrayField("matches", "users"),
   ]);
 
   const blocksSnap = await db.collection("users").doc(uid).collection("blocks").get();
@@ -305,7 +312,7 @@ exports.approveRRPP = onCall({ enforceAppCheck: false }, async (request) => {
 
     await db.collection('users').doc(targetUid).update({
       role: 'rrpp',
-      qr_quota: 0,
+      qr_quota: 25,
       phone: appData.phone,
       city: appData.city
     });

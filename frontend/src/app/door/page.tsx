@@ -4,7 +4,9 @@ import React, { useEffect, useRef, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import jsQR from 'jsqr';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, collectionGroup } from 'firebase/firestore';
+import { doc, getDoc, collection, collectionGroup, query, where, getDocs, updateDoc } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/lib/firebase';
 
 function DoorScannerContent() {
   const searchParams = useSearchParams();
@@ -161,7 +163,7 @@ function DoorScannerContent() {
     if ('vibrate' in navigator) navigator.vibrate(120);
 
     try {
-      // El QR contiene: "CHILL-REQ-{requestId}_{bucket}" o "CHILL-REQ-{requestId}" (legacy)
+      // Clean up CHILL-REQ- prefix if any
       const rawData = qrData.replace('CHILL-REQ-', '');
       const [requestId, bucketStr] = rawData.split('_');
       
@@ -178,56 +180,38 @@ function DoorScannerContent() {
         }
       }
 
-      const reqRef = doc(db, 'chill_requests', requestId);
-      const reqSnap = await getDoc(reqRef);
+      // We only have qrToken and we don't know venueId directly here, but we can call the cloud function.
+      // Wait, validateTicketByDoorToken expects venueId, eventId, qrToken, doorAccessToken.
+      // But we have eventId and token from searchParams!
+      
+      const venueId = searchParams.get('venueId') || eventId; // For independent events, venueId = eventId
+      
+      const validate = httpsCallable(functions, 'validateTicketByDoorToken');
+      const result = await validate({
+        qrToken: qrData,
+        doorAccessToken: token,
+        eventId,
+        venueId,
+      });
 
-      if (reqSnap.exists() && reqSnap.data()?.chill_id === eventId) {
-        const data = reqSnap.data();
-        if (data.checkedIn) {
-          setScanResult({
-            status: 'USED',
-            name: data.user_nick || data.userName,
-            message: `YA USADO (${new Date(data.checkedInAt || data.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`
-          });
-        } else {
-          await updateDoc(reqRef, {
-            checkedIn: true,
-            checkedInAt: new Date().toISOString()
-          });
-          setScanResult({ status: 'VALID', name: data.user_nick || data.userName, message: 'ACCESO CORRECTO' });
-          setScannedCount(prev => prev + 1);
-        }
+      const data = result.data as any;
+
+      if (data.valid) {
+        setScanResult({ 
+          status: 'VALID', 
+          name: data.ticket?.userName || 'Invitado', 
+          message: data.message || 'ACCESO CORRECTO' 
+        });
+        setScannedCount(prev => prev + 1);
       } else {
-        // Check if it's a ticket by qrToken
-        const qTicket = query(collection(db, 'tickets'), where('qrToken', '==', qrData), where('eventId', '==', eventId));
-        const ticketSnap = await getDocs(qTicket);
-
-        if (!ticketSnap.empty) {
-          const ticketDoc = ticketSnap.docs[0];
-          const data = ticketDoc.data();
-          
-          if (data.status === 'used') {
-            setScanResult({
-              status: 'USED',
-              name: data.client_name || data.userName,
-              message: `YA USADO (${data.usedAt ? new Date(data.usedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'NA'})`
-            });
-          } else if (data.status === 'valid') {
-            await updateDoc(doc(db, 'tickets', ticketDoc.id), {
-              status: 'used',
-              usedAt: new Date().toISOString()
-            });
-            setScanResult({ status: 'VALID', name: data.client_name || data.userName, message: 'ACCESO CORRECTO' });
-            setScannedCount(prev => prev + 1);
-          } else {
-            setScanResult({ status: 'INVALID', message: 'TICKET CANCELADO' });
-          }
-        } else {
-          setScanResult({ status: 'INVALID', message: 'PASE NO VÁLIDO' });
-        }
+        setScanResult({ 
+          status: data.message === 'YA ESCANEADA' ? 'USED' : 'INVALID', 
+          message: data.message 
+        });
       }
-    } catch {
-      setScanResult({ status: 'INVALID', message: 'ERROR DE LECTURA' });
+    } catch (e: any) {
+      console.error(e);
+      setScanResult({ status: 'INVALID', message: e.message || 'ERROR DE LECTURA' });
     }
 
     setTimeout(() => {

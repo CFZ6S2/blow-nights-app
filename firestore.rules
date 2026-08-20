@@ -154,6 +154,12 @@ service cloud.firestore {
       }
     }
 
+    match /events/{eventId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.token.role == 'event_organizer' && request.auth.uid == request.resource.data.organizerId;
+      allow update, delete: if isAdmin() || (request.auth != null && request.auth.uid == resource.data.organizerId);
+    }
+
     match /checkins/{checkinId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
@@ -247,6 +253,12 @@ service cloud.firestore {
     }
 
     match /rrpp_applications/{appId} {
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.uid;
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == resource.data.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    match /organizer_applications/{appId} {
       allow create: if request.auth != null && request.auth.uid == request.resource.data.uid;
       allow read: if isAdmin() || (request.auth != null && request.auth.uid == resource.data.uid);
       allow update, delete: if isAdmin();

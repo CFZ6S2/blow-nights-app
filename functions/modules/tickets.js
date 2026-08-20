@@ -92,6 +92,143 @@ exports.createTicketCheckout = onCall({ enforceAppCheck: false }, async (request
   return { sessionId: session.id, url: session.url };
 });
 
+exports.purchaseVenueTicket = onCall({ enforceAppCheck: false }, async (request) => {
+  const { data, auth } = request;
+  if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
+
+  const stripe = getStripe();
+  if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
+
+  const { venueId, ticketType, origin } = data;
+  if (!venueId || !ticketType) {
+    throw new HttpsError("invalid-argument", "venueId y ticketType son obligatorios.");
+  }
+
+  const venueDoc = await db.collection("venues").doc(venueId).get();
+  if (!venueDoc.exists) throw new HttpsError("not-found", "Local no encontrado.");
+  const venueData = venueDoc.data();
+
+  const pricing = venueData.ticketPricing?.[ticketType];
+  if (!pricing) throw new HttpsError("not-found", "Tipo de entrada no encontrado.");
+
+  const stripeAccountId = venueData.stripeAccountId;
+  if (!stripeAccountId) throw new HttpsError("failed-precondition", "El local no tiene Stripe configurado.");
+
+  const ticketPriceCents = pricing.amount || 0;
+  const platformFeeCents = 100;
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    line_items: [{
+      price_data: {
+        currency: "eur",
+        product_data: { name: `${venueData.name} - ${pricing.name || ticketType}` },
+        unit_amount: ticketPriceCents + platformFeeCents,
+      },
+      quantity: 1,
+    }],
+    mode: "payment",
+    payment_intent_data: {
+      application_fee_amount: platformFeeCents,
+      transfer_data: { destination: stripeAccountId },
+    },
+    success_url: `${origin}/wallet?success=true`,
+    cancel_url: `${origin}/wallet?canceled=true`,
+    metadata: {
+      firebaseUID: auth.uid,
+      venueId,
+      ticketType,
+      type: "ticket",
+    },
+  });
+
+  return { sessionId: session.id, url: session.url };
+});
+
+exports.purchaseIndependentEventTicket = onCall({ enforceAppCheck: false }, async (request) => {
+  const { data, auth } = request;
+  if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
+
+  const stripe = getStripe();
+  if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
+
+  const { eventId, ticketType, origin } = data;
+  if (!eventId || !ticketType) {
+    throw new HttpsError("invalid-argument", "eventId y ticketType son obligatorios.");
+  }
+
+  let tierPrice = 0;
+  let tierName = "";
+  let eventTitle = "";
+  let stripeAccountId = null;
+  let organizerId = null;
+
+  await db.runTransaction(async (transaction) => {
+    const eventDocTx = await transaction.get(db.collection("events").doc(eventId));
+    if (!eventDocTx.exists) throw new HttpsError("not-found", "Evento no encontrado.");
+    const eventData = eventDocTx.data();
+    eventTitle = eventData.title;
+    organizerId = eventData.organizerId;
+
+    const tier = eventData.ticket_tiers?.find(t => t.id === ticketType);
+    if (!tier) throw new HttpsError("not-found", "Tipo de entrada no encontrado.");
+
+    tierPrice = tier.price;
+    tierName = tier.name;
+
+    const tierSold = tier.sold || 0;
+    if (tierSold >= tier.quota) {
+      throw new HttpsError("resource-exhausted", "Entradas agotadas para este tramo.");
+    }
+
+    const newTiers = eventData.ticket_tiers.map(t => {
+      if (t.id === ticketType) return { ...t, sold: (t.sold || 0) + 1 };
+      return t;
+    });
+
+    transaction.update(eventDocTx.ref, { ticket_tiers: newTiers });
+  });
+
+  const organizerDoc = await db.collection("users").doc(organizerId).get();
+  stripeAccountId = organizerDoc.data()?.stripeAccountId;
+  
+  if (!stripeAccountId) {
+    throw new HttpsError("failed-precondition", "El organizador no tiene Stripe configurado.");
+  }
+
+  const ticketPriceCents = Math.round(tierPrice * 100);
+  const platformFeeCents = 100;
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    line_items: [{
+      price_data: {
+        currency: "eur",
+        product_data: { name: `${eventTitle} - ${tierName}` },
+        unit_amount: ticketPriceCents + platformFeeCents,
+      },
+      quantity: 1,
+    }],
+    mode: "payment",
+    payment_intent_data: {
+      application_fee_amount: platformFeeCents,
+      transfer_data: { destination: stripeAccountId },
+    },
+    success_url: `${origin}/wallet?success=true`,
+    cancel_url: `${origin}/wallet?canceled=true`,
+    metadata: {
+      firebaseUID: auth.uid,
+      eventId,
+      venueId: eventId,
+      ticketType,
+      type: "ticket",
+      isIndependent: "true"
+    },
+  });
+
+  return { sessionId: session.id, url: session.url };
+});
+
 exports.validateTicket = onCall({ enforceAppCheck: false }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
@@ -163,10 +300,17 @@ exports.validateTicketByDoorToken = onCall({ enforceAppCheck: false }, async (re
     throw new HttpsError("invalid-argument", "Missing parameters.");
   }
 
-  const eventSnap = await db.collection("venues").doc(venueId).collection("events").doc(eventId).get();
+  let eventSnap;
+  if (venueId === eventId) {
+    eventSnap = await db.collection("events").doc(eventId).get();
+  } else {
+    eventSnap = await db.collection("venues").doc(venueId).collection("events").doc(eventId).get();
+  }
+  
   if (!eventSnap.exists) throw new HttpsError("not-found", "Evento no encontrado.");
   const event = eventSnap.data();
-  if (event.door_access_token !== doorAccessToken) {
+  const tokenInDb = event.scanner_token || event.door_access_token;
+  if (tokenInDb !== doorAccessToken) {
     throw new HttpsError("permission-denied", "Token de puerta inválido.");
   }
 
@@ -244,7 +388,25 @@ exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: false }, async 
 
   const promoterDoc = promotersQuery.docs[0];
   const promoter = promoterDoc.data();
-  const venueId = promoterDoc.ref.parent.parent.parent.parent.id;
+  const pathParts = promoterDoc.ref.path.split('/');
+  
+  let venueId, eventIdActual;
+  let isIndependent = false;
+
+  if (pathParts.length >= 6 && pathParts[0] === 'venues') {
+    venueId = pathParts[1];
+    eventIdActual = pathParts[3];
+  } else if (pathParts.length >= 4 && pathParts[0] === 'events') {
+    eventIdActual = pathParts[1];
+    venueId = eventIdActual; // Fallback
+    isIndependent = true;
+  } else {
+    throw new HttpsError('internal', 'Ruta de promotor no reconocida');
+  }
+
+  if (eventIdActual !== eventId) {
+    throw new HttpsError('invalid-argument', 'El evento no coincide con el promotor');
+  }
 
   const maxTickets = promoter.max_tickets || 200;
   
@@ -271,7 +433,12 @@ exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: false }, async 
     throw new HttpsError('resource-exhausted', `Límite de ${maxTickets} entradas alcanzado.`);
   }
 
-  const eventRef = db.collection('venues').doc(venueId).collection('events').doc(eventId);
+  let eventRef;
+  if (isIndependent) {
+    eventRef = db.collection('events').doc(eventId);
+  } else {
+    eventRef = db.collection('venues').doc(venueId).collection('events').doc(eventId);
+  }
   const eventDoc = await eventRef.get();
 
   if (!eventDoc.exists) {
@@ -279,8 +446,13 @@ exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: false }, async 
   }
   const eventData = eventDoc.data();
   
-  const venueDoc = await db.collection('venues').doc(venueId).get();
-  const venueName = venueDoc.exists ? venueDoc.data().name : venueId;
+  let venueName = venueId;
+  if (isIndependent) {
+    venueName = 'Evento Independiente';
+  } else {
+    const venueDoc = await db.collection('venues').doc(venueId).get();
+    if (venueDoc.exists) venueName = venueDoc.data().name;
+  }
 
   const crypto = require("crypto");
   const qrToken = crypto.randomBytes(32).toString("hex");
@@ -394,8 +566,21 @@ exports.getPromoterStats = onCall({ enforceAppCheck: false }, async (request) =>
 
   const promoterDoc = promotersQuery.docs[0];
   const promoter = promoterDoc.data();
-  const eventId = promoterDoc.ref.parent.parent.id;
-  const venueId = promoterDoc.ref.parent.parent.parent.parent.id;
+  const pathParts = promoterDoc.ref.path.split('/');
+  
+  let eventId, venueId;
+  let isIndependent = false;
+
+  if (pathParts.length >= 6 && pathParts[0] === 'venues') {
+    venueId = pathParts[1];
+    eventId = pathParts[3];
+  } else if (pathParts.length >= 4 && pathParts[0] === 'events') {
+    eventId = pathParts[1];
+    venueId = eventId; // Fallback
+    isIndependent = true;
+  } else {
+    throw new HttpsError('internal', 'Ruta de promotor no reconocida');
+  }
 
   const ticketsQuery = await db.collection("tickets")
     .where("eventId", "==", eventId)
@@ -419,10 +604,19 @@ exports.getPromoterStats = onCall({ enforceAppCheck: false }, async (request) =>
     userQuota = promoter.qr_quota || 0;
   }
 
-  const eventDoc = await db.collection(`venues/${venueId}/events`).doc(eventId).get();
-  const eventData = eventDoc.exists ? eventDoc.data() : {};
-  const venueDoc = await db.collection("venues").doc(venueId).get();
-  const venueData = venueDoc.exists ? venueDoc.data() : {};
+  let eventData = {};
+  let venueData = {};
+
+  if (isIndependent) {
+    const eventDoc = await db.collection("events").doc(eventId).get();
+    if (eventDoc.exists) eventData = eventDoc.data();
+    venueData = { name: "Evento Independiente" };
+  } else {
+    const eventDoc = await db.collection(`venues/${venueId}/events`).doc(eventId).get();
+    if (eventDoc.exists) eventData = eventDoc.data();
+    const venueDoc = await db.collection("venues").doc(venueId).get();
+    if (venueDoc.exists) venueData = venueDoc.data();
+  }
 
   return {
     promoter: {

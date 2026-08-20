@@ -264,12 +264,23 @@ exports.deleteRRPPParty = onCall({ enforceAppCheck: false }, async (request) => 
     throw new HttpsError('permission-denied', 'No eres el dueño de esta fiesta');
   }
 
-  const eventId = promoterDoc.ref.parent.parent.id;
-  const venueId = promoterDoc.ref.parent.parent.parent.parent.id;
+  const pathParts = promoterDoc.ref.path.split('/');
+  
+  let eventIdActual;
+  let isIndependent = false;
+
+  if (pathParts.length >= 6 && pathParts[0] === 'venues') {
+    eventIdActual = pathParts[3];
+  } else if (pathParts.length >= 4 && pathParts[0] === 'events') {
+    eventIdActual = pathParts[1];
+    isIndependent = true;
+  } else {
+    throw new HttpsError('internal', 'Ruta de promotor no reconocida');
+  }
 
   // Check sales
   const ticketsQuery = await db.collection("tickets")
-    .where("eventId", "==", eventId)
+    .where("eventId", "==", eventIdActual)
     .where("rrpp_id", "==", promoterDoc.id)
     .get();
 

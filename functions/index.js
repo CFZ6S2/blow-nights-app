@@ -8,6 +8,9 @@ const chills = require("./modules/chills");
 const venues = require("./modules/venues");
 const adminModule = require("./modules/admin");
 const likes = require("./modules/likes");
+const organizers = require("./modules/organizers");
+const scheduled = require("./modules/scheduled");
+const membership = require("./modules/membership");
 
 // Auth & Users
 exports.onUserCreate = auth.onUserCreate;
@@ -18,6 +21,11 @@ exports.deleteUserData = auth.deleteUserData;
 exports.banUser = auth.banUser;
 exports.adminDeleteUser = auth.adminDeleteUser;
 exports.getAdminAnalytics = adminModule.getAdminAnalytics;
+exports.submitOrganizerApplication = organizers.submitOrganizerApplication;
+exports.approveOrganizer = organizers.approveOrganizer;
+
+// Scheduled
+exports.autoCompleteEventsAndSubscriptions = scheduled.autoCompleteEventsAndSubscriptions;
 
 // Notifications
 exports.sendMessageNotification = notifications.sendMessageNotification;
@@ -29,15 +37,23 @@ exports.sendPromoNotification = notifications.sendPromoNotification;
 
 // Stripe payments
 exports.createCheckoutSession = stripe.createCheckoutSession;
+exports.createVenueSubscriptionCheckout = stripe.createVenueSubscriptionCheckout;
 exports.createChillPassCheckout = stripe.createChillPassCheckout;
 exports.createPingCheckoutSession = stripe.createPingCheckoutSession;
 exports.createStripeConnectAccount = stripe.createStripeConnectAccount;
 exports.createStripeAccountLink = stripe.createStripeAccountLink;
 exports.createQRPackageCheckout = stripe.createQRPackageCheckout;
+exports.createStripePortalSession = stripe.createStripePortalSession;
 exports.stripeWebhook = stripe.stripeWebhook;
+
+// Memberships
+exports.createUserMembershipCheckout = membership.createUserMembershipCheckout;
+exports.createBlack8hCheckout = membership.createBlack8hCheckout;
 
 // Tickets & RRPP
 exports.createTicketCheckout = tickets.createTicketCheckout;
+exports.purchaseVenueTicket = tickets.purchaseVenueTicket;
+exports.purchaseIndependentEventTicket = tickets.purchaseIndependentEventTicket;
 exports.validateTicket = tickets.validateTicket;
 exports.validateTicketByDoorToken = tickets.validateTicketByDoorToken;
 exports.generateDirectPromoterTicket = tickets.generateDirectPromoterTicket;

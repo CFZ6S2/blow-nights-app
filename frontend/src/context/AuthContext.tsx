@@ -23,6 +23,10 @@ interface AuthContextType {
   isCityAdmin?: boolean;
   isVenueManager?: boolean;
   hasChillAccess: boolean;
+  isPlus: boolean;
+  isBlack: boolean;
+  hasBlackAccess: boolean;
+  isPromoLifetime: boolean;
   loading: boolean;
   loginWithGoogle: () => Promise<void>;
   loginWithApple: () => Promise<void>;
@@ -38,6 +42,10 @@ const AuthContext = createContext<AuthContextType>({
   isSuperAdmin: false,
   isAdmin: false,
   hasChillAccess: false,
+  isPlus: false,
+  isBlack: false,
+  hasBlackAccess: false,
+  isPromoLifetime: false,
   loading: true,
   loginWithGoogle: async () => {},
   loginWithApple: async () => {},
@@ -198,8 +206,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const isAdmin = isSuperAdmin || claims?.role === 'admin';
   const isCityAdmin = claims?.role === 'cityAdmin';
   const isVenueManager = isAdmin || isCityAdmin || claims?.role === 'venueOwner' || claims?.role === 'venue';
+  
+  const membershipTier = profile?.membershipTier || 'free';
+  const isPlus = membershipTier === 'plus' && profile?.membershipStatus === 'active';
+  const isBlack = membershipTier === 'black' && profile?.membershipStatus === 'active';
+  const isPromoLifetime = profile?.promoMember === true;
+  
+  const boostExpires = profile?.blackBoostExpires?.toMillis?.() || claims?.blackBoostExpires;
+  const hasBlackAccess = isAdmin || isBlack || isPromoLifetime || (typeof boostExpires === 'number' && boostExpires > Date.now());
+  
   const hasChillAccess = isAdmin || !!claims?.premium || !!profile?.premium
-    || (typeof claims?.pass_expires === 'number' && claims.pass_expires > Date.now());
+    || (typeof claims?.pass_expires === 'number' && claims.pass_expires > Date.now())
+    || (typeof claims?.blackBoostExpires === 'number' && claims.blackBoostExpires > Date.now());
 
   const value = useMemo(() => ({
     user,
@@ -210,13 +228,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     isCityAdmin,
     isVenueManager,
     hasChillAccess,
+    isPlus,
+    isBlack,
+    hasBlackAccess,
+    isPromoLifetime,
     loginWithGoogle,
     loginWithApple,
     logout,
     deleteAccount,
     requestVerification,
     loading
-  }), [user, profile, claims, isSuperAdmin, isAdmin, isCityAdmin, isVenueManager, hasChillAccess, loginWithGoogle, loginWithApple, logout, deleteAccount, requestVerification, loading]);
+  }), [user, profile, claims, isSuperAdmin, isAdmin, isCityAdmin, isVenueManager, hasChillAccess, isPlus, isBlack, hasBlackAccess, isPromoLifetime, loginWithGoogle, loginWithApple, logout, deleteAccount, requestVerification, loading]);
 
   return (
     <AuthContext.Provider value={value}>

@@ -41,6 +41,82 @@ exports.createCheckoutSession = onCall({ enforceAppCheck: false }, async (reques
   }
 });
 
+exports.createVenueSubscriptionCheckout = onCall({ enforceAppCheck: false }, async (request) => {
+  const { data, auth } = request;
+  if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
+
+  const stripe = getStripe();
+  if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
+
+  const { venueId, tier, origin } = data;
+  const uid = auth.uid;
+
+  if (!venueId || !tier) {
+    throw new HttpsError("invalid-argument", "venueId y tier son obligatorios.");
+  }
+
+  const venueDoc = await db.collection("venues").doc(venueId).get();
+  if (!venueDoc.exists) throw new HttpsError("not-found", "Local no encontrado.");
+  if (venueDoc.data().ownerId !== uid) {
+    throw new HttpsError("permission-denied", "Solo el propietario puede suscribir el local.");
+  }
+
+  let customerId = venueDoc.data().stripeCustomerId;
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      email: auth.token.email,
+      metadata: { firebaseUID: uid, venueId }
+    });
+    customerId = customer.id;
+    await db.collection("venues").doc(venueId).update({ stripeCustomerId: customerId });
+  }
+
+  let amount = 0;
+  let name = "";
+  let priceId = null;
+
+  if (tier === "basico") { 
+    amount = 3000; name = "Venue - Básico"; 
+    priceId = process.env.STRIPE_PRICE_BASICO;
+  } else if (tier === "promo") { 
+    amount = 6000; name = "Venue - Promo"; 
+    priceId = process.env.STRIPE_PRICE_PROMO;
+  } else if (tier === "ticketing") { 
+    amount = 10000; name = "Venue - Ticketing"; 
+    priceId = process.env.STRIPE_PRICE_TICKETING;
+  } else {
+    throw new HttpsError("invalid-argument", "Tier inválido.");
+  }
+
+  try {
+    const lineItem = priceId ? {
+      price: priceId,
+      quantity: 1,
+    } : {
+      price_data: {
+        currency: "eur",
+        product_data: { name },
+        unit_amount: amount,
+        recurring: { interval: "month" },
+      },
+      quantity: 1,
+    };
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ["card"],
+      line_items: [lineItem],
+      mode: "subscription",
+      success_url: `${origin}/venue-admin?venueId=${venueId}&success=true`,
+      cancel_url: `${origin}/venue-admin?venueId=${venueId}&canceled=true`,
+      metadata: { type: "venue_subscription", venueId, tier, firebaseUID: uid }
+    });
+    return { sessionId: session.id, url: session.url };
+  } catch (error) {
+    throw new HttpsError("internal", error.message);
+  }
+});
+
 exports.createChillPassCheckout = onCall({ enforceAppCheck: false }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
@@ -349,11 +425,51 @@ exports.stripeWebhook = onRequest(async (req, res) => {
         await db.collection("users").doc(uid).update({
           qr_quota: admin.firestore.FieldValue.increment(quantity)
         });
+
+        // 50/50 split con city manager (0.50€ por QR)
+        try {
+          const userDoc = await db.collection("users").doc(uid).get();
+          const cityId = userDoc.exists ? userDoc.data().cityId : null;
+          if (cityId) {
+            const cityDoc = await db.collection("cities").doc(cityId).get();
+            const cityManagerStripe = cityDoc.exists ? cityDoc.data()?.partner_stripe_account_id : null;
+            if (cityManagerStripe) {
+              const managerCut = 50 * quantity; // 0.50€ por QR
+              await stripe.transfers.create({
+                amount: managerCut,
+                currency: "eur",
+                destination: cityManagerStripe,
+                description: `QR pack - ${uid}`,
+                transfer_group: session.id,
+              });
+              await db.collection("cities").doc(cityId).collection("earnings").add({
+                amount: managerCut / 100,
+                type: "qr_pack_fee",
+                userId: uid,
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+              });
+            }
+          }
+        } catch (e) {
+          console.error("Error en transfer City Manager por QR pack:", e);
+        }
+      }
+    } else if (session.metadata?.type === "venue_subscription") {
+      const venueId = session.metadata.venueId;
+      const tier = session.metadata.tier;
+      if (venueId && tier) {
+        await db.collection("venues").doc(venueId).update({
+          subscriptionTier: tier,
+          subscriptionStatus: "active",
+          stripeSubscriptionId: session.subscription,
+        });
       }
     } else if (firebaseUID) {
-    const isTicket = session.metadata?.type === "ticket";
-    const isChillPass = session.metadata?.type === "chill_pass";
-    const isChillVip = session.metadata?.type === "chill_vip";
+     const isTicket = session.metadata?.type === "ticket";
+     const isChillPass = session.metadata?.type === "chill_pass";
+     const isChillVip = session.metadata?.type === "chill_vip";
+     const isUserMembership = session.metadata?.type === "user_membership";
+     const isBlackBoost = session.metadata?.type === "black_boost";
 
     if (isChillPass || isChillVip) {
       if (isChillPass) {
@@ -448,13 +564,29 @@ exports.stripeWebhook = onRequest(async (req, res) => {
       const eventId = session.metadata.eventId;
       const rrppId = session.metadata.rrppId;
       const reservationId = session.metadata.reservationId;
+      const isIndependent = session.metadata.isIndependent === "true";
 
-      const venueDoc = await db.collection("venues").doc(venueId).get();
-      const venueOwnerId = venueDoc.exists ? venueDoc.data().ownerId : null;
-      const cityId = venueDoc.exists ? venueDoc.data().cityId || "" : "";
+      let venueOwnerId = null;
+      let cityId = "";
+      let ambassadorId = null;
+
+      if (isIndependent) {
+        const eventDoc = await db.collection("events").doc(eventId).get();
+        if (eventDoc.exists) {
+          venueOwnerId = eventDoc.data().organizerId;
+          cityId = eventDoc.data().cityId || "";
+        }
+      } else if (venueId) {
+        const venueDoc = await db.collection("venues").doc(venueId).get();
+        if (venueDoc.exists) {
+          venueOwnerId = venueDoc.data().ownerId;
+          cityId = venueDoc.data().cityId || "";
+          ambassadorId = venueDoc.data().ambassadorId;
+        }
+      }
 
       let rrppCommission = 0;
-      if (rrppId) {
+      if (rrppId && venueId && !isIndependent) {
         const rrppDoc = await db.collection("venues").doc(venueId).collection("promoters").doc(rrppId).get();
         if (rrppDoc.exists && rrppDoc.data().is_active) {
           const rrppData = rrppDoc.data();
@@ -469,7 +601,7 @@ exports.stripeWebhook = onRequest(async (req, res) => {
       await db.collection("tickets").add({
         userId: firebaseUID,
         venueId,
-        eventId,
+        eventId: eventId || null,
         venueOwnerId: venueOwnerId || "",
         cityId,
         ticketType: session.metadata.ticketType || "general",
@@ -480,15 +612,16 @@ exports.stripeWebhook = onRequest(async (req, res) => {
         status: "valid",
         purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
         stripeSessionId: session.id,
+        isIndependent,
       });
 
-      if (reservationId) {
+      if (reservationId && venueId && eventId && !isIndependent) {
         await db.collection("venues").doc(venueId).collection("events").doc(eventId).collection("reservations").doc(reservationId).update({
           status: "completed"
         });
       }
 
-      const CITY_MANAGER_CENTS = 30;
+      const CITY_MANAGER_CENTS = 50;
       const AMBASSADOR_CENTS = 25;
 
       if (cityId) {
@@ -517,7 +650,6 @@ exports.stripeWebhook = onRequest(async (req, res) => {
         }
       }
 
-      const ambassadorId = venueDoc.exists ? venueDoc.data()?.ambassadorId : null;
       if (ambassadorId) {
         try {
           const ambassadorDoc = await db.collection("users").doc(ambassadorId).get();
@@ -557,7 +689,14 @@ exports.stripeWebhook = onRequest(async (req, res) => {
 if (event.type === "customer.subscription.deleted") {
     const customer = await stripe.customers.retrieve(session.customer);
     const uid = customer.metadata?.firebaseUID;
-    if (uid) {
+    const venueId = customer.metadata?.venueId;
+    
+    if (venueId) {
+      await db.collection("venues").doc(venueId).update({
+        subscriptionStatus: "canceled",
+        subscriptionTier: admin.firestore.FieldValue.delete()
+      });
+    } else if (uid) {
       const subDoc = await db.collection("subscriptions").doc(uid).get();
       const isPromoMember = subDoc.exists && subDoc.data()?.promoMember === true;
 
@@ -571,4 +710,37 @@ if (event.type === "customer.subscription.deleted") {
   }
 
   res.json({ received: true });
+});
+
+exports.createStripePortalSession = onCall({ enforceAppCheck: false }, async (request) => {
+  const { auth, data } = request;
+  if (!auth) throw new HttpsError("unauthenticated", "Necesitas estar logueado");
+
+  const { venueId } = data;
+  let customerId = null;
+
+  if (venueId) {
+    const venueDoc = await db.collection("venues").doc(venueId).get();
+    if (!venueDoc.exists) throw new HttpsError("not-found", "Local no encontrado");
+    if (venueDoc.data().ownerId !== auth.uid) throw new HttpsError("permission-denied", "No tienes permisos");
+    customerId = venueDoc.data().stripeCustomerId;
+  } else {
+    const userDoc = await db.collection("subscriptions").doc(auth.uid).get();
+    customerId = userDoc.exists ? userDoc.data().stripeCustomerId : null;
+  }
+
+  if (!customerId) {
+    throw new HttpsError("failed-precondition", "No tienes una suscripción activa o método de pago.");
+  }
+
+  try {
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: venueId ? `${process.env.NEXT_PUBLIC_URL || "https://blownights.com"}/venue-admin` : `${process.env.NEXT_PUBLIC_URL || "https://blownights.com"}/premium`,
+    });
+    return { url: session.url };
+  } catch (error) {
+    console.error("Stripe Portal Error:", error);
+    throw new HttpsError("internal", error.message);
+  }
 });

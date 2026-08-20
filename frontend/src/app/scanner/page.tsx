@@ -96,11 +96,8 @@ export default function ScannerPage() {
   }, []);
 
   useEffect(() => {
-    if (mode === 'camera' && !scanning && !result) {
-      startCamera();
-    }
     return () => stopCamera();
-  }, [mode, startCamera, stopCamera]);
+  }, [stopCamera]);
 
   const validateToken = async (token: string) => {
     if (!token || validating) return;
@@ -178,11 +175,20 @@ export default function ScannerPage() {
 
         {mode === 'camera' && !result && (
           <div className="space-y-4">
-            <div className="relative rounded-3xl overflow-hidden bg-black aspect-[4/3]">
-              <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
+            <div className="relative rounded-3xl overflow-hidden bg-black aspect-[4/3] flex items-center justify-center">
+              {!scanning && !cameraError && (
+                <button
+                  onClick={startCamera}
+                  className="px-6 py-3 bg-fuchsia-600 text-white font-bold rounded-2xl flex items-center gap-2 z-10"
+                >
+                  <span className="material-icons">photo_camera</span>
+                  Activar Cámara
+                </button>
+              )}
+              <video ref={videoRef} className="w-full h-full object-cover absolute inset-0" playsInline muted />
               <canvas ref={canvasRef} className="hidden" />
               {scanning && (
-                <div className="absolute inset-0 flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="w-48 h-48 border-2 border-fuchsia-500 rounded-3xl animate-pulse" />
                 </div>
               )}

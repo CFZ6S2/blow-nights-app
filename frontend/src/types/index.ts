@@ -43,6 +43,10 @@ export interface User {
   needsUpdate?: boolean;
   venueId?: string;
   qrCredits?: number;
+  membershipTier?: 'free' | 'plus' | 'black' | null;
+  membershipStatus?: 'active' | 'canceled' | null;
+  blackBoostExpires?: any; // Timestamp for Black 8h boost
+  promoMember?: boolean;   // first 100 Black‑for‑life flag
 }
 
 export interface Venue {
@@ -75,6 +79,29 @@ export interface Venue {
     quota?: number;
   }>;
   ticketsSold?: Record<string, number>;
+  subscriptionTier?: 'basico' | 'promo' | 'ticketing';
+  subscriptionStatus?: string;
+  stripeSubscriptionId?: string;
+  stripeAccountId?: string;
+  isVerified?: boolean;
+}
+
+export interface Event {
+  id: string;
+  title: string;
+  description?: string;
+  date: any; // Firebase Timestamp
+  location: { latitude: number; longitude: number; address?: string };
+  capacity: number;
+  organizerId: string;
+  organizerType: 'user' | 'venue';
+  organizerName: string;
+  cityId: string;
+  status: 'draft' | 'published' | 'cancelled' | 'completed';
+  ticket_tiers?: any[];
+  coverImage?: string;
+  door_access_token?: string;
+  stripeAccountId?: string;
 }
 
 export interface Ticket {

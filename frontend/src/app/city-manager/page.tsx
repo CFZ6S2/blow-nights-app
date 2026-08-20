@@ -18,6 +18,7 @@ export default function CityManagerDashboard() {
   // Data
   const [cityData, setCityData] = useState<any>(null);
   const [venues, setVenues] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [metrics, setMetrics] = useState({
     activeVenues: 0,
     monthlyGrossRevenue: 0,
@@ -60,8 +61,9 @@ export default function CityManagerDashboard() {
           const v: any = { id: d.id, ...d.data() };
           vList.push(v);
           if (v.isActive) mActive++;
-          if (v.subscriptionPlan === 'pro') mGross += 89;
-          if (v.subscriptionPlan === 'radar') mGross += 39;
+          if (v.subscriptionTier === 'ticketing') mGross += 100;
+          if (v.subscriptionTier === 'promo') mGross += 60;
+          if (v.subscriptionTier === 'basico') mGross += 30;
           
           // Simulamos tickets para el MVP (en un caso real, buscaríamos en orders/tickets)
           mTickets += Math.floor(Math.random() * 50) + 10;
@@ -71,6 +73,15 @@ export default function CityManagerDashboard() {
 
         // Cálculo de comisión (40% de SaaS)
         const payout = mGross * 0.40;
+
+        // 3. Buscar los eventos independientes de esta ciudad
+        const eQ = query(collection(db, 'events'), where('cityId', '==', cData.id));
+        const eSnap = await getDocs(eQ);
+        const eList: any[] = [];
+        eSnap.forEach(d => {
+          eList.push({ id: d.id, ...d.data() });
+        });
+        setEvents(eList);
 
         setMetrics({
           activeVenues: mActive,
@@ -227,12 +238,56 @@ export default function CityManagerDashboard() {
                       <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${v.isActive ? 'bg-green-500/10 text-green-400' : 'bg-slate-800 text-slate-400'}`}>
                         {v.isActive ? 'Operativo' : 'Inactivo'}
                       </span>
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${v.subscriptionPlan === 'pro' ? 'bg-indigo-500/10 text-indigo-400' : v.subscriptionPlan === 'radar' ? 'bg-fuchsia-500/10 text-fuchsia-400' : 'bg-slate-800 text-slate-400'}`}>
-                        {v.subscriptionPlan === 'pro' ? 'CLUB PRO' : v.subscriptionPlan === 'radar' ? 'RADAR' : 'FREE'}
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${v.subscriptionTier === 'ticketing' ? 'bg-indigo-500/10 text-indigo-400' : v.subscriptionTier === 'promo' ? 'bg-fuchsia-500/10 text-fuchsia-400' : v.subscriptionTier === 'basico' ? 'bg-blue-500/10 text-blue-400' : 'bg-slate-800 text-slate-400'}`}>
+                        {v.subscriptionTier === 'ticketing' ? 'TICKETING' : v.subscriptionTier === 'promo' ? 'PROMO' : v.subscriptionTier === 'basico' ? 'BÁSICO' : 'FREE'}
                       </span>
                       <button onClick={() => handleDeleteVenue(v.id, v.name)} className="bg-red-900/50 text-red-400 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-900 transition-colors">
                         Borrar
                       </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* EVENTS LIST */}
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Eventos Independientes</h2>
+          </div>
+          
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden">
+            {events.length === 0 ? (
+              <div className="p-8 text-center text-slate-500">
+                Aún no hay eventos independientes registrados en tu territorio.
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-800/50">
+                {events.map(e => (
+                  <div key={e.id} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-800/30 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-slate-800 rounded-xl overflow-hidden flex-shrink-0">
+                        {e.banner_url ? (
+                          <img src={e.banner_url} alt={e.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-600">
+                            <Ticket className="w-5 h-5" />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-white">{e.title}</h3>
+                        <p className="text-xs text-slate-400">
+                          {e.start_date?.toDate?.()?.toLocaleDateString() || ''} • {e.stats?.total_sold || 0} Entradas Vendidas
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${e.status === 'active' ? 'bg-green-500/10 text-green-400' : 'bg-slate-800 text-slate-400'}`}>
+                        {e.status === 'active' ? 'Activo' : 'Cerrado'}
+                      </span>
                     </div>
                   </div>
                 ))}

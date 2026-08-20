@@ -13,12 +13,15 @@ const VENUE_TYPES = {
   // Puntos Comunitarios
   cruising_outdoor: { label: 'Cruising Exterior & Zonas Libres', hours: '22:00–06:00', icon: 'park', cruising: true, group: 'community' },
   community_point: { label: 'Puntos de Encuentro', hours: '24h', icon: 'place', cruising: false, group: 'community' },
+  // Eventos Independientes
+  event: { label: 'Eventos Independientes', hours: 'Especial', icon: 'event', cruising: false, group: 'events' },
 };
 
 export { VENUE_TYPES };
 
 export function useVenues(cityId: string | null) {
   const [venues, setVenues] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,18 +30,24 @@ export function useVenues(cityId: string | null) {
 
     const q = query(collection(db, 'venues'), ...constraints);
 
-    const unsub = onSnapshot(q, (snap) => {
+    const unsubVenues = onSnapshot(q, (snap) => {
       const list = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setVenues(list);
       setLoading(false);
     }, () => setLoading(false));
 
-    return unsub;
+    const eventsQ = query(collection(db, 'events'), ...constraints);
+    const unsubEvents = onSnapshot(eventsQ, (snap) => {
+      const list = snap.docs.map((doc) => ({ id: doc.id, ...doc.data(), type: 'event' })); // Ensure type is 'event'
+      setEvents(list);
+    }, () => {});
+
+    return () => { unsubVenues(); unsubEvents(); };
   }, [cityId]);
 
   const grouped: Record<string, any[]> = {};
   Object.keys(VENUE_TYPES).forEach((key) => {
-    grouped[key] = venues
+    grouped[key] = [...venues, ...events]
       .filter((v) => v.type === key)
       .sort((a, b) => {
         const aBoost = a.boostActive || a.subscription?.status === 'active';
@@ -51,7 +60,7 @@ export function useVenues(cityId: string | null) {
       });
   });
 
-  return { venues, grouped, loading };
+  return { venues: [...venues, ...events], grouped, loading };
 }
 
 export function useVenueCheckins(venueId: string | null) {

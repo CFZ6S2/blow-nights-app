@@ -15,7 +15,7 @@ interface SwipeCardsProps {
 }
 
 export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProps) {
-  const { user, profile } = useAuth();
+  const { user, profile, isPlus, hasBlackAccess } = useAuth();
   const router = useRouter();
   const [cards, setCards] = useState<User[]>([]);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -45,18 +45,20 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
   const checkPingLimits = async () => {
     if (!user || !profile) return false;
     
+    if (profile.isVIPNight || profile.premium || hasBlackAccess) return true;
+
+    const pingLimit = isPlus ? 10 : 3;
+
     // Check 4 hour reset
     const now = new Date().valueOf();
     const lastReset = profile.lastPingReset?.toMillis?.() || 0;
-    if (now - lastReset > 4 * 60 * 60 * 1000 && (profile.dailyPingsLeft || 0) < 3) {
+    if (now - lastReset > 4 * 60 * 60 * 1000 && (profile.dailyPingsLeft || 0) < pingLimit) {
       await updateDoc(doc(db, 'users', user.uid), {
-        dailyPingsLeft: 3,
+        dailyPingsLeft: pingLimit,
         lastPingReset: serverTimestamp()
       });
-      return true; // Just reset, they have 3 now
+      return true; // Just reset, they have limits now
     }
-
-    if (profile.isVIPNight || profile.premium) return true;
 
     if ((profile.dailyPingsLeft ?? 0) <= 0) {
       setPingLimitExceeded(true);

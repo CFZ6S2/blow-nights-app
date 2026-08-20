@@ -262,6 +262,9 @@ export default function VenuesPage() {
               <option value="cruising_outdoor">🌲 Cruising Exterior & Zonas Libres</option>
               <option value="community_point">📍 Puntos de Encuentro</option>
             </optgroup>
+            <optgroup label="── EVENTOS INDEPENDIENTES ──">
+              <option value="event">🎪 Eventos Independientes</option>
+            </optgroup>
           </select>
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
             ▼
@@ -346,23 +349,28 @@ export default function VenuesPage() {
                   )}
                 </div>
 
-                {venue.ticketPricing && Object.keys(venue.ticketPricing).length > 0 && (
+                {(venue.ticketPricing && Object.keys(venue.ticketPricing).length > 0) || (venue.ticket_tiers && venue.ticket_tiers.length > 0) ? (
                   <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
                     <div className="flex gap-2 flex-wrap">
-                      {Object.entries(venue.ticketPricing).map(([type, pricing]: [string, any]) => (
+                      {venue.ticketPricing && Object.entries(venue.ticketPricing).map(([type, pricing]: [string, any]) => (
                         <span key={type} className="text-[9px] bg-white/5 text-slate-400 px-2 py-1 rounded-lg">
-                          {type}: {(pricing.amount / 100).toFixed(2)}€
+                          {pricing.name || type}: {(pricing.amount / 100).toFixed(2)}€
+                        </span>
+                      ))}
+                      {venue.ticket_tiers && venue.ticket_tiers.map((tier: any) => (
+                        <span key={tier.id} className="text-[9px] bg-white/5 text-slate-400 px-2 py-1 rounded-lg">
+                          {tier.name}: {tier.price.toFixed(2)}€
                         </span>
                       ))}
                     </div>
                     <Link
-                      href={cityPath(`/venues/detail?id=${venue.id}`)}
+                      href={cityPath(`/venues/detail?id=${venue.id}&type=${venue.type}`)}
                       className="text-[10px] font-black text-yellow-500 uppercase tracking-widest"
                     >
                       Entradas
                     </Link>
                   </div>
-                )}
+                ) : null}
               </motion.div>
             ))
           )}

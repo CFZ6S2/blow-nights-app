@@ -16,6 +16,7 @@ export default function VenueDetailPage() {
   const { cityPath } = useCityRouter();
   const searchParams = useSearchParams();
   const venueId = searchParams?.get('id');
+  const type = searchParams?.get('type');
 
   const [venue, setVenue] = useState<any>(null);
   const [checkinCount, setCheckinCount] = useState(0);
@@ -60,11 +61,12 @@ export default function VenueDetailPage() {
 
   useEffect(() => {
     if (!venueId) return;
-    const unsub = onSnapshot(doc(db, 'venues', venueId), (snap) => {
+    const collectionName = type === 'event' ? 'events' : 'venues';
+    const unsub = onSnapshot(doc(db, collectionName, venueId), (snap) => {
       if (snap.exists()) setVenue({ id: snap.id, ...snap.data() });
     }, () => {});
     return unsub;
-  }, [venueId]);
+  }, [venueId, type]);
 
   useEffect(() => {
     if (!venueId) return;
@@ -81,14 +83,25 @@ export default function VenueDetailPage() {
     if (!user || purchasing) return;
     setPurchasing(ticketType);
     try {
-      const purchaseTicket = httpsCallable(functions, 'purchaseTicket');
-      const result = await purchaseTicket({
-        venueId,
-        ticketType,
-        origin: window.location.origin,
-      });
-      const { url } = result.data as { url: string };
-      if (url) window.location.href = url;
+      if (type === 'event') {
+        const purchaseEventTicket = httpsCallable(functions, 'purchaseIndependentEventTicket');
+        const result = await purchaseEventTicket({
+          eventId: venueId,
+          ticketType,
+          origin: window.location.origin,
+        });
+        const { url } = result.data as { url: string };
+        if (url) window.location.href = url;
+      } else {
+        const purchaseVenueTicket = httpsCallable(functions, 'purchaseVenueTicket');
+        const result = await purchaseVenueTicket({
+          venueId,
+          ticketType,
+          origin: window.location.origin,
+        });
+        const { url } = result.data as { url: string };
+        if (url) window.location.href = url;
+      }
     } catch (err: any) {
       console.error('Error purchasing ticket:', err);
       alert(err.message || 'Error al comprar la entrada');
@@ -144,7 +157,7 @@ export default function VenueDetailPage() {
               </span>
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight">{venue.name}</h1>
+              <h1 className="text-2xl font-black tracking-tight">{venue.title || venue.name}</h1>
               {venue.address && <p className="text-xs text-slate-500">{venue.address}</p>}
             </div>
           </div>
@@ -164,6 +177,10 @@ export default function VenueDetailPage() {
             )}
           </div>
         </header>
+
+        {venue.banner_url && (
+          <img src={venue.banner_url} alt={venue.title || venue.name} className="w-full h-48 object-cover rounded-3xl" />
+        )}
 
         {canceled && (
           <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-2xl">
@@ -242,7 +259,7 @@ export default function VenueDetailPage() {
                 </a>
                 <p className="text-[10px] text-slate-500">Serás redirigido a la taquilla oficial del local</p>
               </section>
-            ) : Object.keys(pricing).length > 0 ? (
+            ) : Object.keys(pricing).length > 0 || (venue.ticket_tiers && venue.ticket_tiers.length > 0) ? (
               <section className="space-y-4">
                 <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500">Entradas Disponibles</h2>
 
@@ -271,6 +288,40 @@ export default function VenueDetailPage() {
                     className="px-6 py-3 rounded-2xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest hover:shadow-[0_10px_30px_rgba(192,38,211,0.3)] transition-all active:scale-95 disabled:opacity-50"
                   >
                     {purchasing === type ? (
+                      <span className="material-icons text-sm animate-spin">sync</span>
+                    ) : (
+                      'Comprar'
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+                ))}
+            
+            {venue.ticket_tiers && venue.ticket_tiers.map((tier: any) => (
+              <motion.div
+                key={tier.id}
+                whileHover={{ y: -2 }}
+                className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-black capitalize">{tier.name}</h3>
+                    {tier.perks && (
+                      <p className="text-[10px] text-slate-500 mt-1">{tier.perks}</p>
+                    )}
+                    <p className="text-lg font-black text-fuchsia-400 mt-2">
+                      {tier.price.toFixed(2)}€
+                    </p>
+                    {tier.quota != null && (
+                      <p className="text-[9px] text-slate-600 mt-1">Plazas limitadas: {tier.quota}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handlePurchase(tier.id)}
+                    disabled={purchasing !== null}
+                    className="px-6 py-3 rounded-2xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest hover:shadow-[0_10px_30px_rgba(192,38,211,0.3)] transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {purchasing === tier.id ? (
                       <span className="material-icons text-sm animate-spin">sync</span>
                     ) : (
                       'Comprar'
