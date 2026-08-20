@@ -7,7 +7,7 @@ import { perf } from './firebase';
  * @param {Promise<T>} promiseFn - A function that returns the promise to measure
  * @returns {Promise<T>} The result of the promise
  */
-export async function withTrace(traceName, promiseFn) {
+export async function withTrace<T>(traceName: string, promiseFn: () => Promise<T>): Promise<T> {
   if (!perf) {
     return promiseFn();
   }
