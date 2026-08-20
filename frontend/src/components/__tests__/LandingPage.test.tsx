@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import LandingPage from '../LandingPage';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
 
 // Mock de i18n
 const mockT = vi.fn((key: string) => {
@@ -103,19 +103,7 @@ vi.mock('firebase/analytics', () => ({
   logEvent: vi.fn(),
 }));
 
-function createWrapper() {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-    },
-  });
-  
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
-  );
-}
+
 
 describe('LandingPage', () => {
   beforeEach(() => {
@@ -124,7 +112,7 @@ describe('LandingPage', () => {
   
   describe('Navigation', () => {
     it('renders nav items correctly', () => {
-      render(<LandingPage onStart={() => {}} />, { wrapper: createWrapper() });
+      render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
       expect(screen.getByText('Venues')).toBeInTheDocument();
       expect(screen.getByText('RRPP')).toBeInTheDocument();
@@ -133,21 +121,21 @@ describe('LandingPage', () => {
   
   describe('Hero Section', () => {
     it('renders hero with active status', async () => {
-      render(<LandingPage onStart={() => {}} />, { wrapper: createWrapper() });
+      render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
       // La llamada a getCountFromServer devuelve 10, así que debería mostrar Active now
       expect(await screen.findByText('Active now')).toBeInTheDocument();
     });
     
     it('renders hero description', () => {
-      render(<LandingPage onStart={() => {}} />, { wrapper: createWrapper() });
+      render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
       expect(screen.getByText('Connect')).toBeInTheDocument();
       expect(screen.getByText('Discover')).toBeInTheDocument();
     });
     
     it('renders CTA button', () => {
-      render(<LandingPage onStart={() => {}} />, { wrapper: createWrapper() });
+      render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
       expect(screen.getByText('Enter free')).toBeInTheDocument();
     });
@@ -155,20 +143,20 @@ describe('LandingPage', () => {
   
   describe('What is Blow Nights Section', () => {
     it('renders section title', () => {
-      render(<LandingPage onStart={() => {}} />, { wrapper: createWrapper() });
+      render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
       expect(screen.getByText('What is Blow Nights?')).toBeInTheDocument();
     });
     
     it('renders key differentiators', () => {
-      render(<LandingPage onStart={() => {}} />, { wrapper: createWrapper() });
+      render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
       expect(screen.getByText('Not a dating app')).toBeInTheDocument();
       expect(screen.getByText("It's a circuit")).toBeInTheDocument();
     });
     
     it('renders feature list', () => {
-      render(<LandingPage onStart={() => {}} />, { wrapper: createWrapper() });
+      render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
       expect(screen.getByText('Feature 1')).toBeInTheDocument();
     });
@@ -176,7 +164,7 @@ describe('LandingPage', () => {
   
   describe('How it Works Section', () => {
     it('renders steps title', () => {
-      render(<LandingPage onStart={() => {}} />, { wrapper: createWrapper() });
+      render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
       expect(screen.getByText('How it works')).toBeInTheDocument();
     });
