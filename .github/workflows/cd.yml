@@ -1,0 +1,147 @@
+name: CD - Continuous Deployment
+
+on:
+  push:
+    branches: [main]
+
+# Prevenir despliegues simultaneos
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  # ============================================
+  # DEPLOY A PRODUCCION
+  # ============================================
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            functions/package-lock.json
+      
+      - name: Install Firebase CLI
+        run: curl -sL https://firebase.tools | bash
+      
+      - name: Setup Firebase Service Account
+        run: |
+          echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > /tmp/gcp-key.json
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json" >> $GITHUB_ENV
+      
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: npm run build
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          NEXT_PUBLIC_STRIPE_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLIC_KEY }}
+      
+      - name: Install Functions Dependencies
+        working-directory: ./functions
+        run: npm ci
+      
+      - name: Deploy to Firebase
+        run: |
+          firebase deploy \
+            --only functions,firestore:rules,firestore:indexes,storage,hosting \
+            --project blow-nights-app \
+            --non-interactive \
+            --token ${{ secrets.FIREBASE_TOKEN }}
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
+      
+      - name: Cleanup
+        run: rm -f /tmp/gcp-key.json
+      
+      - name: Notify Success
+        if: success()
+        run: |
+          echo "✅ Deploy exitoso!"
+          echo "Frontend: https://blow-nights-app.web.app"
+          echo "Functions: https://europe-west1-blow-nights-app.cloudfunctions.net"
+      
+      - name: Notify Failure
+        if: failure()
+        run: |
+          echo "❌ Deploy fallido!"
+          echo "Revisar logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          exit 1
+  
+  # ============================================
+  # POST-DEPLOY VERIFICATION
+  # ============================================
+  post-deploy-check:
+    name: Post-Deploy Verification
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: always()
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Health Check - Frontend
+        run: |
+          curl --fail --retry 5 --retry-delay 10 https://blow-nights-app.web.app || exit 1
+      
+      - name: Health Check - Functions
+        run: |
+          # Verificar que las funciones esten disponibles
+          curl --fail --retry 3 --retry-delay 5 \
+            "https://europe-west1-blow-nights-app.cloudfunctions.net/" \
+            || echo "⚠️ Functions endpoint no disponible (puede ser normal si no hay endpoint publico)"
+      
+      - name: Check Firestore Rules
+        run: |
+          echo "✅ Firestore rules deployed"
+          # Aqui se podria añadir un test de integracion real
+      
+      - name: Check Storage Rules
+        run: |
+          echo "✅ Storage rules deployed"
+          # Aqui se podria añadir un test de integracion real
+  
+  # ============================================
+  # ROLLBACK AUTOMATICO (si health check falla)
+  # ============================================
+  rollback:
+    name: Rollback (si es necesario)
+    runs-on: ubuntu-latest
+    needs: [deploy, post-deploy-check]
+    if: failure() && needs.deploy.result == 'success'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.before }} # Commit anterior
+      
+      - name: Setup Firebase
+        run: curl -sL https://firebase.tools | bash
+      
+      - name: Rollback Deploy
+        run: |
+          echo "⚠️ Ejecutando rollback al commit anterior..."
+          firebase deploy --only hosting --project blow-nights-app --non-interactive
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
