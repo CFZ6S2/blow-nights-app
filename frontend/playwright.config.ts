@@ -2,13 +2,11 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  timeout: 30 * 1000,
-  expect: {
-    timeout: 5000
-  },
+  timeout: 30_000,
+  expect: { timeout: 5_000 },
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 2 : 1,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   globalSetup: require.resolve('./e2e/global-setup'),
@@ -23,14 +21,14 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
     {
-      name: 'Mobile Chrome',
+      name: 'mobile',
       use: { ...devices['Pixel 5'] },
     },
   ],
   webServer: {
     command: 'npm run dev',
     port: 3000,
-    timeout: 120 * 1000,
+    timeout: 120_000,
     reuseExistingServer: !process.env.CI,
   },
 });
