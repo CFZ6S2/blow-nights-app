@@ -37,6 +37,8 @@ export default function SuperAdminPage() {
   const [newCityPartnerEmail, setNewCityPartnerEmail] = useState('');
   const [newCityStripeId, setNewCityStripeId] = useState('');
   const [newCityAnnualFee, setNewCityAnnualFee] = useState('5000');
+  const [newCityManagerEmail, setNewCityManagerEmail] = useState('');
+  const [newCityAmbassadorEmail, setNewCityAmbassadorEmail] = useState('');
   const [savingCity, setSavingCity] = useState(false);
 
   // Asignar Partner a ciudad existente
@@ -356,6 +358,33 @@ export default function SuperAdminPage() {
     if (!newCitySlug || !newCityName || !newCityAnnualFee) return alert('Slug, Nombre y Canon son obligatorios.');
     setSavingCity(true);
     try {
+      // 1. Validar emails si se proporcionaron
+      let managerDoc = null;
+      let ambassadorDoc = null;
+
+      if (newCityManagerEmail) {
+        const qM = query(collection(db, 'users'), where('email', '==', newCityManagerEmail.toLowerCase().trim()));
+        const snapM = await getDocs(qM);
+        if (snapM.empty) {
+          alert(`No se encontró un usuario con el email del City Manager: ${newCityManagerEmail}`);
+          setSavingCity(false);
+          return;
+        }
+        managerDoc = { id: snapM.docs[0].id, ...snapM.docs[0].data() };
+      }
+
+      if (newCityAmbassadorEmail) {
+        const qA = query(collection(db, 'users'), where('email', '==', newCityAmbassadorEmail.toLowerCase().trim()));
+        const snapA = await getDocs(qA);
+        if (snapA.empty) {
+          alert(`No se encontró un usuario con el email del Ambassador: ${newCityAmbassadorEmail}`);
+          setSavingCity(false);
+          return;
+        }
+        ambassadorDoc = { id: snapA.docs[0].id, ...snapA.docs[0].data() };
+      }
+
+      // 2. Crear la ciudad
       const cityRef = doc(db, 'cities', newCitySlug.toLowerCase());
       const now = new Date();
       const nextYear = new Date();
@@ -364,8 +393,10 @@ export default function SuperAdminPage() {
       await setDoc(cityRef, {
         city_slug: newCitySlug.toLowerCase(),
         name: newCityName,
-        partner_name: newCityPartnerName,
-        partner_email: newCityPartnerEmail,
+        isActive: true, // Activación directa
+        partner_name: managerDoc ? (managerDoc.nick || managerDoc.name || 'Sin nombre') : newCityPartnerName,
+        partner_email: managerDoc ? managerDoc.email : newCityPartnerEmail,
+        partnerId: managerDoc ? managerDoc.id : null,
         partner_stripe_account_id: newCityStripeId,
         license: {
           annual_fee: parseInt(newCityAnnualFee),
@@ -376,9 +407,19 @@ export default function SuperAdminPage() {
         }
       });
       
+      // 3. Asignar roles vía Cloud Function
+      const assignRoleFunc = httpsCallable(functions, 'assignRole');
+      if (managerDoc) {
+        await assignRoleFunc({ uid: managerDoc.id, role: 'cityAdmin', cityId: newCitySlug.toLowerCase() });
+      }
+      if (ambassadorDoc) {
+        await assignRoleFunc({ uid: ambassadorDoc.id, role: 'ambassador', cityId: newCitySlug.toLowerCase() });
+      }
+      
       setNewCitySlug(''); setNewCityName(''); setNewCityPartnerName('');
       setNewCityPartnerEmail(''); setNewCityStripeId(''); setNewCityAnnualFee('5000');
-      alert('Ciudad franquiciada creada con éxito.');
+      setNewCityManagerEmail(''); setNewCityAmbassadorEmail('');
+      alert('Ciudad franquiciada creada con éxito. Ya está activa y los roles asignados (si se indicaron).');
     } catch (e) {
       console.error(e);
       alert('Error creando ciudad.');
@@ -1095,8 +1136,14 @@ export default function SuperAdminPage() {
                 <input placeholder="City Slug (ej: ibiza)" value={newCitySlug} onChange={e => setNewCitySlug(e.target.value)} className="w-1/2 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none" />
                 <input placeholder="Nombre (ej: Ibiza)" value={newCityName} onChange={e => setNewCityName(e.target.value)} className="w-1/2 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none" />
               </div>
-              <input placeholder="Empresa / Nombre Partner" value={newCityPartnerName} onChange={e => setNewCityPartnerName(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none" />
-              <input placeholder="Email del Partner" type="email" value={newCityPartnerEmail} onChange={e => setNewCityPartnerEmail(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none" />
+              
+              <div className="flex gap-3">
+                <input placeholder="Email del City Manager (Opcional)" type="email" value={newCityManagerEmail} onChange={e => setNewCityManagerEmail(e.target.value)} className="w-1/2 bg-black/30 border border-fuchsia-500/30 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none" />
+                <input placeholder="Email del Ambassador (Opcional)" type="email" value={newCityAmbassadorEmail} onChange={e => setNewCityAmbassadorEmail(e.target.value)} className="w-1/2 bg-black/30 border border-blue-500/30 rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none" />
+              </div>
+
+              <input placeholder="Empresa / Nombre Partner (Si no hay manager)" value={newCityPartnerName} onChange={e => setNewCityPartnerName(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none" />
+              <input placeholder="Email de Facturación / Partner" type="email" value={newCityPartnerEmail} onChange={e => setNewCityPartnerEmail(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none" />
               <input placeholder="Stripe Connect ID (acct_...)" value={newCityStripeId} onChange={e => setNewCityStripeId(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none" />
               <div className="flex items-center gap-3 bg-black/30 px-4 py-3 rounded-xl border border-white/10">
                 <span className="text-sm text-slate-400">Canon Anual (€):</span>
