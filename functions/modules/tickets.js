@@ -76,9 +76,6 @@ exports.createTicketCheckout = onCall({ enforceAppCheck: true }, async (request)
     mode: "payment",
     payment_intent_data: {
       application_fee_amount: platformFeeCents,
-      transfer_data: {
-        destination: stripeAccountId,
-      },
     },
     success_url: `${origin}/wallet?success=true`,
     cancel_url: `${origin}/wallet?canceled=true`,
@@ -91,7 +88,7 @@ exports.createTicketCheckout = onCall({ enforceAppCheck: true }, async (request)
       rrppId: rrppId || "",
       reservationId: reservationId || "",
     },
-  });
+  }, { stripeAccount: stripeAccountId });
 
   return { sessionId: session.id, url: session.url };
 });
@@ -134,7 +131,6 @@ exports.purchaseVenueTicket = onCall({ enforceAppCheck: true }, async (request) 
     mode: "payment",
     payment_intent_data: {
       application_fee_amount: platformFeeCents,
-      transfer_data: { destination: stripeAccountId },
     },
     success_url: `${origin}/wallet?success=true`,
     cancel_url: `${origin}/wallet?canceled=true`,
@@ -144,7 +140,7 @@ exports.purchaseVenueTicket = onCall({ enforceAppCheck: true }, async (request) 
       ticketType,
       type: "ticket",
     },
-  });
+  }, { stripeAccount: stripeAccountId });
 
   return { sessionId: session.id, url: session.url };
 });
@@ -216,7 +212,6 @@ exports.purchaseIndependentEventTicket = onCall({ enforceAppCheck: true }, async
     mode: "payment",
     payment_intent_data: {
       application_fee_amount: platformFeeCents,
-      transfer_data: { destination: stripeAccountId },
     },
     success_url: `${origin}/wallet?success=true`,
     cancel_url: `${origin}/wallet?canceled=true`,
@@ -228,7 +223,7 @@ exports.purchaseIndependentEventTicket = onCall({ enforceAppCheck: true }, async
       type: "ticket",
       isIndependent: "true"
     },
-  });
+  }, { stripeAccount: stripeAccountId });
 
   return { sessionId: session.id, url: session.url };
 });
@@ -641,7 +636,7 @@ exports.getPromoterStats = onCall({ enforceAppCheck: true }, async (request) => 
     }
   };
 });
-\n
+
 exports.generateOrganizerQRTicket = onCall({ enforceAppCheck: true }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Login requerido.');
