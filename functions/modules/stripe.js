@@ -26,6 +26,15 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
     const isProcessed = await db.runTransaction(async (t) => {
       const doc = await t.get(ledgerRef);
       if (doc.exists) {
+        const docData = doc.data();
+        if (docData.status === 'processing') {
+          const now = Date.now();
+          const startedAt = docData.timestamp ? docData.timestamp.toMillis() : now;
+          if (now - startedAt > 5 * 60 * 1000) { // 5 minutes timeout
+            t.update(ledgerRef, { timestamp: admin.firestore.FieldValue.serverTimestamp() });
+            return false;
+          }
+        }
         return true;
       }
       t.set(ledgerRef, { status: 'processing', timestamp: admin.firestore.FieldValue.serverTimestamp() });
@@ -45,8 +54,7 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
       relatedId: relatedId || null,
       currency,
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      payouts: [],
-      status: 'completed'
+      payouts: []
     };
 
     if (ambassadorId) {
@@ -99,6 +107,18 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
     const centralCents = amountCents - (ambassadorId ? ambassadorCents : 0) - cityManagerCents;
     ledgerData.payouts.push({ role: 'central', amountCents: centralCents, status: 'retained' });
     
+    const failedPayouts = ledgerData.payouts.filter(p => p.status === 'failed').length;
+    const pendingPayouts = ledgerData.payouts.filter(p => p.status === 'pending_payout').length;
+    const paidPayouts = ledgerData.payouts.filter(p => p.status === 'paid' || p.status === 'retained').length;
+
+    if (failedPayouts > 0) {
+      ledgerData.status = paidPayouts > 0 ? 'partial' : 'failed';
+    } else if (pendingPayouts > 0) {
+      ledgerData.status = paidPayouts > 0 ? 'partial' : 'pending';
+    } else {
+      ledgerData.status = 'completed';
+    }
+
     await ledgerRef.update(ledgerData);
   } catch(e) {
     console.error('Error en territorialSplit', e);
