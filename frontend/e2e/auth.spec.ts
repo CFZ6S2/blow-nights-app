@@ -1,27 +1,61 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Auth Flow', () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock Firebase Auth
-    await page.route('**/identitytoolkit.googleapis.com/**', async route => {
-      await route.fulfill({
-        status: 200,
-        json: { idToken: 'test_token', refreshToken: 'test_refresh' }
-      });
-    });
+  test('login page shows BLOW NIGHTS branding', async ({ page }) => {
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('h1').first()).toContainText('BLOW NIGHTS', { timeout: 15_000 });
   });
 
-  test('user can access landing and navigate to login', async ({ page }) => {
-    await page.goto('/');
-    
-    // Intentar encontrar el botón de login / enter free
-    const enterButton = page.getByText(/Enter free/i).first();
-    if (await enterButton.isVisible()) {
-      await enterButton.click();
-    }
-    
-    // Aquí el mock debería haber entrado en acción si hay un intento real de auth.
-    // Validamos que estemos en la app y no haya explotado.
-    await expect(page.locator('body')).toBeVisible();
+  test('login page shows Google and Apple buttons (disabled by default)', async ({ page }) => {
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+
+    // Both auth buttons should be visible
+    const googleBtn = page.getByRole('button', { name: /google/i });
+    const appleBtn = page.getByRole('button', { name: /apple/i });
+    await expect(googleBtn).toBeVisible({ timeout: 15_000 });
+    await expect(appleBtn).toBeVisible();
+
+    // Buttons should be disabled until age confirmation checkbox is checked
+    await expect(googleBtn).toBeDisabled();
+    await expect(appleBtn).toBeDisabled();
+  });
+
+  test('age confirmation checkbox enables auth buttons', async ({ page }) => {
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+
+    // Wait for the checkbox to appear (Suspense may delay rendering)
+    const checkbox = page.getByRole('checkbox');
+    await expect(checkbox).toBeVisible({ timeout: 15_000 });
+    await checkbox.check();
+
+    // Now auth buttons should be enabled
+    const googleBtn = page.getByRole('button', { name: /google/i });
+    const appleBtn = page.getByRole('button', { name: /apple/i });
+    await expect(googleBtn).toBeEnabled();
+    await expect(appleBtn).toBeEnabled();
+  });
+
+  test('login page shows trust badges (Seguro, Privado, Real)', async ({ page }) => {
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText('Seguro')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('Privado')).toBeVisible();
+    await expect(page.getByText('Real')).toBeVisible();
+  });
+
+  test('login page has links to Terms and Privacy', async ({ page }) => {
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+    const termsLink = page.getByRole('link', { name: /términos/i });
+    const privacyLink = page.getByRole('link', { name: /privacidad/i });
+    await expect(termsLink).toBeVisible({ timeout: 15_000 });
+    await expect(privacyLink).toBeVisible();
+
+    // Verify href attributes (trailing slash may be present)
+    await expect(termsLink).toHaveAttribute('href', /\/terms\/?/);
+    await expect(privacyLink).toHaveAttribute('href', /\/privacy\/?/);
+  });
+
+  test('root redirects to default city', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForURL(/\/madrid\/?/, { timeout: 15_000 });
   });
 });

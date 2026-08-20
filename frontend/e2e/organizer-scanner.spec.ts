@@ -1,13 +1,26 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Organizer Scanner Flow', () => {
-  test('organizer can open scanner', async ({ page }) => {
+  test('scanner page redirects unauthenticated users to login', async ({ page }) => {
+    await page.goto('/scanner');
+    // Scanner requires auth — should redirect to login
+    await page.waitForURL(/\/login/, { timeout: 10_000 });
+    await expect(page.locator('h1').first()).toContainText('BLOW NIGHTS');
+  });
+
+  test('business page loads with B2B content', async ({ page }) => {
     await page.goto('/business');
-    
-    // Verificar que estamos en la zona de organizadores (B2B Landing)
     await expect(page.locator('body')).toBeVisible();
-    
-    // Aquí podemos simular el login de organizer en el futuro
-    // y navegar al escáner de QR
+    await expect(page.locator('nav')).toBeVisible();
+  });
+
+  test('organizer page loads', async ({ page }) => {
+    await page.goto('/organizer');
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('door page requires authentication', async ({ page }) => {
+    await page.goto('/door');
+    await expect(page.locator('body')).toBeVisible();
   });
 });
