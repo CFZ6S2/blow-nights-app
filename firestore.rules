@@ -47,6 +47,14 @@ service cloud.firestore {
       return !('edad' in d) || d.edad == null || (d.edad is int && d.edad >= 18);
     }
 
+    function venueTier(venueId) {
+      return get(/databases/$(database)/documents/venues/$(venueId)).data.get('subscriptionTier', '');
+    }
+
+    function hasVenueTier(venueId, allowedTiers) {
+      return venueTier(venueId) in allowedTiers;
+    }
+
     match /users/{userId} {
       allow get: if request.auth != null && notBlocked(userId);
       allow list: if isAdmin() || (request.auth != null && request.query.limit <= 150);
@@ -142,7 +150,8 @@ service cloud.firestore {
 
       match /events/{eventId} {
         allow read: if true;
-        allow write: if isAdmin() || (request.auth != null && request.auth.uid == get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId);
+        allow write: if isAdmin() || (request.auth != null && request.auth.uid == get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId
+            && hasVenueTier(venueId, ['ticketing']));
 
         match /promoters/{promoterId} {
           allow read: if isAdmin() || (request.auth != null && (
@@ -183,7 +192,8 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow create, update: if isAdmin()
         || isCityAdmin(request.resource.data.cityId)
-        || (request.auth != null && request.auth.uid == request.resource.data.venueOwnerId);
+        || (request.auth != null && request.auth.uid == request.resource.data.venueOwnerId
+            && hasVenueTier(request.resource.data.venueId, ['promo', 'ticketing']));
       allow delete: if isAdmin()
         || isCityAdmin(resource.data.cityId)
         || (request.auth != null && request.auth.uid == resource.data.venueOwnerId);

@@ -468,6 +468,7 @@ exports.stripeWebhook = onRequest(async (req, res) => {
         await db.collection("venues").doc(venueId).update({
           subscriptionTier: tier,
           subscriptionStatus: "active",
+          isActive: true,
           stripeSubscriptionId: session.subscription,
         });
 

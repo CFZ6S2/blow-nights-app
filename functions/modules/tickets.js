@@ -53,7 +53,11 @@ exports.createTicketCheckout = onCall({ enforceAppCheck: true }, async (request)
   });
 
   const venueDoc = await db.collection("venues").doc(venueId).get();
-  const stripeAccountId = venueDoc.data()?.stripeAccountId;
+  const venueData = venueDoc.data();
+  if (venueData?.subscriptionTier !== "ticketing") {
+    throw new HttpsError("failed-precondition", "El local necesita el plan Ticketing para vender entradas.");
+  }
+  const stripeAccountId = venueData?.stripeAccountId;
   if (!stripeAccountId) throw new HttpsError("failed-precondition", "El local no tiene Stripe configurado.");
 
   const ticketPriceCents = Math.round(tierPrice * 100);
