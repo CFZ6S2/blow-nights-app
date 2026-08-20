@@ -18,11 +18,29 @@ export function useTickets(userId: string | undefined) {
       orderBy('purchasedAt', 'desc')
     );
 
+    let perfTrace = null;
+    if (typeof window !== 'undefined') {
+      import('@/lib/perf').then(({ startTrace }) => {
+        perfTrace = startTrace('query_tickets');
+      });
+    }
+
     const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Ticket));
       setTickets(list);
       setLoading(false);
-    }, () => setLoading(false));
+      if (perfTrace) {
+        perfTrace.stop();
+        perfTrace = null;
+      }
+    }, () => {
+      setLoading(false);
+      if (perfTrace) {
+        perfTrace.putAttribute('error', 'true');
+        perfTrace.stop();
+        perfTrace = null;
+      }
+    });
 
     return unsub;
   }, [userId]);

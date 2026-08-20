@@ -30,11 +30,29 @@ export function useVenues(cityId: string | null) {
 
     const q = query(collection(db, 'venues'), ...constraints);
 
+    let perfTrace = null;
+    if (typeof window !== 'undefined') {
+      import('@/lib/perf').then(({ startTrace }) => {
+        perfTrace = startTrace('query_venues');
+      });
+    }
+
     const unsubVenues = onSnapshot(q, (snap) => {
       const list = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setVenues(list);
       setLoading(false);
-    }, () => setLoading(false));
+      if (perfTrace) {
+        perfTrace.stop();
+        perfTrace = null;
+      }
+    }, () => {
+      setLoading(false);
+      if (perfTrace) {
+        perfTrace.putAttribute('error', 'true');
+        perfTrace.stop();
+        perfTrace = null;
+      }
+    });
 
     const eventsQ = query(collection(db, 'events'), ...constraints);
     const unsubEvents = onSnapshot(eventsQ, (snap) => {
