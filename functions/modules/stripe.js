@@ -109,7 +109,7 @@ exports.createVenueSubscriptionCheckout = onCall({ enforceAppCheck: true }, asyn
       mode: "subscription",
       success_url: `${origin}/venue-admin?venueId=${venueId}&success=true`,
       cancel_url: `${origin}/venue-admin?venueId=${venueId}&canceled=true`,
-      metadata: { type: "venue_subscription", venueId, tier, firebaseUID: uid }
+      metadata: { type: "venue_subscription", venueId, tier, firebaseUID: uid, cityId: venueDoc.data().cityId || "" }
     });
     return { sessionId: session.id, url: session.url };
   } catch (error) {
@@ -470,6 +470,77 @@ exports.stripeWebhook = onRequest(async (req, res) => {
           subscriptionStatus: "active",
           stripeSubscriptionId: session.subscription,
         });
+
+        const cityId = session.metadata.cityId;
+        if (cityId && session.amount_total > 0) {
+          const venueDoc = await db.collection("venues").doc(venueId).get();
+          const ambassadorId = venueDoc.exists ? venueDoc.data()?.ambassadorId : null;
+          const ambassadorCents = Math.round(session.amount_total * 0.25);
+          let ambassadorPaid = false;
+
+          if (ambassadorId) {
+            try {
+              const ambassadorDoc = await db.collection("users").doc(ambassadorId).get();
+              const ambassadorStripe = ambassadorDoc.exists ? ambassadorDoc.data()?.stripeAccountId : null;
+              if (ambassadorStripe) {
+                const transferData = {
+                  amount: ambassadorCents,
+                  currency: "eur",
+                  destination: ambassadorStripe,
+                  description: `Ambassador 25% venue sub ${tier} - ${venueId}`,
+                  transfer_group: session.id,
+                };
+                try {
+                  await stripe.transfers.create(transferData);
+                  await db.collection("users").doc(ambassadorId).collection("earnings").add({
+                    amount: ambassadorCents / 100,
+                    type: "venue_subscription",
+                    venueId,
+                    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                  });
+                  ambassadorPaid = true;
+                } catch (err) {
+                  console.error("Error en transfer Ambassador venue sub:", err);
+                  await db.collection("pending_transfers").add({ ...transferData, status: "pending", error: err.message, timestamp: admin.firestore.FieldValue.serverTimestamp() });
+                }
+              }
+            } catch (e) {
+              console.error("Error leyendo datos de Ambassador:", e);
+            }
+          }
+
+          const poolCents = ambassadorPaid ? session.amount_total - ambassadorCents : session.amount_total;
+          const cityManagerCents = Math.ceil(poolCents / 2);
+
+          try {
+            const cityDoc = await db.collection("cities").doc(cityId).get();
+            const partnerStripeId = cityDoc.exists ? cityDoc.data()?.partner_stripe_account_id : null;
+            if (partnerStripeId) {
+              const transferData = {
+                amount: cityManagerCents,
+                currency: "eur",
+                destination: partnerStripeId,
+                description: `50% venue sub ${tier} - ${venueId}`,
+                transfer_group: session.id,
+              };
+              try {
+                await stripe.transfers.create(transferData);
+                await db.collection("cities").doc(cityId).collection("earnings").add({
+                  amount: cityManagerCents / 100,
+                  type: "venue_subscription",
+                  venueId,
+                  tier,
+                  timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                });
+              } catch (err) {
+                console.error("Error en transfer City Manager venue sub:", err);
+                await db.collection("pending_transfers").add({ ...transferData, status: "pending", error: err.message, timestamp: admin.firestore.FieldValue.serverTimestamp() });
+              }
+            }
+          } catch (e) {
+            console.error("Error leyendo datos de City Manager:", e);
+          }
+        }
       }
     } else if (firebaseUID) {
      const isTicket = session.metadata?.type === "ticket";
@@ -639,8 +710,45 @@ exports.stripeWebhook = onRequest(async (req, res) => {
         });
       }
 
-      const CITY_MANAGER_CENTS = 50;
-      const AMBASSADOR_CENTS = 25;
+      const PLATFORM_FEE_CENTS = 100;
+      const ambassadorCents = Math.round(PLATFORM_FEE_CENTS * 0.25);
+      let ambassadorPaid = false;
+
+      if (ambassadorId) {
+        try {
+          const ambassadorDoc = await db.collection("users").doc(ambassadorId).get();
+          const ambassadorStripe = ambassadorDoc.exists ? ambassadorDoc.data()?.stripeAccountId : null;
+          if (ambassadorStripe) {
+            const transferData = {
+              amount: ambassadorCents,
+              currency: "eur",
+              destination: ambassadorStripe,
+              description: `Ambassador 25% ticket ${eventId} - ${venueId}`,
+              transfer_group: session.id,
+            };
+            try {
+              await stripe.transfers.create(transferData);
+              await db.collection("users").doc(ambassadorId).collection("earnings").add({
+                amount: ambassadorCents / 100,
+                type: "ticket_fee",
+                venueId,
+                eventId,
+                userId: firebaseUID,
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+              });
+              ambassadorPaid = true;
+            } catch (err) {
+              console.error("Error en transfer Ambassador:", err);
+              await db.collection("pending_transfers").add({ ...transferData, status: "pending", error: err.message, timestamp: admin.firestore.FieldValue.serverTimestamp() });
+            }
+          }
+        } catch (e) {
+          console.error("Error leyendo datos de Ambassador:", e);
+        }
+      }
+
+      const poolAfterAmbassador = ambassadorPaid ? PLATFORM_FEE_CENTS - ambassadorCents : PLATFORM_FEE_CENTS;
+      const cityManagerCents = Math.ceil(poolAfterAmbassador / 2);
 
       if (cityId) {
         try {
@@ -648,7 +756,7 @@ exports.stripeWebhook = onRequest(async (req, res) => {
           const cityManagerStripe = cityDoc.exists ? cityDoc.data()?.partner_stripe_account_id : null;
           if (cityManagerStripe) {
             const transferData = {
-              amount: CITY_MANAGER_CENTS,
+              amount: cityManagerCents,
               currency: "eur",
               destination: cityManagerStripe,
               description: `CityManager ${cityId} ticket ${eventId}`,
@@ -657,7 +765,7 @@ exports.stripeWebhook = onRequest(async (req, res) => {
             try {
               await stripe.transfers.create(transferData);
               await db.collection("cities").doc(cityId).collection("earnings").add({
-                amount: CITY_MANAGER_CENTS / 100,
+                amount: cityManagerCents / 100,
                 type: "ticket_fee",
                 venueId,
                 eventId,
@@ -671,38 +779,6 @@ exports.stripeWebhook = onRequest(async (req, res) => {
           }
         } catch (e) {
           console.error("Error leyendo datos de City Manager:", e);
-        }
-      }
-
-      if (ambassadorId) {
-        try {
-          const ambassadorDoc = await db.collection("users").doc(ambassadorId).get();
-          const ambassadorStripe = ambassadorDoc.exists ? ambassadorDoc.data()?.stripeAccountId : null;
-          if (ambassadorStripe) {
-            const transferData = {
-              amount: AMBASSADOR_CENTS,
-              currency: "eur",
-              destination: ambassadorStripe,
-              description: `Ambassador ticket ${eventId} - ${venueId}`,
-              transfer_group: session.id,
-            };
-            try {
-              await stripe.transfers.create(transferData);
-              await db.collection("users").doc(ambassadorId).collection("earnings").add({
-                amount: AMBASSADOR_CENTS / 100,
-                type: "ticket_fee",
-                venueId,
-                eventId,
-                userId: firebaseUID,
-                timestamp: admin.firestore.FieldValue.serverTimestamp(),
-              });
-            } catch (err) {
-              console.error("Error en transfer Ambassador:", err);
-              await db.collection("pending_transfers").add({ ...transferData, status: "pending", error: err.message, timestamp: admin.firestore.FieldValue.serverTimestamp() });
-            }
-          }
-        } catch (e) {
-          console.error("Error leyendo datos de Ambassador:", e);
         }
       }
     } else {
