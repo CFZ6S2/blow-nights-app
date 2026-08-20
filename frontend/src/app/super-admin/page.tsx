@@ -359,8 +359,8 @@ export default function SuperAdminPage() {
     setSavingCity(true);
     try {
       // 1. Validar emails si se proporcionaron
-      let managerDoc = null;
-      let ambassadorDoc = null;
+      let managerDoc: any = null;
+      let ambassadorDoc: any = null;
 
       if (newCityManagerEmail) {
         const qM = query(collection(db, 'users'), where('email', '==', newCityManagerEmail.toLowerCase().trim()));
