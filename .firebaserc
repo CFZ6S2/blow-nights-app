@@ -2,5 +2,18 @@
   "projects": {
     "default": "gay-meet-app-mvp-26",
     "staging": "blow-nights-staging"
-  }
+  },
+  "targets": {
+    "gay-meet-app-mvp-26": {
+      "hosting": {
+        "blownights-main": [
+          "blownights-main"
+        ],
+        "darknights": [
+          "darknights"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

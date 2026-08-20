@@ -36,9 +36,9 @@ vi.mock('react-i18next', () => ({
 vi.mock('framer-motion', () => ({
   motion: new Proxy({}, {
     get: (_target, prop) => {
-      if (prop === 'div' || prop === 'span' || prop === 'button' || prop === 'nav' || prop === 'a' || prop === 'p') {
+      if (prop === 'div' || prop === 'span' || prop === 'button' || prop === 'nav' || prop === 'a' || prop === 'p' || prop === 'img') {
         return ({ children, ...props }: any) => {
-          const { initial, animate, exit, whileTap, layoutId, transition, variants, ...htmlProps } = props;
+          const { initial, animate, exit, whileTap, layoutId, transition, variants, viewport, whileInView, drag, dragConstraints, dragElastic, onDragEnd, style, ...htmlProps } = props;
           const Tag = prop as string;
           return <Tag {...htmlProps}>{children}</Tag>;
         };
@@ -48,6 +48,8 @@ vi.mock('framer-motion', () => ({
   }),
   AnimatePresence: ({ children }: any) => children,
   useAnimation: () => ({ start: vi.fn(), stop: vi.fn() }),
+  useScroll: () => ({ scrollY: { get: () => 0 } }),
+  useTransform: () => ({ get: () => 0 }),
 }));
 
 // ── Mock firebase ──
