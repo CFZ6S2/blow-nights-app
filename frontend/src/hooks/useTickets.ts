@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { type PerformanceTrace } from 'firebase/performance';
 import { db } from '@/lib/firebase';
 import { Ticket } from '@/types';
 
@@ -18,7 +19,7 @@ export function useTickets(userId: string | undefined) {
       orderBy('purchasedAt', 'desc')
     );
 
-    let perfTrace = null;
+    let perfTrace: PerformanceTrace | null = null;
     if (typeof window !== 'undefined') {
       import('@/lib/perf').then(({ startTrace }) => {
         perfTrace = startTrace('query_tickets');

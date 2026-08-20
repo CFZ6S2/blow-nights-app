@@ -1,4 +1,4 @@
-import { trace } from 'firebase/performance';
+import { trace, type PerformanceTrace } from 'firebase/performance';
 import { perf } from './firebase';
 
 /**
@@ -7,7 +7,7 @@ import { perf } from './firebase';
  * @param {Promise<T>} promiseFn - A function that returns the promise to measure
  * @returns {Promise<T>} The result of the promise
  */
-export async function withTrace(traceName, promiseFn) {
+export async function withTrace<T>(traceName: string, promiseFn: () => Promise<T>): Promise<T> {
   if (!perf) {
     return promiseFn();
   }
@@ -31,7 +31,7 @@ export async function withTrace(traceName, promiseFn) {
  * Starts a Firebase Performance Trace manually.
  * Remember to call .stop() on the returned trace.
  */
-export function startTrace(traceName) {
+export function startTrace(traceName: string): PerformanceTrace | null {
   if (!perf) return null;
   const perfTrace = trace(perf, traceName);
   perfTrace.start();

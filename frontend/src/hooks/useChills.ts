@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { type PerformanceTrace } from 'firebase/performance';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
@@ -22,11 +23,22 @@ export function useChills(citySlug: string | null) {
       orderBy('created_at', 'desc')
     );
 
+    let perfTrace: PerformanceTrace | null = null;
+    if (typeof window !== 'undefined') {
+      import('@/lib/perf').then(({ startTrace }) => {
+        perfTrace = startTrace('query_chills');
+      });
+    }
+
     const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Chill));
       setChills(list);
       setLoading(false);
-    }, () => setLoading(false));
+      if (perfTrace) { perfTrace.stop(); perfTrace = null; }
+    }, () => {
+      setLoading(false);
+      if (perfTrace) { perfTrace.putAttribute('error', 'true'); perfTrace.stop(); perfTrace = null; }
+    });
 
     return unsub;
   }, [citySlug, user?.uid, authLoading]);
