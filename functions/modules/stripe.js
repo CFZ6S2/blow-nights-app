@@ -22,15 +22,31 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
 
     const finalSplitId = splitId || db.collection('territorial_splits').doc().id;
     const ledgerRef = db.collection('territorial_splits').doc(finalSplitId);
+
+    const isProcessed = await db.runTransaction(async (t) => {
+      const doc = await t.get(ledgerRef);
+      if (doc.exists) {
+        return true;
+      }
+      t.set(ledgerRef, { status: 'processing', timestamp: admin.firestore.FieldValue.serverTimestamp() });
+      return false;
+    });
+
+    if (isProcessed) {
+      console.log('Split already processed:', finalSplitId);
+      return;
+    }
+
     const ledgerData = {
-      splitId: ledgerRef.id,
+      splitId: finalSplitId,
       amountCents,
       cityId,
       sourceType,
       relatedId: relatedId || null,
       currency,
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      payouts: []
+      payouts: [],
+      status: 'completed'
     };
 
     if (ambassadorId) {
@@ -59,8 +75,9 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
       poolCents -= ambassadorCents;
     }
 
-    const cityManagerCents = Math.ceil(poolCents / 2);
+    let cityManagerCents = 0;
     if (partnerStripeId) {
+      cityManagerCents = Math.ceil(poolCents / 2);
        const payoutInfo = { role: 'city_manager', amountCents: cityManagerCents };
        try {
           await stripe.transfers.create({
@@ -77,14 +94,12 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
           payoutInfo.error = err.message;
        }
        ledgerData.payouts.push(payoutInfo);
-    } else {
-       ledgerData.payouts.push({ role: 'city_manager', amountCents: cityManagerCents, status: 'pending_payout', error: 'No Stripe connected' });
     }
 
-    const centralCents = amountCents - (ambassadorPaid ? ambassadorCents : 0) - cityManagerCents;
+    const centralCents = amountCents - (ambassadorId ? ambassadorCents : 0) - cityManagerCents;
     ledgerData.payouts.push({ role: 'central', amountCents: centralCents, status: 'retained' });
     
-    await ledgerRef.set(ledgerData);
+    await ledgerRef.update(ledgerData);
   } catch(e) {
     console.error('Error en territorialSplit', e);
   }

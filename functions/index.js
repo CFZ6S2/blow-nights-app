@@ -57,6 +57,7 @@ exports.purchaseIndependentEventTicket = tickets.purchaseIndependentEventTicket;
 exports.validateTicket = tickets.validateTicket;
 exports.validateTicketByDoorToken = tickets.validateTicketByDoorToken;
 exports.generateDirectPromoterTicket = tickets.generateDirectPromoterTicket;
+exports.generateOrganizerQRTicket = tickets.generateOrganizerQRTicket;
 exports.closePromoterList = tickets.closePromoterList;
 exports.liquidatePromoter = tickets.liquidatePromoter;
 exports.getPromoterStats = tickets.getPromoterStats;

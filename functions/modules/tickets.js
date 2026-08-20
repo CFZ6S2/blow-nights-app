@@ -69,7 +69,7 @@ exports.createTicketCheckout = onCall({ enforceAppCheck: true }, async (request)
       price_data: {
         currency: "eur",
         product_data: { name: `${eventTitle} - ${tierName}` },
-        unit_amount: ticketPriceCents + platformFeeCents,
+        unit_amount: ticketPriceCents,
       },
       quantity: 1,
     }],
@@ -124,7 +124,7 @@ exports.purchaseVenueTicket = onCall({ enforceAppCheck: true }, async (request) 
       price_data: {
         currency: "eur",
         product_data: { name: `${venueData.name} - ${pricing.name || ticketType}` },
-        unit_amount: ticketPriceCents + platformFeeCents,
+        unit_amount: ticketPriceCents,
       },
       quantity: 1,
     }],
@@ -205,7 +205,7 @@ exports.purchaseIndependentEventTicket = onCall({ enforceAppCheck: true }, async
       price_data: {
         currency: "eur",
         product_data: { name: `${eventTitle} - ${tierName}` },
-        unit_amount: ticketPriceCents + platformFeeCents,
+        unit_amount: ticketPriceCents,
       },
       quantity: 1,
     }],
