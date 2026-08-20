@@ -47,7 +47,7 @@ describe('CookieBanner', () => {
       expect(screen.queryByText('We use cookies')).not.toBeInTheDocument();
     });
     
-    expect(localStorage.getItem('cookieConsent')).toBe('true');
+    expect(localStorage.getItem('cookie_consent')).toBe('accepted');
   });
 
   it('handles cookie reject', async () => {
@@ -63,6 +63,6 @@ describe('CookieBanner', () => {
       expect(screen.queryByText('We use cookies')).not.toBeInTheDocument();
     });
     
-    expect(localStorage.getItem('cookieConsent')).toBe('false');
+    expect(localStorage.getItem('cookie_consent')).toBe('rejected');
   });
 });

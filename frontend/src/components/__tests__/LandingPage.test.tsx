@@ -24,7 +24,7 @@ const mockT = vi.fn((key: string) => {
     // What is
     'landing.what_is': 'What is Blow Nights?',
     'landing.not_dating': 'Not a dating app',
-    'landing.is_circuit': 'It\\'s a circuit',
+    'landing.is_circuit': "It's a circuit",
     'landing.about_desc': 'About description',
     
     // Features
