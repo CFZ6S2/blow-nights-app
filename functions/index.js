@@ -1,3 +1,4 @@
+require("./lib/sentry");
 require("./lib/init");
 
 const auth = require("./modules/auth");

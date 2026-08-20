@@ -13,6 +13,7 @@ import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import CookieBanner from "@/components/CookieBanner";
 import { I18nProvider } from "@/providers/I18nProvider";
 import LanguageSelector from "@/components/LanguageSelector";
+import SentryInit from "@/components/SentryInit";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -71,6 +72,7 @@ export default function RootLayout({
           <AuthProvider>
             <CityProvider>
             <NotificationProvider>
+              <SentryInit />
               <LanguageSelector />
               <NotificationManager />
               <NotificationToast />
