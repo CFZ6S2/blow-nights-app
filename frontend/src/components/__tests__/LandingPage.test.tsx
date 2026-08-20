@@ -164,7 +164,7 @@ describe('LandingPage', () => {
       render(<LandingPage onStart={() => {}} />, { wrapper: createWrapper() });
       
       expect(screen.getByText('Not a dating app')).toBeInTheDocument();
-      expect(screen.getByText('It\\'s a circuit')).toBeInTheDocument();
+      expect(screen.getByText("It's a circuit")).toBeInTheDocument();
     });
     
     it('renders feature list', () => {
