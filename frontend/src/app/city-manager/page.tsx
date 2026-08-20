@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { motion } from 'framer-motion';
 import { TrendingUp, Building2, Ticket, Users, AlertTriangle } from 'lucide-react';
@@ -88,6 +88,17 @@ export default function CityManagerDashboard() {
 
     fetchDashboardData();
   }, [user, authLoading, router]);
+
+  const handleDeleteVenue = async (venueId: string, venueName: string) => {
+    if (!confirm(`¿Seguro que quieres borrar "${venueName}"? Esta acción es irreversible.`)) return;
+    try {
+      await deleteDoc(doc(db, 'venues', venueId));
+      setVenues(prev => prev.filter(v => v.id !== venueId));
+    } catch (e) {
+      console.error(e);
+      alert('Error al borrar el local');
+    }
+  };
 
   if (authLoading || dataLoading) return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><div className="w-8 h-8 border-4 border-fuchsia-500 border-t-transparent rounded-full animate-spin" /></div>;
 
@@ -219,6 +230,9 @@ export default function CityManagerDashboard() {
                       <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${v.subscriptionPlan === 'pro' ? 'bg-indigo-500/10 text-indigo-400' : v.subscriptionPlan === 'radar' ? 'bg-fuchsia-500/10 text-fuchsia-400' : 'bg-slate-800 text-slate-400'}`}>
                         {v.subscriptionPlan === 'pro' ? 'CLUB PRO' : v.subscriptionPlan === 'radar' ? 'RADAR' : 'FREE'}
                       </span>
+                      <button onClick={() => handleDeleteVenue(v.id, v.name)} className="bg-red-900/50 text-red-400 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-900 transition-colors">
+                        Borrar
+                      </button>
                     </div>
                   </div>
                 ))}

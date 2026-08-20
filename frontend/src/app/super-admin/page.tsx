@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { collection, doc, setDoc, updateDoc, getDocs, query, where, onSnapshot, collectionGroup } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc, getDocs, query, where, onSnapshot, collectionGroup, deleteDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/lib/firebase';
 import { motion } from 'framer-motion';
@@ -185,6 +185,16 @@ export default function SuperAdminPage() {
       alert('Error al crear local');
     } finally {
       setSavingVenue(false);
+    }
+  };
+
+  const handleDeleteVenue = async (venueId: string, venueName: string) => {
+    if (!confirm(`¿Seguro que quieres borrar "${venueName}"? Esta acción es irreversible.`)) return;
+    try {
+      await deleteDoc(doc(db, 'venues', venueId));
+    } catch (e) {
+      console.error(e);
+      alert('Error al borrar el local');
     }
   };
 
@@ -1225,9 +1235,14 @@ export default function SuperAdminPage() {
                       <p className="text-[10px] text-slate-400 uppercase tracking-widest">{v.type} | Ciudad: {v.cityId}</p>
                       <p className="text-[10px] text-slate-500 font-mono mt-1">Owner: {v.ownerId || 'Nadie'}</p>
                     </div>
-                    <button onClick={() => setAssigningVenueId(assigningVenueId === v.id ? null : v.id)} className="bg-white/10 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white/20">
-                      Asignar
-                    </button>
+                    <div className="flex gap-2">
+                      <button onClick={() => setAssigningVenueId(assigningVenueId === v.id ? null : v.id)} className="bg-white/10 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white/20">
+                        Asignar
+                      </button>
+                      <button onClick={() => handleDeleteVenue(v.id, v.name)} className="bg-red-900/50 text-red-400 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-900 transition-colors">
+                        Borrar
+                      </button>
+                    </div>
                   </div>
                   
                   {assigningVenueId === v.id && (
