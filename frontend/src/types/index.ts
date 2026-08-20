@@ -38,7 +38,6 @@ export interface User {
   lastBoost?: any;
   ghostMode?: boolean;
   notificationsEnabled?: boolean;
-  invitesCount?: number;
   verificationStatus?: string;
   complexion?: string;
   needsUpdate?: boolean;

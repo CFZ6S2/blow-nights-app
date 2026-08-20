@@ -103,36 +103,6 @@ exports.assignRole = onCall({ enforceAppCheck: false }, async (request) => {
   }
 });
 
-exports.processReferral = onCall({ enforceAppCheck: false }, async (request) => {
-  const { auth, data } = request;
-  if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
-
-  const { referrerId } = data;
-  if (!referrerId || referrerId === auth.uid) return { success: false };
-
-  const userDoc = await db.collection("users").doc(auth.uid).get();
-  if (userDoc.exists() && userDoc.data()?.referredBy) return { success: false };
-
-  const inviterRef = db.collection("users").doc(referrerId);
-  const inviterDoc = await inviterRef.get();
-  if (!inviterDoc.exists) return { success: false };
-
-  await db.collection("users").doc(auth.uid).update({ referredBy: referrerId });
-
-  const newCount = (inviterDoc.data().invitesCount || 0) + 1;
-  await inviterRef.update({
-    invitesCount: admin.firestore.FieldValue.increment(1),
-  });
-
-  if (newCount >= 3) {
-    const existingClaims = (await admin.auth().getUser(referrerId)).customClaims || {};
-    await admin.auth().setCustomUserClaims(referrerId, { ...existingClaims, premium: true });
-    await inviterRef.update({ premium: true });
-  }
-
-  return { success: true };
-});
-
 exports.deleteUserData = onCall({ enforceAppCheck: false }, async (request) => {
   const { auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");

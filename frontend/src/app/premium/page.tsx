@@ -76,7 +76,7 @@ export default function PremiumPage() {
             <p className="text-slate-200 text-sm font-bold">
               {t('premium.celebration')}
             </p>
-            <p className="text-slate-400 text-xs mt-2" dangerouslySetInnerHTML={{ __html: t('premium.free_offer').replace('1.000', '<span class="text-fuchsia-400 font-black">1.000</span>').replace('PREMIUM GRATIS', '<span class="text-yellow-500 font-black">PREMIUM GRATIS</span>') }} />
+            <p className="text-slate-400 text-xs mt-2" dangerouslySetInnerHTML={{ __html: t('premium.free_offer').replace('100', '<span class="text-fuchsia-400 font-black">100</span>').replace('PREMIUM GRATIS', '<span class="text-yellow-500 font-black">PREMIUM GRATIS</span>').replace('PREMIUM plan for FREE', '<span class="text-yellow-500 font-black">PREMIUM plan for FREE</span>') }} />
           </div>
         </div>
 

@@ -558,10 +558,15 @@ if (event.type === "customer.subscription.deleted") {
     const customer = await stripe.customers.retrieve(session.customer);
     const uid = customer.metadata?.firebaseUID;
     if (uid) {
-      await db.collection("users").doc(uid).update({ premium: false });
-      await db.collection("subscriptions").doc(uid).update({ status: "canceled" });
-      const existingClaims = (await admin.auth().getUser(uid)).customClaims || {};
-      await admin.auth().setCustomUserClaims(uid, { ...existingClaims, premium: false });
+      const subDoc = await db.collection("subscriptions").doc(uid).get();
+      const isPromoMember = subDoc.exists && subDoc.data()?.promoMember === true;
+
+      if (!isPromoMember) {
+        await db.collection("users").doc(uid).update({ premium: false });
+        const existingClaims = (await admin.auth().getUser(uid)).customClaims || {};
+        await admin.auth().setCustomUserClaims(uid, { ...existingClaims, premium: false });
+      }
+      await db.collection("subscriptions").doc(uid).update({ status: isPromoMember ? "promo_lifetime" : "canceled" });
     }
   }
 

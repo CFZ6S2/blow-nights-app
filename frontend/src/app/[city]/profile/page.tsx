@@ -19,7 +19,7 @@ export default function MyProfilePage() {
   const { toggleNotifications } = useNotifications();
   const { city, cityPath, router } = useCityRouter();
   
-  const [stats, setStats] = useState({ visits: 0, likes: 0, matches: 0, invitesCount: 0 });
+  const [stats, setStats] = useState({ visits: 0, likes: 0, matches: 0 });
   const [isDeleting, setIsDeleting] = useState(false);
   const [isOptimisticAvailable, setIsOptimisticAvailable] = useState<boolean | null>(null);
   const [geoError, setGeoError] = useState(false);
@@ -485,7 +485,7 @@ export default function MyProfilePage() {
         <button
           onClick={async () => {
             try { logEvent(getAnalytics(app), 'share_app_click'); } catch {}
-            const shareUrl = `${window.location.origin}?ref=${user?.uid || ''}`;
+            const shareUrl = window.location.origin;
             try {
               if (navigator.share) {
                 await navigator.share({
@@ -506,13 +506,8 @@ export default function MyProfilePage() {
           className="w-full bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white font-[1000] py-6 rounded-[2.5rem] shadow-2xl flex items-center justify-center gap-4 active:scale-95 transition-all uppercase tracking-[0.2em] text-[10px]"
         >
           <span className="material-icons">share</span>
-          {t('profile.invite_friend')}
+          {t('profile.share_app')}
         </button>
-        <p className="text-[10px] text-center text-slate-500 font-bold uppercase tracking-widest mt-4">
-          {(profile?.invitesCount || 0) >= 3 
-            ? t('profile.premium_unlocked') 
-            : t('profile.invite_more', { count: 3 - (profile?.invitesCount || 0) })}
-        </p>
 
         {/* Photo Grid - Estilo Instagram */}
         <section className="space-y-4">

@@ -121,22 +121,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loginWithGoogle = useCallback(async () => {
     const provider = new GoogleAuthProvider();
-    const urlParams = new URLSearchParams(window.location.search);
-    const refId = urlParams.get('ref');
-    if (refId) sessionStorage.setItem('blow_ref', refId);
-
     try {
-      const result = await signInWithPopup(auth, provider);
-      if (refId && refId !== result.user.uid) {
-        try {
-          const { httpsCallable } = await import('firebase/functions');
-          const { functions } = await import('@/lib/firebase');
-          const processReferral = httpsCallable(functions, 'processReferral');
-          await processReferral({ referrerId: refId });
-        } catch (e) {
-          console.error("Error processing referral:", e);
-        }
-      }
+      await signInWithPopup(auth, provider);
     } catch (error) {
       console.error("Error signing in with Google", error);
       throw error;
