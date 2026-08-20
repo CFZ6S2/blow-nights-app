@@ -17,7 +17,7 @@ export default function BusinessLandingPage() {
             <div className="w-10 h-10 bg-gradient-to-br from-slate-800 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-fuchsia-500/20">
               <Building2 className="w-5 h-5 text-slate-900" />
             </div>
-            <span className="text-xl font-black tracking-tight">BlowNights <span className="text-slate-800">Business</span></span>
+            <span className="text-xl font-black tracking-tight">DarkNights <span className="text-slate-800">Business</span></span>
           </div>
           <div className="flex items-center gap-4">
             <Link href={`/${DEFAULT_CITY}/`} className="text-sm font-semibold text-slate-500 hover:text-slate-900 hidden md:block transition-colors">
@@ -243,12 +243,12 @@ export default function BusinessLandingPage() {
 
       {/* Footer */}
       <footer className="py-8 border-t border-white/5 text-center">
-        <p className="text-slate-600 text-xs font-medium">© {new Date().getFullYear()} BlowNights Business. {t('business.allRightsReserved')}</p>
+        <p className="text-slate-600 text-xs font-medium">© {new Date().getFullYear()} DarkNights Business. {t('business.allRightsReserved')}</p>
       </footer>
 
       {/* Floating WhatsApp Button */}
       <a 
-        href="https://wa.me/34600000000?text=Hola,%20me%20gustar%C3%ADa%20solicitar%20una%20demostraci%C3%B3n%20de%20BlowNights%20Business%20para%20mi%20local."
+        href="https://wa.me/34600000000?text=Hola,%20me%20gustar%C3%ADa%20solicitar%20una%20demostraci%C3%B3n%20de%20DarkNights%20Business%20para%20mi%20local."
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 bg-[#25D366] text-slate-900 p-4 rounded-full shadow-[0_4px_20px_rgba(37,211,102,0.4)] hover:scale-110 transition-transform flex items-center justify-center group"

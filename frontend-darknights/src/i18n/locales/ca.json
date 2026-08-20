@@ -88,7 +88,7 @@
     "gps_step_2": "Selecciona \"Restablir permís\" o activa \"Ubicació\".",
     "gps_step_3": "Refresca la pàgina i prem de nou a \"FER-ME VISIBLE\".",
     "cruising_mode_active_desc": "Actiu: els teus check-ins són sempre anònims (+1), la teva ubicació es difumina a 150m i la teva foto no apareix als llistats de locals.",
-    "share_text": "Uneix-te a DarkNights! El teu circuit nocturn LGTBIQ+ en viu. 🏳️‍🌈🚀",
+    "share_text": "Uneix-te a DarkNights! El teu circuit nocturn Liberal en viu. 🏳️‍🌈🚀",
     "share_copied": "Enllaç copiat al porta-retalls! Envia'l als teus amics.",
     "share_prompt": "Copia aquest enllaç per convidar els teus amics:",
     "verify_prompt": "Puja una foto teva (selfie) per verificar la teva identitat. Aquesta foto només serà vista pels administradors.",
@@ -194,7 +194,7 @@
     "nav_venues": "Locals",
     "nav_rrpp": "RRPP",
     "live_city": "En viu a la teva ciutat",
-    "hero_desc_1": "El teu circuit nocturn LGTBIQ+ en viu.",
+    "hero_desc_1": "El teu circuit nocturn Liberal en viu.",
     "hero_desc_2": "Locals, entrades, check-in i plans reals a la teva ciutat.",
     "enter_free": "Entrar gratis",
     "how_it_works": "Com funciona",
@@ -234,7 +234,7 @@
     "vtype_cruising": "Cruising Bars",
     "vtype_outdoor": "Zones Exteriors",
     "b2b_tag": "Per a locals",
-    "b2b_title": "Tens un local LGTBIQ+?",
+    "b2b_title": "Tens un local Liberal?",
     "b2b_desc": "DarkNights et dona un panell de gestió complet: ven entrades, llança promos flash geolocalitzades, valida QR a porta i controla l'afluència en temps real.",
     "b2b_panel": "Panell de local",
     "b2b_qr": "Escàner QR",
@@ -271,7 +271,7 @@
     "request_territory": "Sol·licitar Territori",
     "opportunity_city_managers": "Oportunitat per a City Managers",
     "operating_system": "Sistema Operatiu",
-    "lgtbiq_nightlife": "de l'Oci Nocturn LGTBIQ+",
+    "lgtbiq_nightlife": "de l'Oci Nocturn Liberal",
     "contact_team": "Contactar amb l'Equip",
     "view_business_model": "Veure el Model de Negoci",
     "immediate_opportunities": "Oportunitats Immediates",
@@ -1028,7 +1028,7 @@
     "report_title": "HAS VIST ALGUNA COSA INAPROPIADA?",
     "report_desc": "Utilitza el botó de report al perfil de qualsevol usuari. Bloqueja a l'instant si et sents incòmode. El teu benestar és la nostra prioritat número u.",
     "accept_btn": "Accepto i Entenc",
-    "footer": "© 2026 BLOW NIGHTS • SEGURETAT I CONFIANÇA"
+    "footer": "© 2026 DARKNIGHTS • SEGURETAT I CONFIANÇA"
   },
   "terms": {
     "back": "Tornar",
@@ -1090,6 +1090,6 @@
   },
   "partners": {
     "meta_title": "DarkNights - Oportunitat de Negoci City Manager",
-    "meta_description": "Converteix-te en l'amo del teu territori amb el Sistema Operatiu de l'Oci Nocturn LGTBIQ+."
+    "meta_description": "Converteix-te en l'amo del teu territori amb el Sistema Operatiu de l'Oci Nocturn Liberal."
   }
 }

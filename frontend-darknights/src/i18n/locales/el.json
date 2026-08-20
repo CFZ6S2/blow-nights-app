@@ -88,7 +88,7 @@
     "gps_step_2": "Selecciona \"Restablecer permiso\" o activa \"Ubicación\".",
     "gps_step_3": "Refresca la página y pulsa de nuevo en \"VOLVERME VISIBLE\".",
     "cruising_mode_active_desc": "Activo: tus check-ins son siempre anónimos (+1), tu ubicación se difumina a 150m y tu foto no aparece en listados de locales.",
-    "share_text": "¡Únete a DarkNights! Tu circuito nocturno LGTBIQ+ en vivo. 🏳️‍🌈🚀",
+    "share_text": "¡Únete a DarkNights! Tu circuito nocturno Liberal en vivo. 🏳️‍🌈🚀",
     "share_copied": "¡Enlace copiado al portapapeles! Envíalo a tus amigos.",
     "share_prompt": "Copia este enlace para invitar a tus amigos:",
     "verify_prompt": "Sube una foto tuya (selfie) para verificar tu identidad. Esta foto solo será vista por los administradores.",
@@ -194,7 +194,7 @@
     "nav_venues": "Χώροι",
     "nav_rrpp": "RRPP",
     "live_city": "Ζωντανά στην πόλη σου",
-    "hero_desc_1": "Το LGTBIQ+ νυχτερινό σου κύκλωμα ζωντανά.",
+    "hero_desc_1": "Το Liberal νυχτερινό σου κύκλωμα ζωντανά.",
     "hero_desc_2": "Χώροι, εισιτήρια, check-in και πραγματικά πλάνα στην πόλη σου.",
     "enter_free": "Δωρεάν είσοδος",
     "how_it_works": "Πώς λειτουργεί",
@@ -234,7 +234,7 @@
     "vtype_cruising": "Cruising Μπαρ",
     "vtype_outdoor": "Εξωτερικοί Χώροι",
     "b2b_tag": "Για χώρους",
-    "b2b_title": "Έχεις LGTBIQ+ χώρο;",
+    "b2b_title": "Έχεις Liberal χώρο;",
     "b2b_desc": "Το DarkNights σου προσφέρει έναν πλήρη πίνακα διαχείρισης: πούλησε εισιτήρια, τρέξε flash promos βάσει τοποθεσίας, επικύρωσε QR στην είσοδο και έλεγξε την προσέλευση σε πραγματικό χρόνο.",
     "b2b_panel": "Πίνακας χώρου",
     "b2b_qr": "QR Σαρωτής",
@@ -271,7 +271,7 @@
     "request_territory": "Αίτημα Περιοχής",
     "opportunity_city_managers": "Ευκαιρία για City Managers",
     "operating_system": "Λειτουργικό Σύστημα",
-    "lgtbiq_nightlife": "της LGTBIQ+ Νυχτερινής Ζωής",
+    "lgtbiq_nightlife": "της Liberal Νυχτερινής Ζωής",
     "contact_team": "Επικοινωνία με την Ομάδα",
     "view_business_model": "Δείτε το Επιχειρηματικό Μοντέλο",
     "immediate_opportunities": "Άμεσες Ευκαιρίες",
@@ -1028,7 +1028,7 @@
     "report_title": "¿HAS VISTO ALGO INAPROPIADO?",
     "report_desc": "Usa el botón de reporte en el perfil de cualquier usuario. Bloquea al instante si te sientes incómodo. Tu bienestar es nuestra prioridad número uno.",
     "accept_btn": "Acepto y Entiendo",
-    "footer": "© 2026 BLOW NIGHTS • SEGURIDAD Y CONFIANZA"
+    "footer": "© 2026 DARKNIGHTS • SEGURIDAD Y CONFIANZA"
   },
   "terms": {
     "back": "Volver",
@@ -1090,6 +1090,6 @@
   },
   "partners": {
     "meta_title": "DarkNights - Oportunidad de Negocio City Manager",
-    "meta_description": "Conviértete en el dueño de tu territorio con el Sistema Operativo del Ocio Nocturno LGTBIQ+."
+    "meta_description": "Conviértete en el dueño de tu territorio con el Sistema Operativo del Ocio Nocturno Liberal."
   }
 }

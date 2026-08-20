@@ -45,7 +45,7 @@
     "Ej: Mario"
   ],
   "\\app\\business\\login\\page.tsx": [
-    "BlowNights",
+    "DarkNights",
     "Business",
     "Email Corporativo",
     "Contraseña",
@@ -54,7 +54,7 @@
     "gerencia@milocal.com"
   ],
   "\\app\\business\\page.tsx": [
-    "BlowNights",
+    "DarkNights",
     "Business",
     "/mes"
   ],
@@ -141,7 +141,7 @@
   ],
   "\\app\\login\\page.tsx": [
     "favorite",
-    "BLOW NIGHTS",
+    "DARKNIGHTS",
     "Confirmo que tengo",
     "+18 años",
     "Términos",
@@ -400,7 +400,7 @@
     "¿HAS VISTO ALGO INAPROPIADO?",
     "Usa el botón de reporte en el perfil de cualquier usuario. Bloquea al instante si te sientes incómodo. Tu bienestar es nuestra prioridad número uno.",
     "Acepto y Entiendo",
-    "© 2026 BLOW NIGHTS • SEGURIDAD Y CONFIANZA"
+    "© 2026 DARKNIGHTS • SEGURIDAD Y CONFIANZA"
   ],
   "\\app\\scanner\\page.tsx": [
     "(null);\r\n  const canvasRef = useRef",
@@ -1018,7 +1018,7 @@
     "Locales",
     "RRPP",
     "NIGHTS",
-    "Tu circuito nocturno LGTBIQ+ en vivo.",
+    "Tu circuito nocturno Liberal en vivo.",
     "Locales, entradas, check-in y planes reales en tu ciudad.",
     "Entrar gratis",
     "Cómo funciona",
@@ -1032,7 +1032,7 @@
     "De la previa al after",
     "Cada tipo de local tiene su franja horaria. DarkNights organiza tu noche entera.",
     "Para locales",
-    "¿Tienes un local LGTBIQ+?",
+    "¿Tienes un local Liberal?",
     "DarkNights te da un panel de gestión completo: vende entradas, lanza promos flash geolocalizadas,\r\n                valida QR en puerta y controla la afluencia en tiempo real.",
     "Registra tu local",
     "verified_user",
@@ -1095,7 +1095,7 @@
     "Oportunidad para City Managers",
     "El",
     "Sistema Operativo",
-    "del Ocio Nocturno LGTBIQ+",
+    "del Ocio Nocturno Liberal",
     "Las apps de citas y las ticketeras genéricas son obsoletas. Únete a la plataforma definitiva que unifica radar social, venta de entradas, RRPPs y afters privados. Operamos la tecnología, tú lideras tu ciudad.",
     "Contactar al Equipo",
     "Ver el Modelo de Negocio",

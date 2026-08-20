@@ -46,7 +46,7 @@
     "gps_step_2": "Selecciona \"Restablecer permiso\" o activa \"Ubicación\".",
     "gps_step_3": "Refresca la página y pulsa de nuevo en \"VOLVERME VISIBLE\".",
     "cruising_mode_active_desc": "Activo: tus check-ins son siempre anónimos (+1), tu ubicación se difumina a 150m y tu foto no aparece en listados de locales.",
-    "share_text": "¡Únete a DarkNights! Tu circuito nocturno LGTBIQ+ en vivo. 🏳️‍🌈🚀",
+    "share_text": "¡Únete a DarkNights! Tu circuito nocturno Liberal en vivo. 🏳️‍🌈🚀",
     "share_copied": "¡Enlace copiado al portapapeles! Envíalo a tus amigos.",
     "share_prompt": "Copia este enlace para invitar a tus amigos:",
     "verify_prompt": "Sube una foto tuya (selfie) para verificar tu identidad. Esta foto solo será vista por los administradores.",
@@ -192,7 +192,7 @@
     "nav_venues": "Établissements",
     "nav_rrpp": "RRPP",
     "live_city": "En direct dans ta ville",
-    "hero_desc_1": "Ton circuit nocturne LGTBIQ+ en direct.",
+    "hero_desc_1": "Ton circuit nocturne Liberal en direct.",
     "hero_desc_2": "Établissements, billets, check-in et vrais plans dans ta ville.",
     "enter_free": "Entrer gratuitement",
     "how_it_works": "Comment ça marche",
@@ -232,7 +232,7 @@
     "vtype_cruising": "Bars Cruising",
     "vtype_outdoor": "Zones Extérieures",
     "b2b_tag": "Pour les établissements",
-    "b2b_title": "As-tu un établissement LGTBIQ+ ?",
+    "b2b_title": "As-tu un établissement Liberal ?",
     "b2b_desc": "DarkNights te donne un panneau de gestion complet : vends des billets, lance des promos flash géolocalisées, valide des QR à l'entrée et contrôle l'affluence en temps réel.",
     "b2b_panel": "Panneau de l'établissement",
     "b2b_qr": "Scanner QR",
@@ -269,7 +269,7 @@
     "request_territory": "Demander un Territoire",
     "opportunity_city_managers": "Opportunité pour les City Managers",
     "operating_system": "Système d'Exploitation",
-    "lgtbiq_nightlife": "des Loisirs Nocturnes LGTBIQ+",
+    "lgtbiq_nightlife": "des Loisirs Nocturnes Liberal",
     "contact_team": "Contacter l'Équipe",
     "view_business_model": "Voir le Modèle Économique",
     "immediate_opportunities": "Opportunités Immédiates",
@@ -977,7 +977,7 @@
     "report_title": "AVEZ-VOUS VU QUELQUE CHOSE D'INAPPROPRIÉ ?",
     "report_desc": "Utilisez le bouton de signalement sur le profil de n'importe quel utilisateur. Bloquez instantanément si vous vous sentez mal à l'aise. Votre bien-être est notre priorité absolue.",
     "accept_btn": "J'accepte et je comprends",
-    "footer": "© 2026 BLOW NIGHTS • SÉCURITÉ ET CONFIANCE"
+    "footer": "© 2026 DARKNIGHTS • SÉCURITÉ ET CONFIANCE"
   },
   "terms": {
     "back": "Retour",
@@ -1039,6 +1039,6 @@
   },
   "partners": {
     "meta_title": "DarkNights - Opportunité d'Affaires City Manager",
-    "meta_description": "Devenez le propriétaire de votre territoire avec le Système d'Exploitation des Loisirs Nocturnes LGTBIQ+."
+    "meta_description": "Devenez le propriétaire de votre territoire avec le Système d'Exploitation des Loisirs Nocturnes Liberal."
   }
 }

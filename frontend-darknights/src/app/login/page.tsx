@@ -80,7 +80,7 @@ function LoginInner() {
             <span className="material-icons text-slate-900 text-4xl">favorite</span>
           </motion.div>
           <h1 className="text-5xl font-[1000] tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-500 via-purple-500 to-indigo-500">
-            BLOW NIGHTS
+            DARKNIGHTS
           </h1>
           <p className="text-slate-500 font-medium uppercase text-[10px] tracking-[0.3em]">{t('login.subtitle')}</p>
         </div>

@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Auth Flow', () => {
-  test('login page shows BLOW NIGHTS branding', async ({ page }) => {
+  test('login page shows DARKNIGHTS branding', async ({ page }) => {
     await page.goto('/login', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('h1').first()).toContainText('BLOW NIGHTS', { timeout: 15_000 });
+    await expect(page.locator('h1').first()).toContainText('DARKNIGHTS', { timeout: 15_000 });
   });
 
   test('login page shows Google and Apple buttons (disabled by default)', async ({ page }) => {

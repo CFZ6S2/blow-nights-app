@@ -91,7 +91,7 @@ export default function BusinessLoginPage() {
         </div>
         
         <div className="text-center mb-8 space-y-2">
-          <h1 className="text-3xl font-black text-slate-900">BlowNights <span className="text-slate-800">Business</span></h1>
+          <h1 className="text-3xl font-black text-slate-900">DarkNights <span className="text-slate-800">Business</span></h1>
           <p className="text-slate-500 text-sm">
             {isRegistering ? t('business.login.subtitle_register') : t('business.login.subtitle_login')}
           </p>

@@ -24,7 +24,7 @@ describe('LandingPage', () => {
   test('renders hardcoded brand name', () => {
     render(<LandingPage onStart={vi.fn()} />);
     const heading = screen.getByRole('heading', { level: 1 });
-    expect(heading.textContent).toContain('BLOW');
+    expect(heading.textContent).toContain('DARKNIGHTS');
     expect(heading.textContent).toContain('NIGHTS');
   });
 

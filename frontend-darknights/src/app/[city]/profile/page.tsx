@@ -489,7 +489,7 @@ export default function MyProfilePage() {
             try {
               if (navigator.share) {
                 await navigator.share({
-                  title: 'BLOW NIGHTS',
+                  title: 'DARKNIGHTS',
                   text: t('profile.share_text'),
                   url: shareUrl
                 });

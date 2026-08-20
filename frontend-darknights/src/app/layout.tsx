@@ -32,7 +32,7 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: "DarkNights - Tu Circuito Nocturno",
-  description: "Locales, entradas y planes en vivo para la comunidad LGTBIQ+.",
+  description: "Locales, entradas y planes en vivo para la comunidad Liberal.",
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',

@@ -13,9 +13,9 @@ test.describe('Matching Flow', () => {
     await expect(page.locator('body')).toBeVisible();
   });
 
-  test('city page shows BLOW header', async ({ page }) => {
+  test('city page shows DARKNIGHTS header', async ({ page }) => {
     await page.goto('/madrid');
-    await expect(page.locator('h1').first()).toContainText('BLOW');
+    await expect(page.locator('h1').first()).toContainText('DARKNIGHTS');
   });
 
   test('city page shows navigation options (VENUES, PR)', async ({ page }) => {
@@ -30,7 +30,7 @@ test.describe('Matching Flow', () => {
     if (await cta.isVisible({ timeout: 5000 }).catch(() => false)) {
       await cta.click();
       await page.waitForURL(/\/login/);
-      await expect(page.locator('h1').first()).toContainText('BLOW NIGHTS');
+      await expect(page.locator('h1').first()).toContainText('DARKNIGHTS');
     }
   });
 

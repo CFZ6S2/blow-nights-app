@@ -5,7 +5,7 @@ test.describe('Responsive - Mobile', () => {
 
   test('landing page renders on mobile', async ({ page }) => {
     await page.goto('/madrid');
-    await expect(page.locator('h1').first()).toContainText('BLOW');
+    await expect(page.locator('h1').first()).toContainText('DARKNIGHTS');
   });
 
   test('cookie banner is visible on mobile', async ({ page }) => {
@@ -19,6 +19,6 @@ test.describe('Responsive - Desktop', () => {
 
   test('landing page renders on desktop', async ({ page }) => {
     await page.goto('/madrid');
-    await expect(page.locator('h1').first()).toContainText('BLOW');
+    await expect(page.locator('h1').first()).toContainText('DARKNIGHTS');
   });
 });

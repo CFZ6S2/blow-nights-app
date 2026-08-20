@@ -1,7 +1,7 @@
 {
   "name": "DarkNights",
-  "short_name": "BlowNights",
-  "description": "Tu circuito nocturno LGTBIQ+. Locales, entradas y planes en vivo.",
+  "short_name": "DarkNights",
+  "description": "Tu circuito nocturno Liberal. Locales, entradas y planes en vivo.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#020617",

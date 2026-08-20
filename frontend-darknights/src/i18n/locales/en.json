@@ -46,7 +46,7 @@
     "gps_step_2": "Select \"Reset permission\" or turn on \"Location\".",
     "gps_step_3": "Refresh the page and tap \"GO VISIBLE\" again.",
     "cruising_mode_active_desc": "Active: your check-ins are always anonymous (+1), your location is blurred to 150m and your photo does not appear in venue lists.",
-    "share_text": "Join DarkNights! Your live LGBTQ+ nightlife circuit. 🏳️‍🌈🚀",
+    "share_text": "Join DarkNights! Your live Liberal nightlife circuit. 🏳️‍🌈🚀",
     "share_copied": "Link copied to clipboard! Send it to your friends.",
     "share_prompt": "Copy this link to invite your friends:",
     "verify_prompt": "Upload a selfie to verify your identity. This photo will only be seen by admins.",
@@ -192,7 +192,7 @@
     "nav_venues": "Venues",
     "nav_rrpp": "PR",
     "live_city": "Live in your city",
-    "hero_desc_1": "Your live LGBTQ+ nightlife circuit.",
+    "hero_desc_1": "Your live Liberal nightlife circuit.",
     "hero_desc_2": "Venues, tickets, check-in, and real plans in your city.",
     "enter_free": "Enter for free",
     "how_it_works": "How it works",
@@ -232,7 +232,7 @@
     "vtype_cruising": "Cruising Bars",
     "vtype_outdoor": "Outdoor Zones",
     "b2b_tag": "For venues",
-    "b2b_title": "Do you own an LGBTQ+ venue?",
+    "b2b_title": "Do you own an Liberal venue?",
     "b2b_desc": "DarkNights gives you a complete management panel: sell tickets, launch geolocated flash promos, validate QRs at the door, and control capacity in real time.",
     "b2b_panel": "Venue Panel",
     "b2b_qr": "QR Scanner",
@@ -269,7 +269,7 @@
     "request_territory": "Request Territory",
     "opportunity_city_managers": "Opportunity for City Managers",
     "operating_system": "Operating System",
-    "lgtbiq_nightlife": "of LGBTQ+ Nightlife",
+    "lgtbiq_nightlife": "of Liberal Nightlife",
     "contact_team": "Contact Team",
     "view_business_model": "View Business Model",
     "immediate_opportunities": "Immediate Opportunities",
@@ -1026,7 +1026,7 @@
     "report_title": "SEEN SOMETHING INAPPROPRIATE?",
     "report_desc": "Use the report button on any user's profile. Block instantly if you feel uncomfortable. Your well-being is our number one priority.",
     "accept_btn": "I Accept and Understand",
-    "footer": "© 2026 BLOW NIGHTS • SECURITY AND TRUST"
+    "footer": "© 2026 DARKNIGHTS • SECURITY AND TRUST"
   },
   "terms": {
     "back": "Back",
@@ -1088,6 +1088,6 @@
   },
   "partners": {
     "meta_title": "DarkNights - City Manager Business Opportunity",
-    "meta_description": "Become the owner of your territory with the LGBTQ+ Nightlife Operating System."
+    "meta_description": "Become the owner of your territory with the Liberal Nightlife Operating System."
   }
 }

@@ -4,7 +4,7 @@ test.describe('Landing Page', () => {
   test('redirects root to default city and shows landing', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForURL(/\/madrid\/?/, { timeout: 15_000 });
-    await expect(page.locator('h1').first()).toContainText('BLOW');
+    await expect(page.locator('h1').first()).toContainText('DARKNIGHTS');
   });
 
   test('shows CTA button that navigates to login', async ({ page }) => {

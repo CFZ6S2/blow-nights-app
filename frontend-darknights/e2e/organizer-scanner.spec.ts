@@ -5,7 +5,7 @@ test.describe('Organizer Scanner Flow', () => {
     await page.goto('/scanner');
     // Scanner requires auth — should redirect to login
     await page.waitForURL(/\/login/, { timeout: 10_000 });
-    await expect(page.locator('h1').first()).toContainText('BLOW NIGHTS');
+    await expect(page.locator('h1').first()).toContainText('DARKNIGHTS');
   });
 
   test('business page loads with B2B content', async ({ page }) => {

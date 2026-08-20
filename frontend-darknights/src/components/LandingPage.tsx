@@ -92,7 +92,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
           {/* Headline */}
           <motion.div variants={fadeUp} className="space-y-4">
             <h1 className="text-[clamp(3rem,10vw,6.5rem)] font-[1000] tracking-[-0.04em] leading-[0.85]">
-              BLOW{' '}
+              DARK{' '}
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-400 via-purple-400 to-indigo-400">
                 NIGHTS
               </span>
@@ -147,7 +147,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         </motion.div>
       </header>
 
-      {/* ═══ WHAT IS BLOW NIGHTS ═══ */}
+      {/* ═══ WHAT IS DARKNIGHTS ═══ */}
       <section className="py-24 md:py-32 px-6">
         <div className="max-w-5xl mx-auto space-y-16">
           <motion.div
