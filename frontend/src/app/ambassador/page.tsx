@@ -10,7 +10,7 @@ export default function AmbassadorDashboard() {
   const { user, profile, loading } = useAuth();
   const router = useRouter();
   const [earnings, setEarnings] = useState<any[]>([]);
-  const [affiliatedVenues, setAffiliatedVenues] = useState<any[]>([]);
+  const [affiliatedCities, setAffiliatedCities] = useState<any[]>([]);
   const [totalEarned, setTotalEarned] = useState(0);
   const [monthEarned, setMonthEarned] = useState(0);
 
@@ -24,12 +24,12 @@ export default function AmbassadorDashboard() {
   useEffect(() => {
     if (!user) return;
 
-    const unsubVenues = onSnapshot(
-      query(collection(db, 'venues'), where('ambassadorId', '==', user.uid)),
+    const unsubCities = onSnapshot(
+      query(collection(db, 'cities'), where('ambassadorId', '==', user.uid)),
       (snap) => {
-        const v: any[] = [];
-        snap.forEach(d => v.push({ id: d.id, ...d.data() }));
-        setAffiliatedVenues(v);
+        const c: any[] = [];
+        snap.forEach(d => c.push({ id: d.id, ...d.data() }));
+        setAffiliatedCities(c);
       }
     );
 
@@ -61,7 +61,7 @@ export default function AmbassadorDashboard() {
       }
     );
 
-    return () => { unsubVenues(); unsubEarnings(); };
+    return () => { unsubCities(); unsubEarnings(); };
   }, [user?.uid]);
 
   if (loading || !profile) {
@@ -94,26 +94,26 @@ export default function AmbassadorDashboard() {
           <p className="text-3xl font-black font-mono">{totalEarned.toFixed(2)} <span className="text-lg text-slate-400">€</span></p>
         </div>
         <div className="bg-white/5 border border-white/10 p-6 rounded-2xl">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Locales afiliados</p>
-          <p className="text-3xl font-black font-mono">{affiliatedVenues.length}</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Ciudades captadas</p>
+          <p className="text-3xl font-black font-mono">{affiliatedCities.length}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <section className="bg-white/5 border border-white/10 p-6 rounded-2xl">
-          <h2 className="text-sm font-black uppercase tracking-widest text-slate-300 mb-4">Mis Locales</h2>
+          <h2 className="text-sm font-black uppercase tracking-widest text-slate-300 mb-4">Mis Ciudades</h2>
           <div className="space-y-3">
-            {affiliatedVenues.length === 0 && (
-              <p className="text-sm text-slate-500">Aún no tienes locales vinculados. El admin te los asignará.</p>
+            {affiliatedCities.length === 0 && (
+              <p className="text-sm text-slate-500">Aún no tienes ciudades vinculadas. El admin te las asignará al captar un City Manager.</p>
             )}
-            {affiliatedVenues.map(v => (
-              <div key={v.id} className="bg-black/30 border border-white/5 p-4 rounded-xl flex justify-between items-center">
+            {affiliatedCities.map(c => (
+              <div key={c.id} className="bg-black/30 border border-white/5 p-4 rounded-xl flex justify-between items-center">
                 <div>
-                  <p className="font-bold">{v.name}</p>
-                  <p className="text-[10px] text-slate-400 uppercase tracking-widest">{v.type} · {v.cityId || 'Sin ciudad'}</p>
+                  <p className="font-bold">{c.emoji || ''} {c.name}</p>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-widest">{c.country || ''} · {c.managerId ? 'Con City Manager' : 'Sin CM'}</p>
                 </div>
-                <span className={`text-[9px] px-2 py-1 rounded-full font-bold uppercase ${v.isActive ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'}`}>
-                  {v.isActive ? 'Activo' : 'Inactivo'}
+                <span className={`text-[9px] px-2 py-1 rounded-full font-bold uppercase ${c.isActive ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'}`}>
+                  {c.isActive ? 'Activa' : 'Inactiva'}
                 </span>
               </div>
             ))}
@@ -148,7 +148,7 @@ export default function AmbassadorDashboard() {
         <span className="material-icons text-yellow-400">info</span>
         <div className="text-xs text-yellow-200/70">
           <p className="font-bold text-yellow-400 mb-1">¿Cómo funciona?</p>
-          <p>Cada vez que se vende un ticket en uno de tus locales afiliados, recibes automáticamente tu comisión via Stripe Connect. Las transferencias se procesan en tiempo real y aparecen aquí al instante.</p>
+          <p>Cada vez que se genera actividad en una ciudad que captaste, recibes automáticamente el 25% de la comisión via Stripe Connect. Las transferencias se procesan en tiempo real y aparecen aquí al instante.</p>
         </div>
       </div>
     </div>

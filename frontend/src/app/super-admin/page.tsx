@@ -68,7 +68,7 @@ export default function SuperAdminPage() {
   const [roleVenueId, setRoleVenueId] = useState('');
   const [assigningRole, setAssigningRole] = useState(false);
   const [recentAssignments, setRecentAssignments] = useState<any[]>([]);
-  const [ambassadorVenues, setAmbassadorVenues] = useState<string[]>([]);
+  const [ambassadorCities, setAmbassadorCities] = useState<string[]>([]);
 
   // --- RRPP STATE ---
   const [promoters, setPromoters] = useState<any[]>([]);
@@ -595,17 +595,17 @@ export default function SuperAdminPage() {
       if (selectedRole === 'venue' && roleVenueId) {
         await updateDoc(doc(db, 'venues', roleVenueId), { ownerId: roleSearchResult.id });
       }
-      if (selectedRole === 'ambassador' && ambassadorVenues.length > 0) {
+      if (selectedRole === 'ambassador' && ambassadorCities.length > 0) {
         await Promise.all(
-          ambassadorVenues.map(vId =>
-            updateDoc(doc(db, 'venues', vId), { ambassadorId: roleSearchResult.id })
+          ambassadorCities.map(cityId =>
+            updateDoc(doc(db, 'cities', cityId), { ambassadorId: roleSearchResult.id })
           )
         );
       }
       await assignRoleFunc(params);
       alert(`Rol "${selectedRole}" asignado a ${roleSearchResult.email}. El cambio será efectivo en su próximo login.`);
       setRoleSearchResult({ ...roleSearchResult, role: selectedRole });
-      setAmbassadorVenues([]);
+      setAmbassadorCities([]);
     } catch (e) {
       console.error(e);
       alert('Error al asignar rol');
@@ -948,22 +948,22 @@ export default function SuperAdminPage() {
 
                 {selectedRole === 'ambassador' && (
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500 block">Locales afiliados por este Ambassador</label>
-                    <p className="text-[10px] text-slate-500">Selecciona los locales que ha traído. Se les vinculará su ambassadorId para cobrar comisión automática por cada ticket.</p>
+                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500 block">Ciudades captadas por este Ambassador</label>
+                    <p className="text-[10px] text-slate-500">Selecciona las ciudades donde captó al City Manager. El ambassador cobrará el 25% de la actividad de esas ciudades.</p>
                     <div className="max-h-48 overflow-y-auto space-y-1 no-scrollbar">
-                      {venues.map(v => (
-                        <label key={v.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5 cursor-pointer">
+                      {cities.map(c => (
+                        <label key={c.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5 cursor-pointer">
                           <input
                             type="checkbox"
-                            checked={ambassadorVenues.includes(v.id)}
+                            checked={ambassadorCities.includes(c.id)}
                             onChange={e => {
-                              if (e.target.checked) setAmbassadorVenues(prev => [...prev, v.id]);
-                              else setAmbassadorVenues(prev => prev.filter(id => id !== v.id));
+                              if (e.target.checked) setAmbassadorCities(prev => [...prev, c.id]);
+                              else setAmbassadorCities(prev => prev.filter(id => id !== c.id));
                             }}
                             className="accent-yellow-400"
                           />
-                          <span className="text-sm">{v.name}</span>
-                          {v.ambassadorId && <span className="text-[9px] text-yellow-400 ml-auto">Ya asignado</span>}
+                          <span className="text-sm">{c.emoji || ''} {c.name}</span>
+                          {c.ambassadorId && <span className="text-[9px] text-yellow-400 ml-auto">Ya asignado</span>}
                         </label>
                       ))}
                     </div>
