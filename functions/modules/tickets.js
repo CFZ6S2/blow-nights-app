@@ -1,7 +1,9 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { admin, db, getStripe } = require("../lib/init");
+const { startTimer } = require("../lib/perf");
 
 exports.createTicketCheckout = onCall({ enforceAppCheck: true }, async (request) => {
+  const timer = startTimer("createTicketCheckout");
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -90,6 +92,7 @@ exports.createTicketCheckout = onCall({ enforceAppCheck: true }, async (request)
     },
   }, { stripeAccount: stripeAccountId });
 
+  timer.stop({ venueId, eventId, ticketType });
   return { sessionId: session.id, url: session.url };
 });
 
@@ -229,6 +232,7 @@ exports.purchaseIndependentEventTicket = onCall({ enforceAppCheck: true }, async
 });
 
 exports.validateTicket = onCall({ enforceAppCheck: true }, async (request) => {
+  const timer = startTimer("validateTicket");
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -279,6 +283,7 @@ exports.validateTicket = onCall({ enforceAppCheck: true }, async (request) => {
   const userDoc = await db.collection("users").doc(result.userId).get();
   const userData = userDoc.data();
 
+  timer.stop({ valid: true });
   return {
     valid: true,
     message: "Entrada válida. Acceso permitido.",
@@ -368,6 +373,7 @@ exports.validateTicketByDoorToken = onCall({ enforceAppCheck: true }, async (req
 });
 
 exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: true }, async (request) => {
+  const timer = startTimer("generateDirectPromoterTicket");
   const { data } = request;
   const { promoterToken, eventId, clientName, tierId } = data;
 
@@ -484,6 +490,7 @@ exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: true }, async (
     tx.set(ticketRef, ticketPayload);
   });
 
+  timer.stop({ eventId });
   return {
     success: true,
     ticketId: ticketRef.id,
@@ -638,6 +645,7 @@ exports.getPromoterStats = onCall({ enforceAppCheck: true }, async (request) => 
 });
 
 exports.generateOrganizerQRTicket = onCall({ enforceAppCheck: true }, async (request) => {
+  const timer = startTimer("generateOrganizerQRTicket");
   const { data, auth } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Login requerido.');
 
@@ -698,6 +706,7 @@ exports.generateOrganizerQRTicket = onCall({ enforceAppCheck: true }, async (req
     tx.set(ticketRef, ticketPayload);
   });
 
+  timer.stop({ eventId });
   return {
     success: true,
     ticketId: ticketRef.id,

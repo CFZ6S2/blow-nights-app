@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, limitToLast } from 'firebase/firestore';
+import { type PerformanceTrace } from 'firebase/performance';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 
@@ -32,14 +33,20 @@ export const useChat = (chatId: string | null) => {
 
     setMeActive();
 
-    // Suscribirse a mensajes
+    let perfTrace: PerformanceTrace | null = null;
+    if (typeof window !== 'undefined') {
+      import('@/lib/perf').then(({ startTrace }) => {
+        perfTrace = startTrace('query_chat_messages');
+      });
+    }
+
     const q = query(
       collection(db, 'chats', chatId, 'messages'),
       orderBy('timestamp', 'asc'),
       limitToLast(100)
     );
 
-    const unsubscribeMessages = onSnapshot(q, 
+    const unsubscribeMessages = onSnapshot(q,
       (snapshot) => {
         const msgs: any[] = [];
         snapshot.forEach((doc) => {
@@ -47,10 +54,12 @@ export const useChat = (chatId: string | null) => {
         });
         setMessages(msgs);
         setLoading(false);
+        if (perfTrace) { perfTrace.stop(); perfTrace = null; }
       },
       (error) => {
         console.error("Messages snapshot error", error);
         setLoading(false);
+        if (perfTrace) { perfTrace.putAttribute('error', 'true'); perfTrace.stop(); perfTrace = null; }
       }
     );
 

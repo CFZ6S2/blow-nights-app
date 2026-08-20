@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Cookie Consent', () => {
   test('shows cookie banner on first visit', async ({ page }) => {
     await page.goto('/madrid', { waitUntil: 'domcontentloaded' });
-    await expect(page.getByRole('button', { name: /accept all/i })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('button', { name: /accept all/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /essential only/i })).toBeVisible();
   });
 
