@@ -7,8 +7,8 @@
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
-    "test": "jest --forceExit",
-    "test:rules": "jest test/rules.test.js --forceExit"
+    "test": "jest --forceExit --testPathIgnorePatterns=rules",
+    "test:rules": "firebase emulators:exec --only firestore 'jest test/rules.test.js --forceExit'"
   },
   "engines": {
     "node": "22"

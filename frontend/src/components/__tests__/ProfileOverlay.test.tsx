@@ -2,6 +2,23 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ProfileOverlay from '../ProfileOverlay';
 
+vi.mock('framer-motion', async () => {
+  const actual = await vi.importActual('framer-motion');
+  return {
+    ...actual,
+    useScroll: () => ({ scrollY: { get: () => 0, on: vi.fn(() => () => {}), onChange: vi.fn(() => () => {}) } }),
+    useTransform: () => ({ get: () => 0, on: vi.fn(() => () => {}), onChange: vi.fn(() => () => {}) }),
+  };
+});
+
+vi.mock('@/lib/geo', () => ({
+  calculateDistance: () => 1.5,
+}));
+
+vi.mock('@/lib/timeUtils', () => ({
+  formatLastSeen: () => '5m ago',
+}));
+
 // Mock dependencies
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
