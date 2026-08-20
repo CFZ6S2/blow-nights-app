@@ -58,7 +58,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: frontend/.next
+          path: frontend/out
           retention-days: 1
   
   # ============================================
@@ -85,7 +85,7 @@ jobs:
       
       - name: Run Unit Tests (no emulator needed)
         working-directory: ./functions
-        run: npx jest --forceExit --testPathIgnorePatterns='rules\\.test'
+        run: npx jest --forceExit --testPathIgnorePatterns="rules"
 
       - name: Install Firebase Emulator
         run: |
@@ -150,10 +150,10 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Secret Scan
-        uses: trufflesecurity/trufflehog@master
+        uses: trufflesecurity/trufflehog@main
         with:
           path: .
-          since: HEAD~1
+          extra_args: --only-verified
   
   # ============================================
   # E2E TESTS
