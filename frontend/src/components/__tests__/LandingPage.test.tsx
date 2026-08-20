@@ -124,7 +124,7 @@ describe('LandingPage', () => {
       render(<LandingPage onStart={() => {}} />, { wrapper: ({ children }: { children: React.ReactNode }) => <>{children}</> });
       
       // La llamada a getCountFromServer devuelve 10, así que debería mostrar Active now
-      expect(await screen.findByText(/Live in/i)).toBeInTheDocument();
+      expect(screen.getByText(/Live in/i)).toBeInTheDocument();
     });
     
     it('renders hero description', () => {
