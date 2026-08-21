@@ -128,7 +128,6 @@ export default function Home() {
   const isRedirecting = role && redirects[role];
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-950 text-white p-4 md:p-8">
     <div className="flex flex-col min-h-screen bg-slate-950 text-white">
       <header className="flex flex-wrap items-center justify-between gap-3 p-4 bg-slate-900/60 backdrop-blur-xl border-b border-white/5 sticky top-0 z-40">
         <div className="flex items-center gap-3">
