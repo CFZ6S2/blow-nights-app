@@ -8,6 +8,7 @@ import { db, functions } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { useTranslation } from 'react-i18next';
+import ProfileOverlay from '@/components/ProfileOverlay';
 
 interface SwipeCardsProps {
   users: User[];
