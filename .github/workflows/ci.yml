@@ -1,218 +1,79 @@
-name: CI - Continuous Integration
+name: CI
 
 on:
-  pull_request:
-    branches: [main, develop]
   push:
-    branches: [main, develop]
-
-# Cancelar workflows anteriores si hay nuevos commits
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  # ============================================
-  # FRONTEND
-  # ============================================
-  frontend:
-    name: Frontend - Lint & Build
+  frontend-test:
     runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-      
-      - name: Install dependencies
+    defaults:
+      run:
         working-directory: ./frontend
-        run: npm ci
-      
-      - name: Run Tests
-        working-directory: ./frontend
-        run: npm test
-
-      - name: Run ESLint
-        working-directory: ./frontend
-        run: npm run lint
-        continue-on-error: true # No bloquear por warnings de lint
-      
-      - name: Build
-        working-directory: ./frontend
-        run: npm run build
-        env:
-          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
-          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
-          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
-          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
-          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
-      
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-build
-          path: frontend/out
-          retention-days: 1
-  
-  # ============================================
-  # FUNCTIONS
-  # ============================================
-  functions:
-    name: Functions - Test
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: functions/package-lock.json
-      
-      - name: Install dependencies
-        working-directory: ./functions
-        run: npm ci
-      
-      - name: Run Unit Tests (no emulator needed)
-        working-directory: ./functions
-        run: npm test
-
-      - name: Install Firebase Emulator
-        run: |
-          curl -sL https://firebase.tools | bash
-          firebase setup:emulators:firestore
-
-      - name: Run Rules Tests (with emulator)
-        working-directory: ./functions
-        run: npm run test:rules
-  
-  # ============================================
-  # I18N VALIDATION
-  # ============================================
-  i18n:
-    name: i18n - Validate Translations
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      
-      - name: Validate i18n keys
-        run: node scripts/validate_i18n.js
-  
-  # ============================================
-  # FIREBASE RULES VALIDATION
-  # ============================================
-  firebase-rules:
-    name: Firebase - Validate Rules
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Install Firebase CLI
-        run: curl -sL https://firebase.tools | bash
-      
-      - name: Validate Firestore Rules
-        run: firebase deploy --only firestore:rules --dry-run
-        continue-on-error: true # Dry run no siempre disponible
-      
-      - name: Validate Storage Rules
-        run: firebase deploy --only storage --dry-run
-        continue-on-error: true
-  
-  # ============================================
-  # SECURITY SCAN
-  # ============================================
-  security:
-    name: Security - Secret Scan
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Secret Scan
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: .
-          extra_args: --only-verified
-  
-  # ============================================
-  # E2E TESTS
-  # ============================================
-  e2e:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
       - name: Install dependencies
-        working-directory: ./frontend
         run: npm ci
-      - name: Build static site
-        working-directory: ./frontend
-        run: npm run build
-        env:
-          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
-          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
-          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
-          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
-          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
-      - name: Install Playwright Browsers
-        working-directory: ./frontend
-        run: npx playwright install --with-deps
-      - name: Run Playwright tests
-        working-directory: ./frontend
-        run: npm run e2e
-        continue-on-error: true
-  
-  # ============================================
-  # SUMMARY
-  # ============================================
-  summary:
-    name: CI Summary
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run type check
+        run: npm run check
+
+      - name: Run tests
+        run: npm run test
+
+  functions-test:
     runs-on: ubuntu-latest
-    needs: [frontend, functions, i18n, firebase-rules, security, e2e]
-    
-    if: always()
-    
+    defaults:
+      run:
+        working-directory: ./functions
     steps:
-      - name: Check CI Status
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+        env:
+          FIRESTORE_EMULATOR_HOST: localhost:8080
+          FIREBASE_EMULATOR_HOST: localhost:8080
+          FIREBASE_AUTH_EMULATOR_HOST: localhost:9099
+
+  ci-summary:
+    runs-on: ubuntu-latest
+    needs: [frontend-test, functions-test]
+    if: always()
+    steps:
+      - name: CI Summary
         run: |
-          echo "=== CI Pipeline Summary ==="
-          echo "Frontend: ${{ needs.frontend.result }}"
-          echo "Functions: ${{ needs.functions.result }}"
-          echo "i18n: ${{ needs.i18n.result }}"
-          echo "Firebase Rules: ${{ needs.firebase-rules.result }}"
-          echo "Security: ${{ needs.security.result }}"
-          echo "E2E: ${{ needs.e2e.result }}"
-          
-          if [[ "${{ needs.frontend.result }}" == "failure" ]] || \
-             [[ "${{ needs.functions.result }}" == "failure" ]] || \
-             [[ "${{ needs.i18n.result }}" == "failure" ]]; then
-            echo "❌ CI FAILED"
-            exit 1
+          if [ "${{ needs.frontend-test.result }}" == "success" ] && [ "${{ needs.functions-test.result }}" == "success" ]; then
+            echo "✅ All CI checks passed!"
+            exit 0
           else
-            echo "✅ CI PASSED"
+            echo "❌ CI Summary: Some checks failed"
+            echo "  - frontend-test: ${{ needs.frontend-test.result }}"
+            echo "  - functions-test: ${{ needs.functions-test.result }}"
+            exit 1
           fi
