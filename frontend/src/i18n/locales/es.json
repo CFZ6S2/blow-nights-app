@@ -278,7 +278,10 @@
     "footer_privacy": "Privacidad",
     "footer_rules": "Normas",
     "active_now_one": "{{count}} persona activa ahora",
-    "active_now_other": "{{count}} personas activas ahora"
+    "active_now_other": "{{count}} personas activas ahora",
+    "tickets_cta_title": "Compra tus Entradas Sin Registro",
+    "tickets_cta_desc": "Accede al catálogo de entradas de todos los locales y eventos. Compra directa, sin necesidad de crear cuenta.",
+    "tickets_cta_btn": "Ver Entradas"
   },
   "cookie": {
     "text": "Usamos cookies esenciales para el funcionamiento de la app y cookies de analítica para mejorar tu experiencia. Puedes aceptar todas o rechazar las no esenciales.",
@@ -1122,11 +1125,6 @@
     "install_android": "Instala la app para acceso rápido",
     "install_btn": "Instalar",
     "close_btn": "Ahora no"
-  },
-  "landing": {
-    "tickets_cta_title": "Compra tus Entradas Sin Registro",
-    "tickets_cta_desc": "Accede al catálogo de entradas de todos los locales y eventos. Compra directa, sin necesidad de crear cuenta.",
-    "tickets_cta_btn": "Ver Entradas"
   },
   "entradas": {
     "back_home": "Inicio",
