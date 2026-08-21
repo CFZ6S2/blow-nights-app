@@ -54,8 +54,11 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         {/* Top nav links */}
         <div className="absolute top-0 left-0 right-0 z-50 px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/business" className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500 hover:text-slate-800 transition-colors">{t('landing.nav_venues')}</Link>
-            <Link href="/rrpp" className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500 hover:text-slate-800 transition-colors">{t('landing.nav_rrpp')}</Link>
+            <Link href="/entradas" className="text-[11px] font-black uppercase tracking-[0.12em] text-red-400 hover:text-white transition-colors bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-full flex items-center gap-1.5">
+              <span>🎟️</span> ENTRADAS
+            </Link>
+            <Link href="/business" className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 hover:text-red-400 transition-colors">{t('landing.nav_venues')}</Link>
+            <Link href="/rrpp" className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 hover:text-red-400 transition-colors">{t('landing.nav_rrpp')}</Link>
           </div>
         </div>
 
@@ -106,15 +109,22 @@ export default function LandingPage({ onStart }: LandingPageProps) {
 
           {/* CTA */}
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+            <Link
+              href="/entradas"
+              className="w-full sm:w-auto px-10 py-5 rounded-2xl bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-[900] text-[13px] uppercase tracking-[0.15em] transition-all shadow-[0_15px_40px_rgba(239,68,68,0.35)] text-center flex items-center justify-center gap-2 transform hover:scale-105"
+            >
+              <span>🎟️</span>
+              <span>Comprar Entradas Sin Registro</span>
+            </Link>
             <button
               onClick={handleStart}
-              className="w-full sm:w-auto px-14 py-5 rounded-2xl bg-white text-black font-[900] text-[13px] uppercase tracking-[0.15em] hover:bg-slate-100 active:scale-[0.97] transition-all shadow-[0_15px_40px_rgba(255,255,255,0.08)]"
+              className="w-full sm:w-auto px-10 py-5 rounded-2xl bg-white text-black font-[900] text-[13px] uppercase tracking-[0.15em] hover:bg-slate-100 active:scale-[0.97] transition-all shadow-[0_15px_40px_rgba(255,255,255,0.08)]"
             >
               {t('landing.enter_free')}
             </button>
             <Link
               href="/rules"
-              className="w-full sm:w-auto px-14 py-5 rounded-2xl bg-white/[0.04] text-slate-900/80 border border-white/10 font-bold text-[13px] uppercase tracking-[0.1em] hover:bg-white/[0.08] transition-all backdrop-blur-sm text-center"
+              className="w-full sm:w-auto px-8 py-5 rounded-2xl bg-white/[0.04] text-slate-900/80 border border-white/10 font-bold text-[13px] uppercase tracking-[0.1em] hover:bg-white/[0.08] transition-all backdrop-blur-sm text-center"
             >
               {t('landing.how_it_works')}
             </Link>
