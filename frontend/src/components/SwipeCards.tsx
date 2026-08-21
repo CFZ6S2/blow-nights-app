@@ -130,6 +130,13 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
     setCards(prev => prev.filter(c => c.id !== targetUser.id));
     onSwipe(targetUser.id, direction);
   };
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Reset photo index when front card changes
+    setCurrentPhotoIndex(0);
+  }, [cards.length]);
 
   if (pingLimitExceeded) {
     return (
@@ -165,7 +172,11 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
   }
 
   return (
-    <div className="relative w-full h-full min-h-[400px] flex items-center justify-center overflow-hidden">
+    <div className="relative w-full h-full min-h-[420px] flex items-center justify-center overflow-hidden">
+      {selectedProfileId && (
+        <ProfileOverlay id={selectedProfileId} onClose={() => setSelectedProfileId(null)} />
+      )}
+
       <AnimatePresence>
         {cards.length === 0 ? (
            <div className="text-center text-slate-500 font-bold uppercase tracking-widest text-[10px]">
@@ -173,16 +184,16 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
            </div>
         ) : (
           cards.map((c, index) => {
-            // We will render first card in array as top. So array should be reversed or we handle z-index.
-            // Wait, if we use cards.map, index 0 is bottom. Let's reverse it visually by mapping normally but making last index front.
             const isFrontCard = index === cards.length - 1;
+            const cardPhotos = [c.fotoUrl, ...(c.extraPhotos || [])].filter(Boolean);
+            const activePhoto = isFrontCard ? (cardPhotos[currentPhotoIndex] || c.fotoUrl) : c.fotoUrl;
 
             return (
               <motion.div
                 key={c.id}
-                className="absolute w-full max-w-[340px] aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-slate-900"
+                className="absolute w-full max-w-[350px] aspect-[3/4] rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/10 bg-slate-900 select-none"
                 style={{
-                  backgroundImage: `url(${c.fotoUrl || '/placeholder.png'})`,
+                  backgroundImage: `url(${activePhoto || '/placeholder.png'})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   zIndex: index,
@@ -196,41 +207,87 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
                 onDragEnd={(e, info) => handleDragEnd(e, info, c)}
                 whileDrag={{ scale: 1.05 }}
               >
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
-                
-                {/* User Info */}
-                <div className="absolute bottom-24 left-0 w-full p-6 text-white space-y-1 pointer-events-none">
-                  <h2 className="text-3xl font-black">{c.nick}, {c.edad || '?'}</h2>
-                  <div className="flex gap-2 text-[10px] font-black uppercase tracking-widest text-slate-300">
-                    <span>
-                      {c.rol === 'activo' ? t('swipe.role_active') : c.rol === 'pasivo' ? t('swipe.role_passive') : t('swipe.role_versatile')}
-                    </span>
-                    <span>•</span>
-                    <span>{t('swipe.distance')}</span>
+                {/* Tinder-style Photo Bar Indicators */}
+                {isFrontCard && cardPhotos.length > 1 && (
+                  <div className="absolute top-3 left-4 right-4 flex gap-1 z-30 pointer-events-none">
+                    {cardPhotos.map((_, pIdx) => (
+                      <div key={pIdx} className="flex-1 h-1 rounded-full bg-black/40 overflow-hidden backdrop-blur-sm">
+                        <div className={`h-full transition-all duration-300 ${pIdx === currentPhotoIndex ? 'bg-white' : 'bg-white/30'}`} />
+                      </div>
+                    ))}
                   </div>
+                )}
+
+                {/* Left/Right Photo Tap Controls */}
+                {isFrontCard && cardPhotos.length > 1 && (
+                  <div className="absolute inset-0 flex z-10">
+                    <div 
+                      className="w-1/2 h-[75%]"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentPhotoIndex(prev => Math.max(0, prev - 1));
+                      }}
+                    />
+                    <div 
+                      className="w-1/2 h-[75%]"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentPhotoIndex(prev => Math.min(cardPhotos.length - 1, prev + 1));
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent pointer-events-none" />
+                
+                {/* User Info & Expand Profile Button */}
+                <div className="absolute bottom-24 left-0 w-full p-6 text-white space-y-1 z-20 flex justify-between items-end">
+                  <div className="cursor-pointer" onClick={() => setSelectedProfileId(c.id)}>
+                    <h2 className="text-3xl font-black flex items-center gap-2">
+                      {c.nick}, {c.edad || '?'}
+                    </h2>
+                    <div className="flex gap-2 text-[10px] font-black uppercase tracking-widest text-slate-300 mt-1">
+                      <span>
+                        {c.rol === 'activo' ? t('swipe.role_active') : c.rol === 'pasivo' ? t('swipe.role_passive') : t('swipe.role_versatile')}
+                      </span>
+                      <span>•</span>
+                      <span>{t('swipe.distance')}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedProfileId(c.id);
+                    }}
+                    className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center hover:scale-110 active:scale-95 transition-all text-white shadow-lg"
+                    title="Ver perfil completo"
+                  >
+                    <span className="material-icons text-xl">info</span>
+                  </button>
                 </div>
 
-                {/* Buttons Layer */}
-                <div className="absolute bottom-6 w-full flex justify-center items-center gap-6 z-20">
+                {/* Action Buttons Layer */}
+                <div className="absolute bottom-5 w-full flex justify-center items-center gap-5 z-30">
                   <button 
-                    onClick={() => handleAction(c, 'left')}
-                    className="w-14 h-14 rounded-full bg-slate-800/80 border border-slate-600 flex items-center justify-center hover:scale-110 hover:bg-slate-700 transition-all shadow-lg"
+                    onClick={(e) => { e.stopPropagation(); handleAction(c, 'left'); }}
+                    className="w-14 h-14 rounded-full bg-slate-900/90 border border-white/10 flex items-center justify-center hover:scale-110 hover:bg-slate-800 transition-all shadow-xl active:scale-95 text-red-400"
                   >
-                    <span className="material-icons text-red-400 text-2xl">close</span>
+                    <span className="material-icons text-2xl">close</span>
                   </button>
                   <button 
-                    onClick={() => handleAction(c, 'up')}
-                    className="w-20 h-20 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 border border-amber-300/50 flex flex-col items-center justify-center hover:scale-110 transition-all shadow-[0_0_20px_rgba(245,158,11,0.5)]"
+                    onClick={(e) => { e.stopPropagation(); handleAction(c, 'up'); }}
+                    className="w-20 h-20 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 border border-amber-300/50 flex flex-col items-center justify-center hover:scale-110 transition-all shadow-[0_0_25px_rgba(245,158,11,0.6)] active:scale-95 text-white"
                   >
-                    <span className="material-icons text-white text-3xl">local_fire_department</span>
-                    <span className="text-[8px] font-black uppercase text-white tracking-widest mt-1">{t('swipe.come_here')}</span>
+                    <span className="material-icons text-3xl">local_fire_department</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest mt-0.5">{t('swipe.come_here')}</span>
                   </button>
                   <button 
-                    onClick={() => handleAction(c, 'right')}
-                    className="w-14 h-14 rounded-full bg-slate-800/80 border border-slate-600 flex items-center justify-center hover:scale-110 hover:bg-slate-700 transition-all shadow-lg"
+                    onClick={(e) => { e.stopPropagation(); handleAction(c, 'right'); }}
+                    className="w-14 h-14 rounded-full bg-slate-900/90 border border-white/10 flex items-center justify-center hover:scale-110 hover:bg-slate-800 transition-all shadow-xl active:scale-95 text-emerald-400"
                   >
-                    <span className="material-icons text-emerald-400 text-2xl">favorite</span>
+                    <span className="material-icons text-2xl">favorite</span>
                   </button>
                 </div>
               </motion.div>

@@ -129,45 +129,51 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-950 text-white p-4 md:p-8">
-      <header className="flex justify-between items-center mb-8">
+    <div className="flex flex-col min-h-screen bg-slate-950 text-white">
+      <header className="flex flex-wrap items-center justify-between gap-3 p-4 bg-slate-900/60 backdrop-blur-xl border-b border-white/5 sticky top-0 z-40">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden border border-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.3)]">
-            <img 
-              src={profile.fotoUrl || `https://ui-avatars.com/api/?name=${profile.nick || 'User'}&background=random`} 
-              alt="Profile" 
-              className="w-full h-full object-cover"
-            />
-          </div>
+          <CitySelector />
           <div>
-            <h1 className="font-display text-lg font-black bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500 uppercase tracking-tighter">
+            <h1 className="font-display text-base sm:text-lg font-black bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500 uppercase tracking-tighter">
               Blow Nights
             </h1>
-            <p className="text-[10px] text-slate-400 font-medium">{t('city.hello')}, {profile.nick}! {isAdmin && <span className="text-purple-400 font-black ml-1">[ADMIN]</span>}</p>
+            <p className="text-[10px] text-slate-400 font-medium truncate max-w-[150px] sm:max-w-none">
+              {t('city.hello')}, {profile.nick}! {isAdmin && <span className="text-purple-400 font-black ml-1">[ADMIN]</span>}
+            </p>
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
-          <CitySelector />
+        <div className="flex items-center gap-1.5 flex-wrap">
           {isSuperAdmin && (
-            <Link href="/super-admin" prefetch={false} className="bg-fuchsia-600/20 text-fuchsia-400 border border-fuchsia-600/50 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase hover:bg-fuchsia-600/30 transition-all">
-              {t('city.super_admin')}
+            <Link 
+              href="/super-admin" 
+              prefetch={false} 
+              className="bg-fuchsia-600/20 text-fuchsia-400 border border-fuchsia-600/50 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase hover:bg-fuchsia-600/30 transition-all flex items-center gap-1"
+            >
+              <span className="material-icons text-xs">admin_panel_settings</span>
+              <span className="hidden xs:inline">Maestro</span>
             </Link>
           )}
           {isAdmin && (
-            <Link href="/admin" prefetch={false} className="bg-purple-600/20 text-purple-400 border border-purple-600/50 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase hover:bg-purple-600/30 transition-all">
-              Admin
+            <Link 
+              href="/admin" 
+              prefetch={false} 
+              className="bg-purple-600/20 text-purple-400 border border-purple-600/50 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase hover:bg-purple-600/30 transition-all flex items-center gap-1"
+            >
+              <span className="material-icons text-xs">tune</span>
+              <span>Admin</span>
             </Link>
           )}
           <button 
             onClick={logout}
-            className="bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl transition-all text-xs font-medium border border-white/5"
+            className="bg-white/5 hover:bg-white/10 px-3 py-1 rounded-lg transition-all text-[10px] font-bold border border-white/5 text-slate-300 flex items-center gap-1"
           >
-            Salir
+            <span className="material-icons text-xs text-slate-400">logout</span>
           </button>
         </div>
       </header>
 
-      <main className="flex-1 space-y-8 max-w-4xl mx-auto w-full">
+      <main className="flex-1 space-y-8 max-w-4xl mx-auto w-full p-4 md:p-8">
         {/* Sección del Mapa */}
         {(!profile || profile.edad === null || profile.edad === undefined || isRedirecting) ? null : (
           <section className="space-y-4">

@@ -3,7 +3,26 @@
     "home": "Inicio",
     "map": "Mapa",
     "chat": "Chat",
-    "profile": "Perfil"
+    "profile": "Perfil",
+    "my_venue": "Mi Local",
+    "admin": "Admin",
+    "venues": "Locales"
+  },
+  "swipe": {
+    "role_active": "Activo",
+    "role_passive": "Pasivo",
+    "role_versatile": "Versátil",
+    "distance": "Ubicación aproximada",
+    "come_here": "¡Vente aquí!",
+    "err_payment": "Error al procesar el pago",
+    "err_wait": "Espera unos segundos antes de enviar otro Ping",
+    "err_already_pinged": "Ya le has enviado un Ping hoy a este usuario",
+    "limit_title": "Límite de Pings alcanzado",
+    "limit_desc": "Has agotado tus Pings gratuitos por hoy. Consigue más pings o pásate a VIP para conectar sin límites.",
+    "pack_extra": "Pack 5 Pings Extra",
+    "pass_unlimited": "Pase Noche VIP Ilimitado",
+    "back_to_radar": "Volver al Radar",
+    "no_more_profiles": "No hay más usuarios cerca por ahora"
   },
   "city": {
     "select": "Elige tu ciudad",
