@@ -1,81 +1,61 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useChills } from '../../hooks/useChills';
-import * as firebase from '../../lib/firebase';
+import { useChills, useChillRequests, useMyChills } from '../../hooks/useChills';
+import { useAuth } from '@/context/AuthContext';
 
-// Mock de Firebase
-vi.mock('../../lib/firebase', () => ({
+vi.mock('@/context/AuthContext', () => ({
+  useAuth: vi.fn(),
+}));
+
+vi.mock('@/lib/firebase', () => ({
   db: {},
+  functions: {}
+}));
+
+vi.mock('firebase/firestore', () => ({
   collection: vi.fn(),
   query: vi.fn(),
   where: vi.fn(),
-  onSnapshot: vi.fn(),
-  addDoc: vi.fn(),
-  updateDoc: vi.fn(),
-  doc: vi.fn(),
-  deleteDoc: vi.fn(),
+  orderBy: vi.fn(),
+  onSnapshot: vi.fn((q, cb) => vi.fn()),
 }));
 
-describe('useChills', () => {
+vi.mock('firebase/functions', () => ({
+  httpsCallable: vi.fn(() => vi.fn()),
+}));
+
+describe('useChills hooks', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('deberÃ¡a inicializar con array vacÃ¡o de chills', () => {
-    const { result } = renderHook(() => useChills());
-    
-    expect(result.current.chills).toEqual([]);
-    expect(result.current.loading).toBe(true);
+  describe('useChills', () => {
+    it('debería inicializar con chills vacíos', () => {
+      (useAuth as any).mockReturnValue({ user: { uid: 'user1' }, loading: false });
+      const { result } = renderHook(() => useChills('madrid'));
+      
+      expect(result.current.chills).toEqual([]);
+      expect(result.current.loading).toBe(true);
+    });
   });
 
-  it('deberÃ¡a exponer funciÃ³n createChill', () => {
-    const { result } = renderHook(() => useChills());
-    
-    expect(result.current.createChill).toBeDefined();
-    expect(typeof result.current.createChill).toBe('function');
+  describe('useChillRequests', () => {
+    it('debería inicializar requests vacíos', () => {
+      (useAuth as any).mockReturnValue({ user: { uid: 'user1' }, loading: false });
+      const { result } = renderHook(() => useChillRequests('chill-123'));
+      
+      expect(result.current.requests).toEqual([]);
+      expect(result.current.loading).toBe(true);
+    });
   });
 
-  it('deberÃ¡a exponer funciÃ³n updateChill', () => {
-    const { result } = renderHook(() => useChills());
-    
-    expect(result.current.updateChill).toBeDefined();
-    expect(typeof result.current.updateChill).toBe('function');
-  });
-
-  it('deberÃ¡a exponer funciÃ³n deleteChill', () => {
-    const { result } = renderHook(() => useChills());
-    
-    expect(result.current.deleteChill).toBeDefined();
-    expect(typeof result.current.deleteChill).toBe('function');
-  });
-
-  it('deberÃ¡a filtrar chills por city', () => {
-    const { result } = renderHook(() => useChills('madrid'));
-    
-    expect(result).toBeDefined();
-  });
-
-  it('deberÃ¡a filtrar chills por venue', () => {
-    const { result } = renderHook(() => useChills('madrid', 'venue-123'));
-    
-    expect(result).toBeDefined();
-  });
-
-  it('deberÃ¡a manejar estado de error', () => {
-    const { result } = renderHook(() => useChills());
-    
-    expect(result.current.error).toBeDefined();
-  });
-
-  it('deberÃ¡a exponer funciÃ³n joinChill', () => {
-    const { result } = renderHook(() => useChills());
-    
-    expect(result.current.joinChill).toBeDefined();
-  });
-
-  it('deberÃ¡a exponer funciÃ³n leaveChill', () => {
-    const { result } = renderHook(() => useChills());
-    
-    expect(result.current.leaveChill).toBeDefined();
+  describe('useMyChills', () => {
+    it('debería inicializar myChills vacíos', () => {
+      (useAuth as any).mockReturnValue({ user: { uid: 'user1' }, loading: false });
+      const { result } = renderHook(() => useMyChills());
+      
+      expect(result.current.myChills).toEqual([]);
+      expect(result.current.loading).toBe(true);
+    });
   });
 });
