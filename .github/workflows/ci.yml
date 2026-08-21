@@ -85,7 +85,7 @@ jobs:
       
       - name: Run Unit Tests (no emulator needed)
         working-directory: ./functions
-        run: npx jest --forceExit --testPathIgnorePatterns="rules"
+        run: npm test
 
       - name: Install Firebase Emulator
         run: |
@@ -94,8 +94,7 @@ jobs:
 
       - name: Run Rules Tests (with emulator)
         working-directory: ./functions
-        run: firebase emulators:exec --only firestore --project demo-project 'npx jest test/rules.test.js --forceExit'
-        continue-on-error: true
+        run: npm run test:rules
   
   # ============================================
   # I18N VALIDATION
