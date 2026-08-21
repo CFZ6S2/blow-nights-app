@@ -70,7 +70,7 @@
     },
     {
       "target": "darknights",
-      "public": "frontend-darknights/out",
+      "public": "darknights/frontend/out",
       "cleanUrls": true,
       "trailingSlash": false,
       "ignore": [

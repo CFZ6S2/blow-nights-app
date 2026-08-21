@@ -1092,4 +1092,12 @@
     "meta_title": "Blow Nights - Oportunitat de Negoci City Manager",
     "meta_description": "Converteix-te en l'amo del teu territori amb el Sistema Operatiu de l'Oci Nocturn LGTBIQ+."
   }
+,
+  "pwa": {
+    "install_title": "Instal·lar Blow Nights",
+    "install_ios": "Toca Compartir i després Afegir a la pantalla d'inici",
+    "install_android": "Instal·la l'app per accés ràpid",
+    "install_btn": "Instal·lar",
+    "close_btn": "Ara no"
+  }
 }

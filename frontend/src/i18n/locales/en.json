@@ -1089,5 +1089,12 @@
   "partners": {
     "meta_title": "Blow Nights - City Manager Business Opportunity",
     "meta_description": "Become the owner of your territory with the LGBTQ+ Nightlife Operating System."
+  },
+  "pwa": {
+    "install_title": "Install Blow Nights",
+    "install_ios": "Tap Share then Add to Home Screen",
+    "install_android": "Install the app for quick access",
+    "install_btn": "Install",
+    "close_btn": "Not now"
   }
 }
