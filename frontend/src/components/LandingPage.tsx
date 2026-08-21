@@ -145,7 +145,29 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             <ChevronDown className="w-6 h-6 animate-bounce mx-auto" />
           </div>
         </motion.div>
-      </header>
+      {/* ═══ PUBLIC TICKETS CTA BANNER ═══ */}
+      <section className="px-6 -mt-6 mb-12 relative z-20">
+        <div className="max-w-5xl mx-auto bg-gradient-to-r from-fuchsia-950/80 via-slate-900 to-indigo-950/80 border border-fuchsia-500/30 rounded-3xl p-8 md:p-10 shadow-2xl backdrop-blur-2xl flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="space-y-3 text-center md:text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30 text-[10px] font-black uppercase tracking-widest">
+              <span>🎟️ VENTA DIRECTA SIN REGISTRO</span>
+            </div>
+            <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight">
+              ¿Vas de fiesta esta noche? <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-indigo-400">Compra tu entrada en 10 segundos</span>
+            </h2>
+            <p className="text-slate-300 text-xs md:text-sm max-w-xl">
+              Elige tu garito favorito, selecciona tu pase VIP o general y recibe tu QR anti-fraude sin necesidad de registrarte.
+            </p>
+          </div>
+
+          <Link
+            href="/entradas"
+            className="px-8 py-5 bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-fuchsia-500/25 transition-all transform hover:scale-105 shrink-0 whitespace-nowrap"
+          >
+            Ver Entradas & Garitos →
+          </Link>
+        </div>
+      </section>
 
       {/* ═══ WHAT IS BLOW NIGHTS ═══ */}
       <section className="py-24 md:py-32 px-6">

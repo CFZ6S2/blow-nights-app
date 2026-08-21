@@ -10,6 +10,7 @@ import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/lib/firebase';
 import { ShieldCheck, Sparkles, Building2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import VenueReviews from '@/components/VenueReviews';
 
 export default function VenueDetailPage() {
   const { t } = useTranslation();
@@ -387,6 +388,10 @@ export default function VenueDetailPage() {
             </div>
           </div>
         )}
+        {/* Sección de Reseñas de la Comunidad */}
+        <section className="pt-6">
+          <VenueReviews venueId={id || ''} venueName={venue?.title || venue?.name || 'Local'} />
+        </section>
       </main>
     </div>
   );
