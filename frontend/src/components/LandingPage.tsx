@@ -145,6 +145,8 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             <ChevronDown className="w-6 h-6 animate-bounce mx-auto" />
           </div>
         </motion.div>
+      </header>
+
       {/* ═══ PUBLIC TICKETS CTA BANNER ═══ */}
       <section className="px-6 -mt-6 mb-12 relative z-20">
         <div className="max-w-5xl mx-auto bg-gradient-to-r from-fuchsia-950/80 via-slate-900 to-indigo-950/80 border border-fuchsia-500/30 rounded-3xl p-8 md:p-10 shadow-2xl backdrop-blur-2xl flex flex-col md:flex-row items-center justify-between gap-8">

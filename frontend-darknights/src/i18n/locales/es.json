@@ -15,6 +15,7 @@
     "install_btn": "Instalar",
     "close_btn": "Cerrar"
   },
+  "swipe": {
     "role_active": "Activo",
     "role_passive": "Pasivo",
     "role_versatile": "Versátil",
