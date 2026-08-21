@@ -27,7 +27,8 @@
     "react-dom": "19.0.0",
     "react-i18next": "^17.0.11",
     "react-map-gl": "^8.1.1",
-    "react-qr-code": "^2.2.0"
+    "react-qr-code": "^2.2.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
