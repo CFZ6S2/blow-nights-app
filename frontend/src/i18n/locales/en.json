@@ -3,7 +3,10 @@
     "home": "Home",
     "map": "Map",
     "chat": "Chat",
-    "profile": "Profile"
+    "profile": "Profile",
+    "my_venue": "My Venue",
+    "admin": "Admin",
+    "venues": "Venues"
   },
   "city": {
     "select": "Choose your city",

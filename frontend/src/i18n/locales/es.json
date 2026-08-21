@@ -9,11 +9,11 @@
     "venues": "Locales"
   },
   "pwa": {
-    "install_title": "Instala la App",
-    "install_ios": "Toca el botón compartir ⎋ y selecciona 'Añadir a la pantalla de inicio'.",
-    "install_android": "Instala la app en tu teléfono para acceder más rápido y recibir notificaciones.",
+    "install_title": "Instalar Blow Nights",
+    "install_ios": "Toca Compartir y luego Añadir a pantalla de inicio",
+    "install_android": "Instala la app para acceso rápido",
     "install_btn": "Instalar",
-    "close_btn": "Cerrar"
+    "close_btn": "Ahora no"
   },
   "swipe": {
     "role_active": "Activo",
@@ -29,7 +29,8 @@
     "pack_extra": "Pack 5 Pings Extra",
     "pass_unlimited": "Pase Noche VIP Ilimitado",
     "back_to_radar": "Volver al Radar",
-    "no_more_profiles": "No hay más usuarios cerca por ahora"
+    "no_more_profiles": "No hay más usuarios cerca por ahora",
+    "gift_ticket": "Regalar Entrada"
   },
   "city": {
     "select": "Elige tu ciudad",
@@ -1119,13 +1120,6 @@
     "meta_title": "Blow Nights - Oportunidad de Negocio City Manager",
     "meta_description": "Conviértete en el dueño de tu territorio con el Sistema Operativo del Ocio Nocturno LGTBIQ+."
   },
-  "pwa": {
-    "install_title": "Instalar Blow Nights",
-    "install_ios": "Toca Compartir y luego Añadir a pantalla de inicio",
-    "install_android": "Instala la app para acceso rápido",
-    "install_btn": "Instalar",
-    "close_btn": "Ahora no"
-  },
   "entradas": {
     "back_home": "Inicio",
     "title": "Entradas",
@@ -1149,9 +1143,6 @@
     "sending": "Enviando...",
     "submit": "Publicar",
     "no_reviews": "Aún no hay opiniones. ¡Sé el primero!"
-  },
-  "swipe": {
-    "gift_ticket": "Regalar Entrada"
   },
   "city.buy_tickets": "Comprar Entradas",
   "city.buy_tickets_desc": "Catálogo público de entradas disponibles",
