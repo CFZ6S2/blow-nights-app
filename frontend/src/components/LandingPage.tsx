@@ -346,6 +346,160 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         </div>
       </section>
 
+      {/* ═══ ROLES & ACCESS SECTION ═══ */}
+      <section className="py-24 md:py-32 px-6 border-t border-white/[0.04] bg-slate-900/40">
+        <div className="max-w-6xl mx-auto space-y-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center space-y-3"
+          >
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-fuchsia-400">Ecosistema Blow Nights</p>
+            <h2 className="text-3xl md:text-5xl font-[900] tracking-tight">Formas de Participar en la App</h2>
+            <p className="text-slate-400 max-w-xl mx-auto text-sm">
+              Descubre qué puedes ver y hacer según tu perfil. Elige tu rol e intégrate en la plataforma.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* 1. Usuario */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-white/[0.03] border border-white/[0.08] rounded-3xl p-6 flex flex-col justify-between hover:border-fuchsia-500/40 transition-all hover:bg-white/[0.05]"
+            >
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-fuchsia-500/20 text-fuchsia-400 flex items-center justify-center font-black text-xl">
+                  👤
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-1">Usuario / Party Goer</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Mapa de locales en tiempo real, pases VIP, pings y matches. Únete a Chills (requiere User Plus) o crea el tuyo (User Black).
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/login"
+                className="mt-6 w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider text-center transition-all"
+              >
+                Entrar / Registrarme
+              </Link>
+            </motion.div>
+
+            {/* 2. RRPP */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="bg-white/[0.03] border border-white/[0.08] rounded-3xl p-6 flex flex-col justify-between hover:border-purple-500/40 transition-all hover:bg-white/[0.05]"
+            >
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-black text-xl">
+                  🎟️
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-1">RRPP / Promotor</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Genera enlaces y QRs de descuento, promociona eventos en tus redes y gana comisiones automáticas cuando escaneen tus invitados en puerta.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/rrpp/register"
+                className="mt-6 w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider text-center transition-all shadow-lg"
+              >
+                Ser RRPP
+              </Link>
+            </motion.div>
+
+            {/* 3. Organizador */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="bg-white/[0.03] border border-white/[0.08] rounded-3xl p-6 flex flex-col justify-between hover:border-indigo-500/40 transition-all hover:bg-white/[0.05]"
+            >
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-black text-xl">
+                  🪩
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-1">Organizador de Eventos</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Comienza como usuario y solicita tu alta. Publica fiestas, fija tramos de precio (Early Bird, VIP) y gestiona tu equipo de RRPPs.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/organizer/register"
+                className="mt-6 w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider text-center transition-all shadow-lg"
+              >
+                Crear Eventos
+              </Link>
+            </motion.div>
+
+            {/* 4. Local */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="bg-white/[0.03] border border-white/[0.08] rounded-3xl p-6 flex flex-col justify-between hover:border-blue-500/40 transition-all hover:bg-white/[0.05]"
+            >
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-black text-xl">
+                  🍸
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-1">Local / Discoteca</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Conecta tu banco vía Stripe Connect Express, vende pases/entradas con enlaces públicos y controla el aforo de tu sala.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/business"
+                className="mt-6 w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider text-center transition-all shadow-lg"
+              >
+                Portal de Locales
+              </Link>
+            </motion.div>
+
+            {/* 5. Franquiciado */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+              className="bg-white/[0.03] border border-white/[0.08] rounded-3xl p-6 flex flex-col justify-between hover:border-emerald-500/40 transition-all hover:bg-white/[0.05] col-span-1 md:col-span-2 lg:col-span-1"
+            >
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-xl">
+                  🏙️
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-1">City Manager / Franquiciado</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Gestiona una ciudad completa, aprueba locales/eventos y supervisa el negocio en tu territorio (comisiones fijadas por SuperAdmin).
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/partners"
+                className="mt-6 w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider text-center transition-all shadow-lg"
+              >
+                Solicitar Franquicia
+              </Link>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* ═══ B2B / FOR VENUES ═══ */}
       <section className="py-24 md:py-32 px-6 border-t border-white/[0.04]">
         <div className="max-w-5xl mx-auto">
