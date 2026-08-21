@@ -5,6 +5,7 @@ import { collection, query, where, getDocs, limit, getCountFromServer } from 'fi
 import { db } from '@/lib/firebase';
 import { getAnalytics, logEvent } from 'firebase/analytics';
 import app from '@/lib/firebase';
+import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
