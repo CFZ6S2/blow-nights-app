@@ -47,13 +47,14 @@ export default function LanguageSelector() {
   };
 
   return (
-    <div className="fixed top-3 right-4 z-[99999] pointer-events-auto" ref={dropdownRef}>
+    <div className="fixed top-4 right-4 z-[999999] pointer-events-auto" ref={dropdownRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center gap-1.5 bg-black/40 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-white/10 transition-colors shadow-lg"
+        className="flex items-center justify-center gap-2 bg-slate-900/95 text-white backdrop-blur-2xl border border-red-500/50 px-3.5 py-2 rounded-full text-xs font-black uppercase tracking-wider hover:bg-slate-800 transition-all shadow-[0_10px_25px_rgba(0,0,0,0.8)] active:scale-95"
       >
-        <span className="text-[14px]">{languages.find(l => l.code === currentLang)?.icon}</span>
+        <span className="text-[16px]">{languages.find(l => l.code === currentLang)?.icon}</span>
         <span>{languages.find(l => l.code === currentLang)?.label}</span>
+        <span className="text-[9px] text-red-400 ml-0.5">▼</span>
       </button>
 
       <AnimatePresence>

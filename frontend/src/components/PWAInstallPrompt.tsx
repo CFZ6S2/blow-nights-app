@@ -26,26 +26,24 @@ export default function PWAInstallPrompt() {
     else if (isAndroid) setTimeout(() => setPlatform('android'), 0);
 
     if (!isStandalone) {
-      // Para Android: escuchar el evento de instalación
-      window.addEventListener('beforeinstallprompt', (e) => {
+      // Mostrar aviso automáticamente tras 2.5s en todos los navegadores no instalados
+      const timer = setTimeout(() => setShowPrompt(true), 2500);
+
+      const handleBeforeInstall = (e: any) => {
         e.preventDefault();
         setDeferredPrompt(e);
         setShowPrompt(true);
-      });
+      };
 
-      // Para iOS: mostrar el aviso después de unos segundos
-      if (isIos) {
-        const timer = setTimeout(() => setShowPrompt(true), 5000);
-        
-        // Listener manual para volver a mostrarlo
-        const handleManualShow = () => setShowPrompt(true);
-        window.addEventListener('show-pwa-prompt', handleManualShow);
+      window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+      const handleManualShow = () => setShowPrompt(true);
+      window.addEventListener('show-pwa-prompt', handleManualShow);
 
-        return () => {
-          clearTimeout(timer);
-          window.removeEventListener('show-pwa-prompt', handleManualShow);
-        };
-      }
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+        window.removeEventListener('show-pwa-prompt', handleManualShow);
+      };
     }
   }, []);
 
