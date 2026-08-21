@@ -311,7 +311,7 @@ export default function MainMap() {
   const { cityPath } = useCityRouter();
   const mapRef = useRef<MapRef>(null);
   const profileRef = useRef(profile);
-  profileRef.current = profile;
+  useEffect(() => { profileRef.current = profile; }, [profile]);
   
   const [viewState, setViewState] = useState({
     latitude: 40.485,
