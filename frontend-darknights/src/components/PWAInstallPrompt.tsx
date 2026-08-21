@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { Download } from 'lucide-react';
 
 export default function PWAInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
@@ -68,9 +69,9 @@ export default function PWAInstallPrompt() {
         exit={{ y: 100, opacity: 0 }}
         className="fixed bottom-24 left-4 right-4 z-[90]"
       >
-        <div className="bg-white/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-6 shadow-2xl flex items-center gap-6">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-slate-800 to-indigo-600 flex items-center justify-center shrink-0 shadow-lg">
-            <span className="material-icons text-slate-900 text-3xl">download_for_offline</span>
+        <div className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-6 shadow-2xl flex items-center gap-6">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-red-600 to-amber-600 flex items-center justify-center shrink-0 shadow-lg">
+            <Download className="text-white w-7 h-7" />
           </div>
           
           <div className="flex-1 min-w-0">

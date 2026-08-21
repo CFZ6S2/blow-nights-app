@@ -6,6 +6,7 @@ import { db } from '@/lib/firebase';
 import { getAnalytics, logEvent } from 'firebase/analytics';
 import app from '@/lib/firebase';
 import { motion } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
@@ -141,9 +142,9 @@ export default function LandingPage({ onStart }: LandingPageProps) {
           transition={{ delay: 1.5 }}
           className="absolute bottom-8 left-1/2 -translate-x-1/2"
         >
-          <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity }} className="text-slate-600">
-            <span className="material-icons text-xl">expand_more</span>
-          </motion.div>
+          <div className="text-slate-500">
+            <ChevronDown className="w-6 h-6 animate-bounce mx-auto" />
+          </div>
         </motion.div>
       </header>
 

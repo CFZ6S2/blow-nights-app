@@ -8,7 +8,13 @@
     "admin": "Admin",
     "venues": "Locales"
   },
-  "swipe": {
+  "pwa": {
+    "install_title": "Instala la App",
+    "install_ios": "Toca el botón compartir ⎋ y selecciona 'Añadir a la pantalla de inicio'.",
+    "install_android": "Instala la app en tu teléfono para acceder más rápido y recibir notificaciones.",
+    "install_btn": "Instalar",
+    "close_btn": "Cerrar"
+  },
     "role_active": "Activo",
     "role_passive": "Pasivo",
     "role_versatile": "Versátil",
