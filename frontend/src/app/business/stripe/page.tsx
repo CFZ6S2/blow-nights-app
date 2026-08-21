@@ -127,13 +127,24 @@ function StripeOnboardingContent() {
                 <p className="text-sm text-slate-400">
                   {t('business.stripe.description_linked')}
                 </p>
-                <button
-                  onClick={handleConnectStripe}
-                  disabled={isLinking}
-                  className="w-full bg-[#1c1f38] hover:bg-[#23273f] text-white font-bold py-3 rounded-xl transition-all mt-4 border border-[#3b3f68]"
-                >
-                  {isLinking ? t('common.loading') : t('business.stripe.update_bank_details')}
-                </button>
+                <div className="flex flex-col gap-3 mt-4">
+                  <a
+                    href="https://dashboard.stripe.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full bg-[#635BFF] hover:bg-[#4B45FF] text-white font-bold py-3 rounded-xl transition-all text-center flex items-center justify-center gap-2 shadow-lg"
+                  >
+                    <span className="material-icons text-lg">open_in_new</span>
+                    Ver Dashboard de Cobros en Stripe
+                  </a>
+                  <button
+                    onClick={handleConnectStripe}
+                    disabled={isLinking}
+                    className="w-full bg-[#1c1f38] hover:bg-[#23273f] text-slate-300 font-semibold py-3 rounded-xl transition-all border border-[#3b3f68] text-sm"
+                  >
+                    {isLinking ? t('common.loading') : t('business.stripe.update_bank_details')}
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="space-y-6">

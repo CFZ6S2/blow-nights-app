@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 async function waitForAppReady(page: import('@playwright/test').Page) {
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
   await page.waitForFunction(() => {
     const spinner = document.querySelector('.animate-spin');
     return !spinner;
