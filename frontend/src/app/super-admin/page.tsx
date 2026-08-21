@@ -193,6 +193,7 @@ export default function SuperAdminPage() {
       await setDoc(ref, {
         name: newVenueName,
         type: newVenueType,
+        platform: process.env.NEXT_PUBLIC_APP_PLATFORM || 'blownights',
         location: { latitude: parseFloat(newVenueLat), longitude: parseFloat(newVenueLng) },
         isActive: true, currentCount: 0, cityId: 'madrid', ownerId: ''
       });

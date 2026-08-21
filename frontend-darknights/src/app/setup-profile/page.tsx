@@ -180,6 +180,7 @@ export default function SetupProfilePage() {
           extraPhotos: extraPhotosUrls || [],
           privatePhotos: privatePhotosUrls || [],
           cityId: city,
+          platform: process.env.NEXT_PUBLIC_APP_PLATFORM || 'blownights',
           updatedAt: new Date(),
           needsUpdate: false
         }, { merge: true });

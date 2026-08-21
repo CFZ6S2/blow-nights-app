@@ -23,6 +23,7 @@ interface IndependentEvent {
   id: string;
   title: string;
   description: string;
+  platform?: string;
   banner_url: string;
   start_date: Timestamp | null;
   scanner_token: string;
@@ -367,6 +368,7 @@ export default function OrganizerDashboard() {
         title,
         description,
         banner_url,
+        platform: process.env.NEXT_PUBLIC_APP_PLATFORM || 'blownights',
         start_date: Timestamp.fromDate(new Date(startDate)),
         scanner_token,
         ticket_tiers: tiers,

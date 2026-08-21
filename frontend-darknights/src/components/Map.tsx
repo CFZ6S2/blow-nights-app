@@ -590,6 +590,7 @@ export default function MainMap() {
       await setDoc(ref, {
         name: newPinName.trim(),
         type: newPinType,
+        platform: process.env.NEXT_PUBLIC_APP_PLATFORM || 'blownights',
         location: {
           latitude: viewState.latitude,
           longitude: viewState.longitude
@@ -598,7 +599,7 @@ export default function MainMap() {
         currentCount: 0,
         cityId: profile?.cityId || 'madrid',
         ownerId: 'community',
-        createdBy: user.uid,
+        createdBy: user?.uid,
         createdAt: new Date(),
         ...(expiresAt ? { expiresAt } : {})
       });

@@ -1,7 +1,11 @@
 const { onCall, HttpsError, onRequest } = require("firebase-functions/v2/https");
 const { admin, db, getStripe } = require("../lib/init");
 
-async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, relatedId, currency = 'eur', splitId = null }) {
+async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, relatedId, currency = 'eur', splitId = null, platform = 'blownights' }) {
+  if (platform === 'darknights') {
+    console.log(`Skipping territorial split for DarkNights (splitId: ${splitId}) - 100% retained by platform`);
+    return;
+  }
   if (!cityId || amountCents <= 0) return;
   try {
     const cityDoc = await db.collection('cities').doc(cityId).get();
@@ -149,6 +153,7 @@ exports.createCheckoutSession = onCall({ enforceAppCheck: true }, async (request
       await db.collection("subscriptions").doc(uid).set({ stripeCustomerId: customerId, status: "incomplete" }, { merge: true });
     }
 
+    const platform = origin?.includes('darknights') ? 'darknights' : (data.platform || 'blownights');
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ["card"],
@@ -156,7 +161,7 @@ exports.createCheckoutSession = onCall({ enforceAppCheck: true }, async (request
       mode: "subscription",
       success_url: `${origin}/premium?success=true`,
       cancel_url: `${origin}/premium?canceled=true`,
-      metadata: { firebaseUID: uid }
+      metadata: { firebaseUID: uid, platform }
     });
 
     return { sessionId: session.id, url: session.url };
@@ -226,6 +231,7 @@ exports.createVenueSubscriptionCheckout = onCall({ enforceAppCheck: true }, asyn
       quantity: 1,
     };
 
+    const platform = origin?.includes('darknights') ? 'darknights' : (data.platform || 'blownights');
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ["card"],
@@ -233,7 +239,7 @@ exports.createVenueSubscriptionCheckout = onCall({ enforceAppCheck: true }, asyn
       mode: "subscription",
       success_url: `${origin}/venue-admin?venueId=${venueId}&success=true`,
       cancel_url: `${origin}/venue-admin?venueId=${venueId}&canceled=true`,
-      metadata: { type: "venue_subscription", venueId, tier, firebaseUID: uid, cityId: venueDoc.data().cityId || "" }
+      metadata: { type: "venue_subscription", venueId, tier, firebaseUID: uid, cityId: venueDoc.data().cityId || "", platform }
     });
     return { sessionId: session.id, url: session.url };
   } catch (error) {
@@ -283,7 +289,7 @@ exports.createChillPassCheckout = onCall({ enforceAppCheck: true }, async (reque
         mode: "payment",
         success_url: `${origin}/chills?pass=ok`,
         cancel_url: `${origin}/chills?pass=cancel`,
-        metadata: { firebaseUID: uid, type: "chill_pass", duration: "48h", city_slug: citySlug || "" },
+        metadata: { firebaseUID: uid, type: "chill_pass", duration: "48h", city_slug: citySlug || "", platform: origin?.includes('darknights') ? 'darknights' : (data.platform || 'blownights') },
       });
       return { sessionId: session.id, url: session.url };
     } else if (passType === "monthly") {
@@ -302,7 +308,7 @@ exports.createChillPassCheckout = onCall({ enforceAppCheck: true }, async (reque
         mode: "subscription",
         success_url: `${origin}/chills?vip=ok`,
         cancel_url: `${origin}/chills?vip=cancel`,
-        metadata: { firebaseUID: uid, type: "chill_vip", city_slug: citySlug || "" },
+        metadata: { firebaseUID: uid, type: "chill_vip", city_slug: citySlug || "", platform: origin?.includes('darknights') ? 'darknights' : (data.platform || 'blownights') },
       });
       return { sessionId: session.id, url: session.url };
     } else if (passType === "quarterly") {
@@ -321,7 +327,7 @@ exports.createChillPassCheckout = onCall({ enforceAppCheck: true }, async (reque
         mode: "subscription",
         success_url: `${origin}/chills?vip=ok`,
         cancel_url: `${origin}/chills?vip=cancel`,
-        metadata: { firebaseUID: uid, type: "chill_vip", city_slug: citySlug || "" },
+        metadata: { firebaseUID: uid, type: "chill_vip", city_slug: citySlug || "", platform: origin?.includes('darknights') ? 'darknights' : (data.platform || 'blownights') },
       });
       return { sessionId: session.id, url: session.url };
     } else {
@@ -392,6 +398,7 @@ exports.createPingCheckoutSession = onCall({ enforceAppCheck: true }, async (req
       throw new HttpsError("invalid-argument", "Tipo de pase no válido.");
     }
 
+    const platform = origin?.includes('darknights') ? 'darknights' : (data.platform || 'blownights');
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ["card", "apple_pay", "google_pay"],
@@ -406,7 +413,8 @@ exports.createPingCheckoutSession = onCall({ enforceAppCheck: true }, async (req
         firebaseUID: uid, 
         type: type.startsWith("qr_credits_pack") ? "qr_credits_pack" : type, 
         city_slug: citySlug || "",
-        creditsAmount: creditsAmount.toString()
+        creditsAmount: creditsAmount.toString(),
+        platform
       },
     });
     return { sessionId: session.id, url: session.url };
@@ -496,6 +504,7 @@ exports.createQRPackageCheckout = onCall({ enforceAppCheck: true }, async (reque
   const successUrlPath = isOrganizer ? "/organizer/register" : "/rrpp/comprar-creditos";
 
   try {
+    const platform = origin?.includes('darknights') ? 'darknights' : (data.platform || 'blownights');
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card", "apple_pay", "google_pay"],
       line_items: [{
@@ -509,7 +518,7 @@ exports.createQRPackageCheckout = onCall({ enforceAppCheck: true }, async (reque
       mode: "payment",
       success_url: `${origin}${successUrlPath}?success=true`,
       cancel_url: `${origin}${successUrlPath}?canceled=true`,
-      metadata: { type: typeStr, promoterToken: token || "", firebaseUID, quantity: quantity.toString() },
+      metadata: { type: typeStr, promoterToken: token || "", firebaseUID, quantity: quantity.toString(), platform },
     });
     return { url: session.url };
   } catch (error) {
@@ -564,7 +573,7 @@ exports.stripeWebhook = onRequest(async (req, res) => {
              const isOrganizer = session.metadata?.type === "qr_credits_pack";
              const amountCents = isOrganizer ? (100 * quantity) : (50 * quantity);
              const sourceType = isOrganizer ? "organizer_qr_credits" : "rrpp_qr_pack";
-             await territorialSplit(stripe, db, { amountCents, cityId, sourceType, relatedId: uid, splitId: session.id });
+             await territorialSplit(stripe, db, { amountCents, cityId, sourceType, relatedId: uid, splitId: session.id, platform: session.metadata?.platform || 'blownights' });
           }
         } catch (e) {
           console.error("Error al despachar territorialSplit de QRs:", e);
@@ -583,7 +592,7 @@ exports.stripeWebhook = onRequest(async (req, res) => {
 
         const cityId = session.metadata.cityId;
         if (cityId && session.amount_total > 0) {
-          await territorialSplit(stripe, db, { amountCents: session.amount_total, cityId, sourceType: "venue_saas", relatedId: venueId, splitId: session.id });
+          await territorialSplit(stripe, db, { amountCents: session.amount_total, cityId, sourceType: "venue_saas", relatedId: venueId, splitId: session.id, platform: session.metadata?.platform || 'blownights' });
         }
       }
     } else if (firebaseUID) {
@@ -621,7 +630,7 @@ exports.stripeWebhook = onRequest(async (req, res) => {
       const citySlug = session.metadata?.city_slug;
       if (citySlug && session.amount_total > 0) {
         const sourceType = session.metadata?.type || "chill_pass";
-        await territorialSplit(stripe, db, { amountCents: session.amount_total, cityId: citySlug, sourceType, relatedId: firebaseUID, splitId: session.id });
+        await territorialSplit(stripe, db, { amountCents: session.amount_total, cityId: citySlug, sourceType, relatedId: firebaseUID, splitId: session.id, platform: session.metadata?.platform || 'blownights' });
       }
     } else if (session.metadata?.type === "ping_pack" || session.metadata?.type === "vip_night") {
       const type = session.metadata.type;
@@ -639,7 +648,7 @@ exports.stripeWebhook = onRequest(async (req, res) => {
       const citySlug = session.metadata?.city_slug;
       if (citySlug && session.amount_total > 0) {
         const sourceType = session.metadata?.type || "chill_pass";
-        await territorialSplit(stripe, db, { amountCents: session.amount_total, cityId: citySlug, sourceType, relatedId: firebaseUID, splitId: session.id });
+        await territorialSplit(stripe, db, { amountCents: session.amount_total, cityId: citySlug, sourceType, relatedId: firebaseUID, splitId: session.id, platform: session.metadata?.platform || 'blownights' });
       }
     } else if (isTicket) {
       const crypto = require("crypto");
@@ -706,7 +715,7 @@ exports.stripeWebhook = onRequest(async (req, res) => {
 
       const PLATFORM_FEE_CENTS = 100;
       if (cityId) {
-        await territorialSplit(stripe, db, { amountCents: PLATFORM_FEE_CENTS, cityId, sourceType: "venue_ticketing_fee", relatedId: eventId || venueId, splitId: session.id });
+        await territorialSplit(stripe, db, { amountCents: PLATFORM_FEE_CENTS, cityId, sourceType: "venue_ticketing_fee", relatedId: eventId || venueId, splitId: session.id, platform: session.metadata?.platform || 'blownights' });
       }
     } else {
       await db.collection("users").doc(firebaseUID).update({ premium: true });
@@ -732,10 +741,10 @@ exports.stripeWebhook = onRequest(async (req, res) => {
         if (isVenueSub) {
           const venueId = subscription.metadata?.venueId;
           const tier = subscription.metadata?.tier;
-          await territorialSplit(stripe, db, { amountCents: invoice.amount_paid, cityId: citySlug, sourceType: "venue_subscription_renewal", relatedId: venueId, splitId: invoice.id });
+          await territorialSplit(stripe, db, { amountCents: invoice.amount_paid, cityId: citySlug, sourceType: "venue_subscription_renewal", relatedId: venueId, splitId: invoice.id, platform: subscription.metadata?.platform || 'blownights' });
         } else if (isUserSub) {
           const firebaseUID = subscription.metadata?.firebaseUID;
-          await territorialSplit(stripe, db, { amountCents: invoice.amount_paid, cityId: citySlug, sourceType: "user_membership_renewal", relatedId: firebaseUID, splitId: invoice.id });
+          await territorialSplit(stripe, db, { amountCents: invoice.amount_paid, cityId: citySlug, sourceType: "user_membership_renewal", relatedId: firebaseUID, splitId: invoice.id, platform: subscription.metadata?.platform || 'blownights' });
           
           if (firebaseUID) {
             await db.collection("subscriptions").doc(firebaseUID).update({

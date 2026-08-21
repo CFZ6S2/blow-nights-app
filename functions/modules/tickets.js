@@ -89,6 +89,7 @@ exports.createTicketCheckout = onCall({ enforceAppCheck: true }, async (request)
       type: "ticket",
       rrppId: rrppId || "",
       reservationId: reservationId || "",
+      platform: origin?.includes('darknights') ? 'darknights' : (data.platform || 'blownights'),
     },
   }, { stripeAccount: stripeAccountId });
 
@@ -142,6 +143,7 @@ exports.purchaseVenueTicket = onCall({ enforceAppCheck: true }, async (request) 
       venueId,
       ticketType,
       type: "ticket",
+      platform: origin?.includes('darknights') ? 'darknights' : (data.platform || 'blownights'),
     },
   }, { stripeAccount: stripeAccountId });
 
@@ -224,7 +226,8 @@ exports.purchaseIndependentEventTicket = onCall({ enforceAppCheck: true }, async
       venueId: eventId,
       ticketType,
       type: "ticket",
-      isIndependent: "true"
+      isIndependent: "true",
+      platform: origin?.includes('darknights') ? 'darknights' : (data.platform || 'blownights'),
     },
   }, { stripeAccount: stripeAccountId });
 
