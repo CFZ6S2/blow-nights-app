@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 
 function LoginInner() {
   const { t } = useTranslation();
-  const { user, profile, loading: authLoading, loginWithGoogle, loginWithApple } = useAuth();
+  const { user, profile, loading: authLoading, loginWithGoogle } = useAuth();
   const [error, setError] = useState('');
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const router = useRouter();
@@ -52,14 +52,6 @@ function LoginInner() {
     }
   };
 
-  const handleAppleLogin = async () => {
-    try {
-      await loginWithApple();
-    } catch (err) {
-      setError('Error al iniciar sesión con Apple.');
-    }
-  };
-
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 p-6 selection:bg-fuchsia-500/30 overflow-hidden relative">
       {/* Background Orbs */}
@@ -69,20 +61,20 @@ function LoginInner() {
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-md bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[3rem] p-12 shadow-[0_50px_100px_rgba(0,0,0,0.5)] space-y-12 relative z-10"
+        className="w-full max-w-md bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[3rem] p-10 shadow-[0_50px_100px_rgba(0,0,0,0.5)] space-y-8 relative z-10"
       >
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-3">
           <motion.div 
             initial={{ y: -20 }}
             animate={{ y: 0 }}
-            className="w-20 h-20 bg-gradient-to-tr from-fuchsia-600 to-indigo-600 rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl rotate-12 mb-6"
+            className="w-16 h-16 bg-gradient-to-tr from-fuchsia-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-2xl rotate-12 mb-4"
           >
-            <span className="material-icons text-white text-4xl">favorite</span>
+            <span className="material-icons text-white text-3xl">favorite</span>
           </motion.div>
-          <h1 className="text-5xl font-[1000] tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-500 via-purple-500 to-indigo-500">
+          <h1 className="text-4xl font-[1000] tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-500 via-purple-500 to-indigo-500">
             BLOW NIGHTS
           </h1>
-          <p className="text-slate-400 font-medium uppercase text-[10px] tracking-[0.3em]">{t('login.subtitle')}</p>
+          <p className="text-slate-400 font-medium uppercase text-[9px] tracking-[0.3em]">{t('login.subtitle')}</p>
         </div>
 
         {error && (
@@ -95,7 +87,7 @@ function LoginInner() {
           </motion.div>
         )}
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           <label className="flex items-start gap-3 cursor-pointer group">
             <input
               type="checkbox"
@@ -113,29 +105,41 @@ function LoginInner() {
           <button
             onClick={handleGoogleLogin}
             disabled={!ageConfirmed}
-            className="w-full flex items-center justify-center gap-4 bg-white text-black font-[1000] py-6 rounded-2xl hover:bg-slate-200 transition-all duration-300 shadow-xl text-[10px] uppercase tracking-[0.2em] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white"
+            className="w-full flex items-center justify-center gap-4 bg-white text-black font-[1000] py-5 rounded-2xl hover:bg-slate-200 transition-all duration-300 shadow-xl text-[10px] uppercase tracking-[0.2em] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white"
           >
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
             {t('login.google')}
           </button>
 
-          <button
-            onClick={handleAppleLogin}
-            disabled={!ageConfirmed}
-            className="w-full flex items-center justify-center gap-4 bg-black text-white border border-white/20 font-[1000] py-6 rounded-2xl hover:bg-slate-900 transition-all duration-300 shadow-xl text-[10px] uppercase tracking-[0.2em] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-black"
-          >
-            <span className="material-icons text-xl">apple</span>
-            {t('login.apple')}
-          </button>
+          {/* Separación Clara de Registros Profesionales */}
+          <div className="pt-6 border-t border-white/10 space-y-3 text-center">
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">¿Perteneces al sector profesional?</p>
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <Link
+                href="/rrpp/register"
+                className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-center text-xs font-bold text-fuchsia-400 transition-all flex flex-col items-center gap-1"
+              >
+                <span className="material-icons text-base">badge</span>
+                <span>Registro RRPP</span>
+              </Link>
+              <Link
+                href="/business/login"
+                className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-center text-xs font-bold text-indigo-400 transition-all flex flex-col items-center gap-1"
+              >
+                <span className="material-icons text-base">storefront</span>
+                <span>Acceso Locales</span>
+              </Link>
+            </div>
+          </div>
 
-          <div className="flex justify-between gap-2 pt-4">
+          <div className="flex justify-between gap-2 pt-2">
             {[
               { icon: 'shield', label: 'Seguro' },
               { icon: 'lock', label: 'Privado' },
               { icon: 'verified', label: 'Real' }
             ].map((b, i) => (
-              <div key={i} className="flex flex-col items-center gap-2 opacity-40">
-                <span className="material-icons text-lg">{b.icon}</span>
+              <div key={i} className="flex flex-col items-center gap-1 opacity-40">
+                <span className="material-icons text-base">{b.icon}</span>
                 <span className="text-[7px] font-black uppercase tracking-tighter">{b.label}</span>
               </div>
             ))}
