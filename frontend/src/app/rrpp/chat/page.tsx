@@ -22,9 +22,6 @@ export default function RRPPChatPage() {
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  if (!isReady) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-fuchsia-500" /></div>;
-
   const chatId = user ? `support_${user.uid}` : null;
 
   useEffect(() => {
@@ -46,6 +43,8 @@ export default function RRPPChatPage() {
 
     return () => unsubscribe();
   }, [chatId]);
+
+  if (!isReady) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-fuchsia-500" /></div>;
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();

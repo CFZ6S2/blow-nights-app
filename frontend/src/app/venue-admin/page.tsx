@@ -25,7 +25,7 @@ export default function VenueAdminPage() {
   const { isReady: hasRole } = useRequireRole(['venue', 'venueOwner', 'cityAdmin', 'admin', 'superadmin']);
   const router = useRouter();
   const profileRef = useRef(profile);
-  profileRef.current = profile;
+  useEffect(() => { profileRef.current = profile; }, [profile]);
 
   const [myVenues, setMyVenues] = useState<any[]>([]);
   const [selectedVenue, setSelectedVenue] = useState<any>(null);

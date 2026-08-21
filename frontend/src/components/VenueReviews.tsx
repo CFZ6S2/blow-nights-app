@@ -1,17 +1,47 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
-import { Star, MessageSquare, Send, UserCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+
+function StarRow({ value, interactive = false, onRate, onHover, onHoverEnd }: {
+  value: number;
+  interactive?: boolean;
+  onRate?: (v: number) => void;
+  onHover?: (v: number) => void;
+  onHoverEnd?: () => void;
+}) {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map(star => (
+        <button
+          key={star}
+          type="button"
+          disabled={!interactive}
+          onClick={() => interactive && onRate?.(star)}
+          onMouseEnter={() => interactive && onHover?.(star)}
+          onMouseLeave={() => interactive && onHoverEnd?.()}
+          className={`transition-transform ${interactive ? 'hover:scale-125 cursor-pointer' : 'cursor-default'}`}
+        >
+          <span className={`material-icons text-lg ${
+            star <= value ? 'text-yellow-400' : 'text-slate-700'
+          }`}>
+            {star <= (interactive ? value : Math.round(value)) ? 'star' : 'star_border'}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 interface Review {
   id: string;
   userId: string;
   userNick: string;
-  userFoto?: string;
+  userPhoto?: string;
   rating: number;
   comment: string;
   createdAt: any;
@@ -23,173 +53,183 @@ interface VenueReviewsProps {
 }
 
 export default function VenueReviews({ venueId, venueName }: VenueReviewsProps) {
+  const { t } = useTranslation();
   const { user, profile } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [rating, setRating] = useState<number>(5);
-  const [comment, setComment] = useState<string>('');
-  const [hoverRating, setHoverRating] = useState<number>(0);
-  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
 
   useEffect(() => {
-    const fetchReviews = async () => {
-      try {
-        const q = query(
-          collection(db, 'venues', venueId, 'reviews'),
-          orderBy('createdAt', 'desc')
-        );
-        const snapshot = await getDocs(q);
-        const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
-        setReviews(list);
-      } catch (err) {
-        console.error("Error cargando reseñas:", err);
+    if (!venueId) return;
+
+    const q = query(
+      collection(db, 'reviews'),
+      where('venueId', '==', venueId),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsub = onSnapshot(q, (snap) => {
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as Review));
+      setReviews(list);
+      setLoading(false);
+
+      if (user) {
+        setHasReviewed(list.some(r => r.userId === user.uid));
       }
-    };
+    }, () => setLoading(false));
 
-    if (venueId) fetchReviews();
-  }, [venueId]);
+    return unsub;
+  }, [venueId, user]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return alert('Debes iniciar sesión para dejar una opinión.');
-    if (!comment.trim()) return;
+  const avgRating = reviews.length > 0
+    ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
+    : 0;
 
+  const handleSubmit = async () => {
+    if (!user || !profile || rating === 0 || submitting) return;
     setSubmitting(true);
     try {
-      const newReview = {
+      await addDoc(collection(db, 'reviews'), {
+        venueId,
         userId: user.uid,
-        userNick: profile?.nick || 'Usuario',
-        userFoto: profile?.fotoUrl || '',
+        userNick: profile.nick || 'Anon',
+        userPhoto: profile.fotoUrl || null,
         rating,
         comment: comment.trim(),
-        createdAt: serverTimestamp()
-      };
-
-      const docRef = await addDoc(collection(db, 'venues', venueId, 'reviews'), newReview);
-      setReviews(prev => [{ id: docRef.id, ...newReview, createdAt: new Date() }, ...prev]);
+        createdAt: serverTimestamp(),
+      });
       setComment('');
+      setRating(0);
+      setShowForm(false);
     } catch (err) {
-      console.error("Error guardando reseña:", err);
+      console.error('Error submitting review:', err);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const avgRating = reviews.length > 0
-    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
-    : '4.9';
-
   return (
-    <div className="bg-slate-900 border border-white/10 rounded-3xl p-6 md:p-8 space-y-8 shadow-2xl">
-      {/* Header Reseñas */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-6">
-        <div>
-          <h3 className="text-2xl font-black text-white flex items-center gap-2">
-            <MessageSquare className="w-6 h-6 text-fuchsia-400" />
-            Opiniones & Reseñas
-          </h3>
-          <p className="text-slate-400 text-xs mt-1">Experiencias reales de la comunidad en {venueName}</p>
-        </div>
-
-        <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-2xl border border-white/5 self-start sm:self-auto">
-          <span className="text-3xl font-black text-white">{avgRating}</span>
-          <div className="flex flex-col">
-            <div className="flex gap-0.5 text-amber-400">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star key={star} className={`w-4 h-4 ${star <= Math.round(Number(avgRating)) ? 'fill-current' : 'opacity-30'}`} />
-              ))}
-            </div>
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{reviews.length} opiniones</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Formulario de Reseña */}
-      {user ? (
-        <form onSubmit={handleSubmit} className="bg-slate-950/80 p-6 rounded-2xl border border-white/5 space-y-4">
-          <h4 className="text-sm font-black text-white uppercase tracking-wider">Deja tu opinión</h4>
-          
+    <section className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500">
+          {t('reviews.title')}
+        </h2>
+        {reviews.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400 font-medium mr-2">Tu valoración:</span>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                type="button"
-                key={star}
-                onMouseEnter={() => setHoverRating(star)}
-                onMouseLeave={() => setHoverRating(0)}
-                onClick={() => setRating(star)}
-                className="p-1 transition-transform hover:scale-125 focus:outline-none"
-              >
-                <Star
-                  className={`w-6 h-6 transition-colors ${
-                    star <= (hoverRating || rating)
-                      ? 'text-amber-400 fill-current'
-                      : 'text-slate-600'
-                  }`}
-                />
-              </button>
-            ))}
+            <StarRow value={avgRating} />
+            <span className="text-xs font-black text-yellow-400">{avgRating.toFixed(1)}</span>
+            <span className="text-[10px] text-slate-600">({reviews.length})</span>
           </div>
-
-          <div className="relative">
-            <textarea
-              rows={3}
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="¿Qué tal el ambiente, la música y las copas? Cuenta tu experiencia..."
-              className="w-full bg-slate-900 border border-white/10 rounded-xl p-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-fuchsia-500 transition-colors"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitting || !comment.trim()}
-            className="px-6 py-3 bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg flex items-center gap-2 disabled:opacity-50"
-          >
-            <Send className="w-4 h-4" />
-            {submitting ? 'Publicando...' : 'Publicar Reseña'}
-          </button>
-        </form>
-      ) : (
-        <div className="bg-slate-950/50 p-4 rounded-2xl border border-white/5 text-center text-xs text-slate-400">
-          Inicia sesión en la app para compartir tu opinión sobre este local.
-        </div>
-      )}
-
-      {/* Lista de Reseñas */}
-      <div className="space-y-4">
-        {reviews.length === 0 ? (
-          <p className="text-center py-6 text-slate-500 text-xs font-medium">Sé el primero en dejar una reseña sobre este local.</p>
-        ) : (
-          reviews.map((rev) => (
-            <motion.div
-              key={rev.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-slate-950/50 p-5 rounded-2xl border border-white/5 space-y-2"
-            >
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-fuchsia-600/20 border border-fuchsia-500/30 flex items-center justify-center text-xs font-black text-fuchsia-400 uppercase">
-                    {rev.userNick?.[0] || 'U'}
-                  </div>
-                  <div>
-                    <h5 className="text-xs font-bold text-white flex items-center gap-1">
-                      {rev.userNick} <UserCheck className="w-3 h-3 text-emerald-400" />
-                    </h5>
-                    <div className="flex gap-0.5 text-amber-400 mt-0.5">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star key={star} className={`w-3 h-3 ${star <= rev.rating ? 'fill-current' : 'opacity-20'}`} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-slate-300 text-xs leading-relaxed pt-1">{rev.comment}</p>
-            </motion.div>
-          ))
         )}
       </div>
-    </div>
+
+      {user && !hasReviewed && (
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="w-full py-3 bg-white/5 border border-white/10 rounded-2xl text-xs font-bold text-slate-400 hover:text-white hover:border-fuchsia-500/30 transition-all flex items-center justify-center gap-2"
+        >
+          <span className="material-icons text-sm">rate_review</span>
+          {t('reviews.write_review')}
+        </button>
+      )}
+
+      <AnimatePresence>
+        {showForm && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-white/5 border border-white/10 rounded-3xl p-5 space-y-4 overflow-hidden"
+          >
+            <div className="text-center space-y-2">
+              <p className="text-xs font-bold text-slate-400">{t('reviews.rate_venue', { name: venueName })}</p>
+              <div className="flex justify-center">
+                <StarRow value={hoverRating || rating} interactive onRate={setRating} onHover={setHoverRating} onHoverEnd={() => setHoverRating(0)} />
+              </div>
+            </div>
+
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder={t('reviews.comment_placeholder')}
+              maxLength={500}
+              rows={3}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-fuchsia-500/50 resize-none"
+            />
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowForm(false)}
+                className="flex-1 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-all"
+              >
+                {t('reviews.cancel')}
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={rating === 0 || submitting}
+                className="flex-1 py-3 bg-fuchsia-600 rounded-xl text-xs font-black text-white uppercase tracking-wider hover:bg-fuchsia-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {submitting ? t('reviews.sending') : t('reviews.submit')}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {loading ? (
+        <div className="space-y-3">
+          {[1, 2].map(i => (
+            <div key={i} className="bg-white/5 rounded-2xl p-4 animate-pulse h-20" />
+          ))}
+        </div>
+      ) : reviews.length === 0 ? (
+        <div className="text-center py-8">
+          <span className="material-icons text-3xl text-slate-700">reviews</span>
+          <p className="text-xs text-slate-600 mt-2">{t('reviews.no_reviews')}</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {reviews.map((r) => (
+            <motion.div
+              key={r.id}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-white/5 border border-white/[0.06] rounded-2xl p-4 space-y-2"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-800 flex-shrink-0">
+                  {r.userPhoto ? (
+                    <img src={r.userPhoto} alt={r.userNick} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs font-bold">
+                      {r.userNick?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold truncate">{r.userNick}</span>
+                    <StarRow value={r.rating} />
+                  </div>
+                  {r.createdAt && (
+                    <span className="text-[9px] text-slate-600">
+                      {new Date(r.createdAt.seconds ? r.createdAt.seconds * 1000 : r.createdAt).toLocaleDateString('es-ES')}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {r.comment && (
+                <p className="text-xs text-slate-400 leading-relaxed">{r.comment}</p>
+              )}
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

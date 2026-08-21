@@ -1,0 +1,22 @@
+{
+  "name": "DarkNights",
+  "short_name": "DarkNights",
+  "description": "Tu noche empieza aquí. Planes, locales y entradas para esta noche.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#D97706",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1092,4 +1092,12 @@
     "meta_title": "Blow Nights - فرصة عمل City Manager",
     "meta_description": "كن مالك منطقتك مع نظام التشغيل للترفيه الليلي LGTBIQ+."
   }
+,
+  "pwa": {
+    "install_title": "تثبيت Blow Nights",
+    "install_ios": "اضغط على مشاركة ثم إضافة إلى الشاشة الرئيسية",
+    "install_android": "ثبّت التطبيق للوصول السريع",
+    "install_btn": "تثبيت",
+    "close_btn": "ليس الآن"
+  }
 }

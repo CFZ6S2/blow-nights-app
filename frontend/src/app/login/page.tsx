@@ -47,8 +47,10 @@ function LoginInner() {
   const handleGoogleLogin = async () => {
     try {
       await loginWithGoogle();
-    } catch (err) {
-      setError('Error al iniciar sesión con Google.');
+    } catch (err: any) {
+      const code = err?.code || '';
+      if (code === 'auth/popup-closed-by-user') return;
+      setError(`Error al iniciar sesión con Google. ${code}`);
     }
   };
 

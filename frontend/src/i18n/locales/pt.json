@@ -1092,4 +1092,12 @@
     "meta_title": "Blow Nights - Oportunidade de Negócios City Manager",
     "meta_description": "Torne-se o dono do seu território com o Sistema Operacional do Lazer Noturno LGTBIQ+."
   }
+,
+  "pwa": {
+    "install_title": "Instalar Blow Nights",
+    "install_ios": "Toque em Compartilhar e depois Adicionar à tela inicial",
+    "install_android": "Instale o app para acesso rápido",
+    "install_btn": "Instalar",
+    "close_btn": "Agora não"
+  }
 }

@@ -237,6 +237,25 @@ export default function Home() {
           </motion.div>
 
           <motion.div variants={itemVariants} whileTap={{ scale: 0.95 }} className="col-span-2">
+            <Link
+              href="/entradas"
+              className="glass-card p-5 group flex items-center justify-between relative overflow-hidden"
+            >
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="text-3xl group-hover:scale-110 transition-transform">
+                  <span className="material-icons text-yellow-400 text-3xl drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]">confirmation_number</span>
+                </div>
+                <div>
+                  <h3 className="font-display font-bold relative z-10">{t('city.buy_tickets')}</h3>
+                  <p className="text-[10px] text-slate-400 mt-1 relative z-10">{t('city.buy_tickets_desc')}</p>
+                </div>
+              </div>
+              <span className="bg-yellow-400 text-black text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-tighter relative z-10">{t('city.no_register')}</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-600/10 to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </Link>
+          </motion.div>
+
+          <motion.div variants={itemVariants} whileTap={{ scale: 0.95 }} className="col-span-2">
             <div
               onClick={() => window.dispatchEvent(new CustomEvent('show-pwa-prompt'))}
               className="glass-card p-5 group cursor-pointer flex items-center justify-between relative overflow-hidden"

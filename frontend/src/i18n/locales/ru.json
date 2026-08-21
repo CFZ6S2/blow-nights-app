@@ -1132,4 +1132,12 @@
   "map.mode_map": "Mapa",
   "map.mode_swipe": "Swipe",
   "map.site_category": "Categoría de Sitio"
+,
+  "pwa": {
+    "install_title": "Установить Blow Nights",
+    "install_ios": "Нажмите Поделиться, затем На экран Домой",
+    "install_android": "Установите приложение для быстрого доступа",
+    "install_btn": "Установить",
+    "close_btn": "Не сейчас"
+  }
 }
