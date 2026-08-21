@@ -344,6 +344,10 @@ export default function VenueDetailPage() {
           </>
         )}
 
+        {venueId && venue && (
+          <VenueReviews venueId={venueId} venueName={venue.title || venue.name} />
+        )}
+
         {showClaimModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <div className="bg-slate-900 border border-purple-500/40 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">

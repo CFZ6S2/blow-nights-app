@@ -118,6 +118,7 @@ export default function EntradasPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {filteredVenues.map((v) => {
                     const lowestPrice = getLowestPrice(v);
+                    const slug = v.slug || v.id;
                     return (
                       <motion.div
                         key={v.id}

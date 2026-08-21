@@ -1096,5 +1096,40 @@
     "install_android": "Install the app for quick access",
     "install_btn": "Install",
     "close_btn": "Not now"
-  }
+  },
+  "landing": {
+    "tickets_cta_title": "Buy Tickets Without Registration",
+    "tickets_cta_desc": "Browse the ticket catalog for all venues and events. Direct purchase, no account needed.",
+    "tickets_cta_btn": "View Tickets"
+  },
+  "entradas": {
+    "back_home": "Home",
+    "title": "Tickets",
+    "subtitle": "Buy tickets for the best venues and events without needing to register.",
+    "search_placeholder": "Search venue or event...",
+    "venues_section": "Venues with Tickets",
+    "events_section": "Events with Tickets",
+    "from": "From",
+    "types_available": "types available",
+    "no_results": "No tickets on sale at the moment",
+    "try_another_search": "Try a different search or come back later",
+    "want_to_sell": "Own a venue and want to sell tickets?",
+    "register_venue": "Register your Venue"
+  },
+  "reviews": {
+    "title": "Reviews",
+    "write_review": "Write a Review",
+    "rate_venue": "How was {{name}}?",
+    "comment_placeholder": "Tell us about your experience...",
+    "cancel": "Cancel",
+    "sending": "Sending...",
+    "submit": "Post",
+    "no_reviews": "No reviews yet. Be the first!"
+  },
+  "swipe": {
+    "gift_ticket": "Gift Ticket"
+  },
+  "city.buy_tickets": "Buy Tickets",
+  "city.buy_tickets_desc": "Public catalog of available tickets",
+  "city.no_register": "No sign-up"
 }

@@ -270,21 +270,28 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
                 </div>
 
                 {/* Action Buttons Layer */}
-                <div className="absolute bottom-5 w-full flex justify-center items-center gap-5 z-30">
-                  <button 
+                <div className="absolute bottom-5 w-full flex justify-center items-center gap-4 z-30">
+                  <button
                     onClick={(e) => { e.stopPropagation(); handleAction(c, 'left'); }}
                     className="w-14 h-14 rounded-full bg-slate-900/90 border border-white/10 flex items-center justify-center hover:scale-110 hover:bg-slate-800 transition-all shadow-xl active:scale-95 text-red-400"
                   >
                     <span className="material-icons text-2xl">close</span>
                   </button>
-                  <button 
+                  <button
+                    onClick={(e) => { e.stopPropagation(); router.push(`/entradas?gift=${c.id}`); }}
+                    className="w-12 h-12 rounded-full bg-slate-900/90 border border-yellow-500/40 flex items-center justify-center hover:scale-110 hover:bg-yellow-500/20 transition-all shadow-xl active:scale-95"
+                    title={t('swipe.gift_ticket')}
+                  >
+                    <span className="material-icons text-yellow-400 text-xl">card_giftcard</span>
+                  </button>
+                  <button
                     onClick={(e) => { e.stopPropagation(); handleAction(c, 'up'); }}
                     className="w-20 h-20 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 border border-amber-300/50 flex flex-col items-center justify-center hover:scale-110 transition-all shadow-[0_0_25px_rgba(245,158,11,0.6)] active:scale-95 text-white"
                   >
                     <span className="material-icons text-3xl">local_fire_department</span>
                     <span className="text-[8px] font-black uppercase tracking-widest mt-0.5">{t('swipe.come_here')}</span>
                   </button>
-                  <button 
+                  <button
                     onClick={(e) => { e.stopPropagation(); handleAction(c, 'right'); }}
                     className="w-14 h-14 rounded-full bg-slate-900/90 border border-white/10 flex items-center justify-center hover:scale-110 hover:bg-slate-800 transition-all shadow-xl active:scale-95 text-emerald-400"
                   >

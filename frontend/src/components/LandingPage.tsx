@@ -272,6 +272,34 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         </div>
       </section>
 
+      {/* ═══ TICKETS CTA ═══ */}
+      <section className="py-16 px-6 border-t border-white/[0.04]">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-gradient-to-r from-yellow-500/10 via-amber-500/5 to-orange-500/10 border border-yellow-500/20 rounded-[2rem] p-8 md:p-10 flex flex-col md:flex-row items-center gap-6 md:gap-10"
+          >
+            <div className="flex-shrink-0">
+              <div className="w-20 h-20 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+                <span className="material-icons text-yellow-400 text-4xl">confirmation_number</span>
+              </div>
+            </div>
+            <div className="flex-1 text-center md:text-left space-y-3">
+              <h2 className="text-2xl md:text-3xl font-[900] tracking-tight">{t('landing.tickets_cta_title')}</h2>
+              <p className="text-slate-400 text-sm leading-relaxed max-w-lg">{t('landing.tickets_cta_desc')}</p>
+            </div>
+            <Link
+              href="/entradas"
+              className="flex-shrink-0 px-10 py-4 rounded-2xl bg-white text-black font-[900] text-[12px] uppercase tracking-[0.15em] hover:bg-slate-100 active:scale-[0.97] transition-all shadow-[0_10px_30px_rgba(255,255,255,0.08)]"
+            >
+              {t('landing.tickets_cta_btn')}
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
       {/* ═══ HOW IT WORKS ═══ */}
       <section className="py-24 md:py-32 px-6 border-t border-white/[0.04]">
         <div className="max-w-4xl mx-auto space-y-16">

@@ -133,7 +133,7 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
 
   if (pingLimitExceeded) {
     return (
-      <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-white/90 backdrop-blur-md rounded-[2.5rem]">
+      <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md rounded-[2.5rem]">
         <div className="bg-slate-900 border border-slate-700 p-8 rounded-3xl text-center shadow-2xl w-full max-w-sm">
           <div className="text-4xl mb-4">🔥</div>
           <h2 className="text-lg font-black text-white uppercase leading-tight mb-2">{t('swipe.limit_title')}</h2>
@@ -180,7 +180,7 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
             return (
               <motion.div
                 key={c.id}
-                className="absolute w-full max-w-[340px] aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl border border-slate-200 bg-slate-900"
+                className="absolute w-full max-w-[340px] aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-slate-900"
                 style={{
                   backgroundImage: `url(${c.fotoUrl || '/placeholder.png'})`,
                   backgroundSize: 'cover',
@@ -212,25 +212,32 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
                 </div>
 
                 {/* Buttons Layer */}
-                <div className="absolute bottom-6 w-full flex justify-center items-center gap-6 z-20">
-                  <button 
+                <div className="absolute bottom-6 w-full flex justify-center items-center gap-4 z-20">
+                  <button
                     onClick={() => handleAction(c, 'left')}
-                    className="w-14 h-14 rounded-full bg-slate-800/80 border border-slate-600 flex items-center justify-center hover:scale-110 hover:bg-slate-700 transition-all shadow-lg"
+                    className="w-12 h-12 rounded-full bg-slate-800/80 border border-slate-600 flex items-center justify-center hover:scale-110 hover:bg-slate-700 transition-all shadow-lg"
                   >
-                    <span className="material-icons text-red-400 text-2xl">close</span>
+                    <span className="material-icons text-red-400 text-xl">close</span>
                   </button>
-                  <button 
+                  <button
+                    onClick={() => router.push(`/entradas?gift=${c.id}`)}
+                    className="w-12 h-12 rounded-full bg-slate-800/80 border border-yellow-500/40 flex items-center justify-center hover:scale-110 hover:bg-yellow-500/20 transition-all shadow-lg"
+                    title={t('swipe.gift_ticket')}
+                  >
+                    <span className="material-icons text-yellow-400 text-xl">card_giftcard</span>
+                  </button>
+                  <button
                     onClick={() => handleAction(c, 'up')}
-                    className="w-20 h-20 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 border border-amber-300/50 flex flex-col items-center justify-center hover:scale-110 transition-all shadow-[0_0_20px_rgba(245,158,11,0.5)]"
+                    className="w-18 h-18 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 border border-amber-300/50 flex flex-col items-center justify-center hover:scale-110 transition-all shadow-[0_0_20px_rgba(245,158,11,0.5)] p-4"
                   >
-                    <span className="material-icons text-white text-3xl">local_fire_department</span>
-                    <span className="text-[8px] font-black uppercase text-white tracking-widest mt-1">{t('swipe.come_here')}</span>
+                    <span className="material-icons text-white text-2xl">local_fire_department</span>
+                    <span className="text-[7px] font-black uppercase text-white tracking-widest mt-0.5">{t('swipe.come_here')}</span>
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleAction(c, 'right')}
-                    className="w-14 h-14 rounded-full bg-slate-800/80 border border-slate-600 flex items-center justify-center hover:scale-110 hover:bg-slate-700 transition-all shadow-lg"
+                    className="w-12 h-12 rounded-full bg-slate-800/80 border border-slate-600 flex items-center justify-center hover:scale-110 hover:bg-slate-700 transition-all shadow-lg"
                   >
-                    <span className="material-icons text-emerald-400 text-2xl">favorite</span>
+                    <span className="material-icons text-emerald-400 text-xl">favorite</span>
                   </button>
                 </div>
               </motion.div>

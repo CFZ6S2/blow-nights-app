@@ -10,6 +10,7 @@ import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/lib/firebase';
 import { ShieldCheck, Sparkles, Building2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import VenueReviews from '@/components/VenueReviews';
 
 export default function VenueDetailPage() {
   const { t } = useTranslation();
@@ -114,15 +115,15 @@ export default function VenueDetailPage() {
 
   if (loading || !profile) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-10 h-10 border-t-2 border-amber-500 rounded-full" />
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-10 h-10 border-t-2 border-fuchsia-500 rounded-full" />
       </div>
     );
   }
 
   if (!venueId) {
     return (
-      <div className="min-h-screen bg-white text-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
         <p className="text-slate-500">{t('venueDetail.noVenueSpecified')}</p>
       </div>
     );
@@ -130,7 +131,7 @@ export default function VenueDetailPage() {
 
   if (!venue) {
     return (
-      <div className="min-h-screen bg-white text-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
         <p className="text-slate-500">{t('venueDetail.loadingVenue')}</p>
       </div>
     );
@@ -140,9 +141,9 @@ export default function VenueDetailPage() {
   const isCommunitySpot = venue.ownerId === 'community';
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 pb-32">
+    <div className="min-h-screen bg-slate-950 text-white pb-32">
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-amber-600/10 blur-[120px] rounded-full" />
+        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-fuchsia-600/10 blur-[120px] rounded-full" />
       </div>
 
       <main className="relative z-10 p-6 md:p-12 max-w-2xl mx-auto space-y-6">
@@ -153,8 +154,8 @@ export default function VenueDetailPage() {
 
         <header className="space-y-4">
           <div className="flex items-center gap-4">
-            <div className={`w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center border-2 ${isCommunitySpot ? (venue.type === 'chill' ? 'border-red-500' : 'border-green-500') : 'border-transparent'}`}>
-              <span className={`material-icons text-3xl ${venue.type === 'chill' ? 'text-red-500' : venue.type === 'cruising' ? 'text-green-500' : 'text-amber-400'}`}>
+            <div className={`w-16 h-16 rounded-3xl bg-white/10 flex items-center justify-center border-2 ${isCommunitySpot ? (venue.type === 'chill' ? 'border-red-500' : 'border-green-500') : 'border-transparent'}`}>
+              <span className={`material-icons text-3xl ${venue.type === 'chill' ? 'text-red-500' : venue.type === 'cruising' ? 'text-green-500' : 'text-fuchsia-400'}`}>
                 {venue.type === 'chill' ? 'local_fire_department' : venue.type === 'cruising' ? 'park' : 'nightlife'}
               </span>
             </div>
@@ -165,13 +166,13 @@ export default function VenueDetailPage() {
           </div>
 
           <div className="flex gap-3">
-            <div className="bg-amber-500/10 border border-amber-500/20 px-4 py-2 rounded-2xl">
-              <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">
+            <div className="bg-fuchsia-500/10 border border-fuchsia-500/20 px-4 py-2 rounded-2xl">
+              <span className="text-[10px] font-black text-fuchsia-400 uppercase tracking-widest">
                 {checkinCount} {t('venueDetail.peopleGo', { count: checkinCount })}
               </span>
             </div>
             {venue.capacity && (
-              <div className="bg-slate-50 border border-slate-200 px-4 py-2 rounded-2xl">
+              <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-2xl">
                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
                   {t('venueDetail.capacity')} {venue.capacity}
                 </span>
@@ -191,22 +192,22 @@ export default function VenueDetailPage() {
         )}
 
         {venue.description && (
-          <section className="bg-slate-50 border border-slate-200 p-6 rounded-3xl">
+          <section className="bg-white/5 border border-white/10 p-6 rounded-3xl">
             <p className="text-sm text-slate-300 leading-relaxed">{venue.description}</p>
           </section>
         )}
 
         {isCommunitySpot ? (
-          <section className="bg-slate-50 border border-slate-200 p-8 rounded-3xl text-center space-y-3 mt-8">
+          <section className="bg-white/5 border border-white/10 p-8 rounded-3xl text-center space-y-3 mt-8">
             <span className="material-icons text-4xl text-slate-700">forum</span>
             <p className="text-sm text-slate-400">{t('venueDetail.communitySpot')}</p>
             <p className="text-[10px] text-slate-500">{t('venueDetail.joinChat')}</p>
             
             {['club', 'bar', 'sauna', 'chiringuito'].includes(venue.type) && user && (
-              <div className="mt-8 pt-6 border-t border-slate-200 text-left">
-                <div className="p-4 bg-gradient-to-br from-blue-950/60 via-slate-900 to-blue-950/60 border border-blue-500/40 rounded-2xl shadow-xl">
+              <div className="mt-8 pt-6 border-t border-white/10 text-left">
+                <div className="p-4 bg-gradient-to-br from-purple-950/60 via-slate-900 to-indigo-950/60 border border-purple-500/40 rounded-2xl shadow-xl">
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="p-2 bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30">
+                    <div className="p-2 bg-purple-600/20 text-purple-400 rounded-xl border border-purple-500/30">
                       <Building2 className="w-5 h-5" />
                     </div>
                     <div>
@@ -219,7 +220,7 @@ export default function VenueDetailPage() {
 
                   <button
                     onClick={() => setShowClaimModal(true)}
-                    className="w-full py-3 px-4 bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white text-xs font-extrabold uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-extrabold uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4" />
                     {t('venueDetail.claimButton')}
@@ -269,7 +270,7 @@ export default function VenueDetailPage() {
               <motion.div
                 key={type}
                 whileHover={{ y: -2 }}
-                className="bg-slate-50 backdrop-blur-xl border border-slate-200 p-6 rounded-3xl"
+                className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -277,7 +278,7 @@ export default function VenueDetailPage() {
                     {data.description && (
                       <p className="text-[10px] text-slate-500 mt-1">{data.description}</p>
                     )}
-                    <p className="text-lg font-black text-amber-400 mt-2">
+                    <p className="text-lg font-black text-fuchsia-400 mt-2">
                       {data.amount ? (data.amount / 100).toFixed(2) : '0.00'}€
                     </p>
                     {data.quota != null && (
@@ -287,7 +288,7 @@ export default function VenueDetailPage() {
                   <button
                     onClick={() => handlePurchase(type)}
                     disabled={purchasing !== null}
-                    className="px-6 py-3 rounded-2xl bg-gradient-to-r from-slate-800 to-blue-900 text-white text-[10px] font-black uppercase tracking-widest hover:shadow-[0_10px_30px_rgba(245,158,11,0.3)] transition-all active:scale-95 disabled:opacity-50"
+                    className="px-6 py-3 rounded-2xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest hover:shadow-[0_10px_30px_rgba(192,38,211,0.3)] transition-all active:scale-95 disabled:opacity-50"
                   >
                     {purchasing === type ? (
                       <span className="material-icons text-sm animate-spin">sync</span>
@@ -303,7 +304,7 @@ export default function VenueDetailPage() {
               <motion.div
                 key={tier.id}
                 whileHover={{ y: -2 }}
-                className="bg-slate-50 backdrop-blur-xl border border-slate-200 p-6 rounded-3xl"
+                className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -311,7 +312,7 @@ export default function VenueDetailPage() {
                     {tier.perks && (
                       <p className="text-[10px] text-slate-500 mt-1">{tier.perks}</p>
                     )}
-                    <p className="text-lg font-black text-amber-400 mt-2">
+                    <p className="text-lg font-black text-fuchsia-400 mt-2">
                       {tier.price.toFixed(2)}€
                     </p>
                     {tier.quota != null && (
@@ -321,7 +322,7 @@ export default function VenueDetailPage() {
                   <button
                     onClick={() => handlePurchase(tier.id)}
                     disabled={purchasing !== null}
-                    className="px-6 py-3 rounded-2xl bg-gradient-to-r from-slate-800 to-blue-900 text-white text-[10px] font-black uppercase tracking-widest hover:shadow-[0_10px_30px_rgba(245,158,11,0.3)] transition-all active:scale-95 disabled:opacity-50"
+                    className="px-6 py-3 rounded-2xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest hover:shadow-[0_10px_30px_rgba(192,38,211,0.3)] transition-all active:scale-95 disabled:opacity-50"
                   >
                     {purchasing === tier.id ? (
                       <span className="material-icons text-sm animate-spin">sync</span>
@@ -334,7 +335,7 @@ export default function VenueDetailPage() {
                 ))}
               </section>
             ) : (
-              <section className="bg-slate-50 border border-slate-200 p-8 rounded-3xl text-center space-y-3">
+              <section className="bg-white/5 border border-white/10 p-8 rounded-3xl text-center space-y-3">
                 <span className="material-icons text-4xl text-slate-700">local_activity</span>
                 <p className="text-sm text-slate-500">{t('venueDetail.noTickets')}</p>
                 <p className="text-[10px] text-slate-600">{t('venueDetail.checkInFromVenues')}</p>
@@ -343,11 +344,15 @@ export default function VenueDetailPage() {
           </>
         )}
 
+        {venueId && venue && (
+          <VenueReviews venueId={venueId} venueName={venue.title || venue.name} />
+        )}
+
         {showClaimModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm p-4">
-            <div className="bg-slate-900 border border-blue-500/40 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="bg-slate-900 border border-purple-500/40 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
               <div className="text-center">
-                <div className="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-2 border border-blue-500/30">
+                <div className="w-12 h-12 bg-purple-600/20 text-purple-400 rounded-full flex items-center justify-center mx-auto mb-2 border border-purple-500/30">
                   <ShieldCheck className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-bold text-white">{t('venueDetail.takeControl')} {venue?.name}</h3>
@@ -356,7 +361,7 @@ export default function VenueDetailPage() {
                 </p>
               </div>
 
-              <div className="space-y-2 text-xs text-slate-300 bg-white/60 p-3 rounded-xl border border-slate-800">
+              <div className="space-y-2 text-xs text-slate-300 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
                 <div className="flex items-center gap-2">
                   <span className="text-emerald-400">✓</span> {t('venueDetail.scanner')}
                 </div>
@@ -379,7 +384,7 @@ export default function VenueDetailPage() {
                 <button
                   onClick={handleClaimVenue}
                   disabled={isClaiming}
-                  className="flex-1 py-2.5 px-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-md disabled:opacity-50"
+                  className="flex-1 py-2.5 px-3 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl transition-all shadow-md disabled:opacity-50"
                 >
                   {isClaiming ? t('venueDetail.assigning') : t('venueDetail.confirmAndEnter')}
                 </button>

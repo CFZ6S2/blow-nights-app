@@ -46,7 +46,7 @@
     "gps_step_2": "Selecciona \"Restablecer permiso\" o activa \"Ubicación\".",
     "gps_step_3": "Refresca la página y pulsa de nuevo en \"VOLVERME VISIBLE\".",
     "cruising_mode_active_desc": "Activo: tus check-ins son siempre anónimos (+1), tu ubicación se difumina a 150m y tu foto no aparece en listados de locales.",
-    "share_text": "¡Únete a DARKNIGHTS! Tu circuito nocturno LGTBIQ+ en vivo. 🏳️‍🌈🚀",
+    "share_text": "¡Únete a Blow Nights! Tu circuito nocturno LGTBIQ+ en vivo. 🏳️‍🌈🚀",
     "share_copied": "¡Enlace copiado al portapapeles! Envíalo a tus amigos.",
     "share_prompt": "Copia este enlace para invitar a tus amigos:",
     "verify_prompt": "Sube una foto tuya (selfie) para verificar tu identidad. Esta foto solo será vista por los administradores.",
@@ -72,7 +72,7 @@
     "push_notifications": "Notificaciones Push",
     "push_desc": "Recibe avisos de mensajes y likes",
     "install_app": "Instalar App en este móvil",
-    "share_app": "Compartir DARKNIGHTS",
+    "share_app": "Compartir Blow Nights",
     "my_photos": "Mis Fotos",
     "manage": "Gestionar",
     "add_photo": "Añadir",
@@ -199,10 +199,10 @@
     "stat_venues": "Locales",
     "stat_types": "Tipos de venue",
     "stat_tickets": "Entradas digitales",
-    "what_is": "Qué es DARKNIGHTS",
+    "what_is": "Qué es Blow Nights",
     "not_dating": "No es una app de citas.",
     "is_circuit": "Es tu circuito nocturno.",
-    "about_desc": "DARKNIGHTS conecta personas, locales y eventos en tiempo real. Haz check-in en tu garito, compra entradas con QR, y descubre quién sale esta noche — todo desde una sola app.",
+    "about_desc": "Blow Nights conecta personas, locales y eventos en tiempo real. Haz check-in en tu garito, compra entradas con QR, y descubre quién sale esta noche — todo desde una sola app.",
     "feat1_title": "Locales en vivo",
     "feat1_desc": "Bares, discotecas, afters, saunas — mira quién hay en cada sitio ahora mismo.",
     "feat2_title": "Entradas QR",
@@ -214,7 +214,7 @@
     "feat5_title": "Modo Cruising",
     "feat5_desc": "Check-in anónimo, GPS difuso y foto oculta. Privacidad total para zonas 18+.",
     "feat6_title": "Multi-ciudad",
-    "feat6_desc": "Madrid, Barcelona, Valencia... DARKNIGHTS llega a cada ciudad con su propio circuito.",
+    "feat6_desc": "Madrid, Barcelona, Valencia... Blow Nights llega a cada ciudad con su propio circuito.",
     "steps_title": "Tres toques y estás dentro",
     "step1_title": "Crea tu perfil",
     "step1_desc": "Google Sign-In, nick y foto. En 30 segundos estás dentro.",
@@ -224,7 +224,7 @@
     "step3_desc": "Compra entradas, conecta con gente y vive la noche.",
     "venue_types": "Tipos de locales",
     "venue_title": "De la previa al after",
-    "venue_desc": "Cada tipo de local tiene su franja horaria. DARKNIGHTS organiza tu noche entera.",
+    "venue_desc": "Cada tipo de local tiene su franja horaria. Blow Nights organiza tu noche entera.",
     "vtype_bars": "Bares / Previas",
     "vtype_clubs": "Discotecas",
     "vtype_afters": "Afters",
@@ -233,7 +233,7 @@
     "vtype_outdoor": "Zonas Exteriores",
     "b2b_tag": "Para locales",
     "b2b_title": "¿Tienes un local LGTBIQ+?",
-    "b2b_desc": "DARKNIGHTS te da un panel de gestión completo: vende entradas, lanza promos flash geolocalizadas, valida QR en puerta y controla la afluencia en tiempo real.",
+    "b2b_desc": "Blow Nights te da un panel de gestión completo: vende entradas, lanza promos flash geolocalizadas, valida QR en puerta y controla la afluencia en tiempo real.",
     "b2b_panel": "Panel de local",
     "b2b_qr": "Escáner QR",
     "b2b_promos": "Promos flash",
@@ -324,7 +324,7 @@
   "chills.create.qrs_available": "QRs disp.",
   "chills.create.buy_qrs": "+ 20 QRs (10€)",
   "chills.create.terms_strong": "Acepto las Condiciones de Uso:",
-  "chills.create.terms_text": "Declaro que soy el único responsable de la organización, seguridad y admisión de mi reunión privada. Reconozco que DARKNIGHTS es un mero proveedor técnico de control de accesos y no responde por cancelaciones, transacciones entre particulares ni incidencias en recintos privados.",
+  "chills.create.terms_text": "Declaro que soy el único responsable de la organización, seguridad y admisión de mi reunión privada. Reconozco que Blow Nights es un mero proveedor técnico de control de accesos y no responde por cancelaciones, transacciones entre particulares ni incidencias en recintos privados.",
   "chills.create.open_doors": "Abrir Puertas (Comercial)",
   "chills.create.create_social": "Crear Chill Social",
   "chills_manage.door_delegation": "Delegación de Puerta",
@@ -434,7 +434,7 @@
     "passValidated": "Pase Validado",
     "accessPin": "PIN de Acceso",
     "attendeeNotice": "Aviso al Asistente",
-    "disclaimer": "Este pase es un código de acceso digital generado por el anfitrión mediante la tecnología de DARKNIGHTS. La plataforma no organiza este evento privado ni garantiza acuerdos económicos entre particulares. Acceso sujeto al derecho de admisión del anfitrión.",
+    "disclaimer": "Este pase es un código de acceso digital generado por el anfitrión mediante la tecnología de Blow Nights. La plataforma no organiza este evento privado ni garantiza acuerdos económicos entre particulares. Acceso sujeto al derecho de admisión del anfitrión.",
     "yourName": "Tu Nombre",
     "unlockedLocation": "Ubicación Desbloqueada",
     "loadingAddress": "Cargando dirección...",
@@ -470,7 +470,7 @@
     "cons2": "Reventa pirata en la cola de tu local",
     "cons3": "El portero pierde tiempo discutiendo",
     "cons4": "Pérdida de ingresos por duplicados",
-    "dynamicQrBn": "QR Dinámico DARKNIGHTS",
+    "dynamicQrBn": "QR Dinámico Blow Nights",
     "pros1": "El código QR muta cada 15 segundos",
     "pros2": "Las capturas caducan antes de llegar a puerta",
     "pros3": "Escáner ultra-rápido (< 300ms) sin fricción",
@@ -498,9 +498,9 @@
     "writeUsOnWhatsapp": "Escríbenos por WhatsApp",
     "claim": {
       "default_venue": "tu local",
-      "alert_success": "Solicitud de reclamo enviada. Un agente de DARKNIGHTS se pondrá en contacto contigo.",
+      "alert_success": "Solicitud de reclamo enviada. Un agente de Blow Nights se pondrá en contacto contigo.",
       "title": "Reclama el control de",
-      "description": "Tus promotores (RRPPs) ya están utilizando <1>DARKNIGHTS</1> para gestionar listas y accesos en tu local de forma independiente.",
+      "description": "Tus promotores (RRPPs) ya están utilizando <1>Blow Nights</1> para gestionar listas y accesos en tu local de forma independiente.",
       "benefits_title": "Al reclamar tu local podrás:",
       "benefits_1": "Ver la recaudación en tiempo real.",
       "benefits_2": "Auditar los escaneos de puerta (cero fraude).",
@@ -549,8 +549,8 @@
       "description_linked": "Todo está listo. Cuando vendas una entrada, el dinero de la venta (descontando los gastos de gestión) se transferirá automáticamente a tu cuenta bancaria a través de Stripe.",
       "update_bank_details": "Actualizar mis datos bancarios",
       "step_1": "Conecta tu cuenta bancaria mediante la pasarela segura de Stripe Express.",
-      "step_2": "Vende entradas a través de la App de DARKNIGHTS o enlaces de RRPP.",
-      "step_3": "Recibe el 100% del precio de tu entrada directamente en tu banco (DARKNIGHTS cobra los gastos de gestión al comprador).",
+      "step_2": "Vende entradas a través de la App de Blow Nights o enlaces de RRPP.",
+      "step_3": "Recibe el 100% del precio de tu entrada directamente en tu banco (Blow Nights cobra los gastos de gestión al comprador).",
       "connecting": "Conectando...",
       "setup_bank_account": "Configurar Cuenta Bancaria",
       "footer_note": "El proceso de alta tarda solo 3 minutos. Ten a mano tu DNI/CIF y tu número de cuenta (IBAN)."
@@ -621,7 +621,7 @@
   "city.visits": "Visitas",
   "city.who_saw_you": "Quién te ha visto",
   "city.install_app": "Instalar App",
-  "city.take_home": "Lleva DARKNIGHTS en tu pantalla de inicio",
+  "city.take_home": "Lleva Blow Nights en tu pantalla de inicio",
   "city.vip_account": "Tu Cuenta VIP",
   "city.go_premium": "Hazte Premium",
   "city.enjoy_advantages": "Disfruta de todas las ventajas",
@@ -1000,13 +1000,13 @@
       "title": "6. Cookies y Almacenamiento Local",
       "p1": "Utilizamos almacenamiento local en tu dispositivo para mantener tu sesión iniciada y recordar tus preferencias de visualización."
     },
-    "footer": "© 2026 DARKNIGHTS App. Tu privacidad es nuestra prioridad."
+    "footer": "© 2026 Blow Nights App. Tu privacidad es nuestra prioridad."
   },
   "rules": {
     "title": "Normas de la Comunidad",
     "header1": "LAS 4 REGLAS",
     "header2": "DE ORO",
-    "subtitle": "DARKNIGHTS es un espacio seguro y real. Para mantenerlo así, todos seguimos estos principios fundamentales.",
+    "subtitle": "Blow Nights es un espacio seguro y real. Para mantenerlo así, todos seguimos estos principios fundamentales.",
     "rule1": {
       "title": "Respeto Total",
       "desc": "Cero tolerancia al odio, acoso o discriminación. Tratamos a los demás como queremos ser tratados. La educación es la base de cualquier conexión."
@@ -1026,7 +1026,7 @@
     "report_title": "¿HAS VISTO ALGO INAPROPIADO?",
     "report_desc": "Usa el botón de reporte en el perfil de cualquier usuario. Bloquea al instante si te sientes incómodo. Tu bienestar es nuestra prioridad número uno.",
     "accept_btn": "Acepto y Entiendo",
-    "footer": "© 2026 DARKNIGHTS • SEGURIDAD Y CONFIANZA"
+    "footer": "© 2026 BLOW NIGHTS • SEGURIDAD Y CONFIANZA"
   },
   "terms": {
     "back": "Volver",
@@ -1034,11 +1034,11 @@
     "lastUpdated": "Última actualización: 27 de mayo de 2026",
     "section1": {
       "title": "1. Aceptación de los Términos",
-      "p1": "Al acceder o utilizar DARKNIGHTS, aceptas estar legalmente vinculado por estos Términos de Servicio. Si no estás de acuerdo con alguna parte de estos términos, no debes utilizar la aplicación."
+      "p1": "Al acceder o utilizar Blow Nights, aceptas estar legalmente vinculado por estos Términos de Servicio. Si no estás de acuerdo con alguna parte de estos términos, no debes utilizar la aplicación."
     },
     "section2": {
       "title": "2. Requisitos de Edad",
-      "p1": "Debes tener al menos 18 años de edad para crear una cuenta y utilizar DARKNIGHTS. El uso de la aplicación por menores de edad está estrictamente prohibido y resultará en la eliminación inmediata de la cuenta."
+      "p1": "Debes tener al menos 18 años de edad para crear una cuenta y utilizar Blow Nights. El uso de la aplicación por menores de edad está estrictamente prohibido y resultará en la eliminación inmediata de la cuenta."
     },
     "section3": {
       "title": "3. Conducta del Usuario",
@@ -1050,7 +1050,7 @@
     },
     "section4": {
       "title": "4. Geolocalización y Privacidad",
-      "p1": "DARKNIGHTS es una aplicación basada en la ubicación. Al activar tu visibilidad, compartes tu ubicación aproximada con otros usuarios. Entiendes y aceptas que esta es la funcionalidad principal de la aplicación."
+      "p1": "Blow Nights es una aplicación basada en la ubicación. Al activar tu visibilidad, compartes tu ubicación aproximada con otros usuarios. Entiendes y aceptas que esta es la funcionalidad principal de la aplicación."
     },
     "section5": {
       "title": "5. Suscripciones Premium",
@@ -1060,7 +1060,7 @@
       "title": "6. Terminación de Cuenta",
       "p1": "Nos reservamos el derecho de suspender o eliminar cualquier cuenta que viole estos términos o por cualquier otra razón que consideremos necesaria para mantener la seguridad de la comunidad."
     },
-    "footer": "© 2026 DARKNIGHTS App. Todos los derechos reservados."
+    "footer": "© 2026 Blow Nights App. Todos los derechos reservados."
   },
   "partners_apply": {
     "back": "Volver",
@@ -1087,7 +1087,49 @@
     "whatsapp_tooltip": "Habla con un asesor"
   },
   "partners": {
-    "meta_title": "DARKNIGHTS - Oportunidad de Negocio City Manager",
+    "meta_title": "Blow Nights - Oportunidad de Negocio City Manager",
     "meta_description": "Conviértete en el dueño de tu territorio con el Sistema Operativo del Ocio Nocturno LGTBIQ+."
-  }
+  },
+  "pwa": {
+    "install_title": "Instalar Blow Nights",
+    "install_ios": "Toca Compartir y luego Añadir a pantalla de inicio",
+    "install_android": "Instala la app para acceso rápido",
+    "install_btn": "Instalar",
+    "close_btn": "Ahora no"
+  },
+  "landing": {
+    "tickets_cta_title": "Compra tus Entradas Sin Registro",
+    "tickets_cta_desc": "Accede al catálogo de entradas de todos los locales y eventos. Compra directa, sin necesidad de crear cuenta.",
+    "tickets_cta_btn": "Ver Entradas"
+  },
+  "entradas": {
+    "back_home": "Inicio",
+    "title": "Entradas",
+    "subtitle": "Compra entradas para los mejores locales y eventos sin necesidad de registrarte.",
+    "search_placeholder": "Buscar local o evento...",
+    "venues_section": "Locales con Entradas",
+    "events_section": "Eventos con Entradas",
+    "from": "Desde",
+    "types_available": "tipos disponibles",
+    "no_results": "No hay entradas a la venta en este momento",
+    "try_another_search": "Prueba con otra búsqueda o vuelve más tarde",
+    "want_to_sell": "¿Tienes un local y quieres vender entradas?",
+    "register_venue": "Registra tu Local"
+  },
+  "reviews": {
+    "title": "Opiniones",
+    "write_review": "Escribir Opinión",
+    "rate_venue": "¿Qué te pareció {{name}}?",
+    "comment_placeholder": "Cuéntanos tu experiencia...",
+    "cancel": "Cancelar",
+    "sending": "Enviando...",
+    "submit": "Publicar",
+    "no_reviews": "Aún no hay opiniones. ¡Sé el primero!"
+  },
+  "swipe": {
+    "gift_ticket": "Regalar Entrada"
+  },
+  "city.buy_tickets": "Comprar Entradas",
+  "city.buy_tickets_desc": "Catálogo público de entradas disponibles",
+  "city.no_register": "Sin registro"
 }

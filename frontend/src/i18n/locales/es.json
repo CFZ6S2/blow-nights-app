@@ -1122,5 +1122,40 @@
     "install_android": "Instala la app para acceso rápido",
     "install_btn": "Instalar",
     "close_btn": "Ahora no"
-  }
+  },
+  "landing": {
+    "tickets_cta_title": "Compra tus Entradas Sin Registro",
+    "tickets_cta_desc": "Accede al catálogo de entradas de todos los locales y eventos. Compra directa, sin necesidad de crear cuenta.",
+    "tickets_cta_btn": "Ver Entradas"
+  },
+  "entradas": {
+    "back_home": "Inicio",
+    "title": "Entradas",
+    "subtitle": "Compra entradas para los mejores locales y eventos sin necesidad de registrarte.",
+    "search_placeholder": "Buscar local o evento...",
+    "venues_section": "Locales con Entradas",
+    "events_section": "Eventos con Entradas",
+    "from": "Desde",
+    "types_available": "tipos disponibles",
+    "no_results": "No hay entradas a la venta en este momento",
+    "try_another_search": "Prueba con otra búsqueda o vuelve más tarde",
+    "want_to_sell": "¿Tienes un local y quieres vender entradas?",
+    "register_venue": "Registra tu Local"
+  },
+  "reviews": {
+    "title": "Opiniones",
+    "write_review": "Escribir Opinión",
+    "rate_venue": "¿Qué te pareció {{name}}?",
+    "comment_placeholder": "Cuéntanos tu experiencia...",
+    "cancel": "Cancelar",
+    "sending": "Enviando...",
+    "submit": "Publicar",
+    "no_reviews": "Aún no hay opiniones. ¡Sé el primero!"
+  },
+  "swipe": {
+    "gift_ticket": "Regalar Entrada"
+  },
+  "city.buy_tickets": "Comprar Entradas",
+  "city.buy_tickets_desc": "Catálogo público de entradas disponibles",
+  "city.no_register": "Sin registro"
 }
