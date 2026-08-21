@@ -390,7 +390,7 @@ export default function VenueDetailPage() {
         )}
         {/* Sección de Reseñas de la Comunidad */}
         <section className="pt-6">
-          <VenueReviews venueId={id || ''} venueName={venue?.title || venue?.name || 'Local'} />
+          <VenueReviews venueId={venueId || ''} venueName={venue?.title || venue?.name || 'Local'} />
         </section>
       </main>
     </div>
