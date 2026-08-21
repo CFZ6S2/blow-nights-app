@@ -54,6 +54,7 @@ exports.createBlack8hCheckout = membership.createBlack8hCheckout;
 // Tickets & RRPP
 exports.createTicketCheckout = tickets.createTicketCheckout;
 exports.purchaseVenueTicket = tickets.purchaseVenueTicket;
+exports.purchasePublicVenueTicket = tickets.purchasePublicVenueTicket;
 exports.purchaseIndependentEventTicket = tickets.purchaseIndependentEventTicket;
 exports.validateTicket = tickets.validateTicket;
 exports.validateTicketByDoorToken = tickets.validateTicketByDoorToken;

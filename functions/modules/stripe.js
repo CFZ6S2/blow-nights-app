@@ -595,8 +595,9 @@ exports.stripeWebhook = onRequest(async (req, res) => {
           await territorialSplit(stripe, db, { amountCents: session.amount_total, cityId, sourceType: "venue_saas", relatedId: venueId, splitId: session.id, platform: session.metadata?.platform || 'blownights' });
         }
       }
-    } else if (firebaseUID) {
-     const isTicket = session.metadata?.type === "ticket";
+    } else if (firebaseUID || session.metadata?.type === "public_ticket") {
+     const isTicket = session.metadata?.type === "ticket" || session.metadata?.type === "public_ticket";
+     const isPublicTicket = session.metadata?.type === "public_ticket";
      const isChillPass = session.metadata?.type === "chill_pass";
      const isChillVip = session.metadata?.type === "chill_vip";
      const isUserMembership = session.metadata?.type === "user_membership";
@@ -691,7 +692,8 @@ exports.stripeWebhook = onRequest(async (req, res) => {
       }
 
       await db.collection("tickets").add({
-        userId: firebaseUID,
+        userId: session.metadata.giftUserId || firebaseUID || null,
+        customerEmail: session.customer_details?.email || session.customer_email || null,
         venueId,
         eventId: eventId || null,
         venueOwnerId: venueOwnerId || "",

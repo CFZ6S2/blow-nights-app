@@ -140,9 +140,63 @@ exports.purchaseVenueTicket = onCall({ enforceAppCheck: true }, async (request) 
     cancel_url: `${origin}/wallet?canceled=true`,
     metadata: {
       firebaseUID: auth.uid,
+      giftUserId: data.giftUserId || null,
       venueId,
       ticketType,
       type: "ticket",
+      platform: origin?.includes('darknights') ? 'darknights' : (data.platform || 'blownights'),
+    },
+  }, { stripeAccount: stripeAccountId });
+
+  return { sessionId: session.id, url: session.url };
+});
+
+exports.purchasePublicVenueTicket = onCall({ enforceAppCheck: false }, async (request) => {
+  const { data } = request;
+  
+  const stripe = getStripe();
+  if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
+
+  const { venueId, ticketType, origin } = data;
+  if (!venueId || !ticketType) {
+    throw new HttpsError("invalid-argument", "venueId y ticketType son obligatorios.");
+  }
+
+  const venueDoc = await db.collection("venues").doc(venueId).get();
+  if (!venueDoc.exists) throw new HttpsError("not-found", "Local no encontrado.");
+  const venueData = venueDoc.data();
+
+  const pricing = venueData.ticketPricing?.[ticketType];
+  if (!pricing) throw new HttpsError("not-found", "Tipo de entrada no encontrado.");
+
+  const stripeAccountId = venueData.stripeAccountId;
+  if (!stripeAccountId) throw new HttpsError("failed-precondition", "El local no tiene Stripe configurado.");
+
+  const ticketPriceCents = pricing.amount || 0;
+  const platformFeeCents = 100;
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    customer_creation: 'always',
+    line_items: [{
+      price_data: {
+        currency: "eur",
+        product_data: { name: `${venueData.name} - ${pricing.name || ticketType}` },
+        unit_amount: ticketPriceCents,
+      },
+      quantity: 1,
+    }],
+    mode: "payment",
+    payment_intent_data: {
+      application_fee_amount: platformFeeCents,
+    },
+    success_url: `${origin}/entradas?success=true`,
+    cancel_url: `${origin}/${venueData.slug || venueId}/entradas?canceled=true`,
+    metadata: {
+      venueId,
+      ticketType,
+      giftUserId: data.giftUserId || null,
+      type: "public_ticket",
       platform: origin?.includes('darknights') ? 'darknights' : (data.platform || 'blownights'),
     },
   }, { stripeAccount: stripeAccountId });

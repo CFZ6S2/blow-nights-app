@@ -370,25 +370,32 @@ function PublicProfileContent() {
 
       {/* Fixed Actions Dock */}
       <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-30">
-        <div className="bg-slate-900/90 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-3 flex gap-3 shadow-[0_25px_60px_rgba(0,0,0,0.8)]">
+        <div className="bg-slate-900/90 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-3 flex gap-2 shadow-[0_25px_60px_rgba(0,0,0,0.8)]">
           <motion.button 
             whileTap={{ scale: 0.9 }} 
             onClick={() => handleLike(true)} 
-            className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-yellow-500 hover:bg-yellow-500/10 transition-colors"
+            className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-yellow-500 hover:bg-yellow-500/10 transition-colors shrink-0"
           >
             <span className="material-icons">star</span>
           </motion.button>
           <motion.button 
+            whileTap={{ scale: 0.9 }} 
+            onClick={() => router.push(`/entradas?gift=${id}`)} 
+            className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-emerald-400 hover:bg-emerald-400/10 transition-colors shrink-0"
+          >
+            <span className="material-icons">card_giftcard</span>
+          </motion.button>
+          <motion.button 
             whileTap={{ scale: 0.95 }} 
             onClick={() => handleLike(false)} 
-            className={`flex-1 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl ${hasLiked ? 'bg-slate-800 text-slate-500' : 'bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-white shadow-fuchsia-500/20'}`}
+            className={`flex-1 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl ${hasLiked ? 'bg-slate-800 text-slate-500' : 'bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-white shadow-fuchsia-500/20'}`}
           >
             {hasLiked ? t('profileView.sent') : t('profileView.like')}
           </motion.button>
           <motion.button 
             whileTap={{ scale: 0.9 }} 
             onClick={handleChat} 
-            className="relative w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-white overflow-hidden group"
+            className="relative w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-white overflow-hidden group shrink-0"
           >
             <motion.div 
               animate={{ scale: [1, 1.2, 1], opacity: [0, 0.2, 0] }}

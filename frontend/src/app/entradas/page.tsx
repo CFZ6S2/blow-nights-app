@@ -126,7 +126,7 @@ export default function EntradasPage() {
                         whileHover={{ y: -2 }}
                       >
                         <Link
-                          href={`/madrid/venues/detail?id=${v.id}&type=venue`}
+                          href={`/${v.ciudad?.toLowerCase() || 'madrid'}/venues/detail?id=${v.id}&type=venue`}
                           className="block bg-white/5 border border-white/10 rounded-3xl overflow-hidden hover:border-fuchsia-500/30 transition-all"
                         >
                           {v.coverImage && (

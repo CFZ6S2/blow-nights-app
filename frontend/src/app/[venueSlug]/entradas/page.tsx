@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -20,9 +20,11 @@ interface TicketTier {
   destacado?: boolean;
 }
 
-export default function PublicVenueTicketsPage() {
+function PublicVenueTicketsContent() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const venueSlug = params?.venueSlug as string;
+  const giftUserId = searchParams.get('gift');
 
   const [venue, setVenue] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -74,10 +76,22 @@ export default function PublicVenueTicketsPage() {
   const handleCheckout = async (ticket: TicketTier) => {
     setBuyingId(ticket.id);
     try {
-      // Simulación de checkout rápido o redirección
-      alert(`Iniciando compra segura de "${ticket.nombre}" (${ticket.precio}€)...`);
-    } catch (err) {
+      const { getFunctions, httpsCallable } = await import('firebase/functions');
+      const functions = getFunctions();
+      const purchasePublicVenueTicket = httpsCallable(functions, 'purchasePublicVenueTicket');
+
+      const result = await purchasePublicVenueTicket({
+        venueId: venue.id,
+        ticketType: ticket.id,
+        origin: window.location.origin,
+        giftUserId, // Si existe, será un regalo
+      });
+
+      const { url } = result.data as { url: string };
+      if (url) window.location.href = url;
+    } catch (err: any) {
       console.error("Error en checkout:", err);
+      alert(err.message || 'Error al iniciar el pago.');
     } finally {
       setBuyingId(null);
     }
@@ -205,5 +219,13 @@ export default function PublicVenueTicketsPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function PublicVenueTicketsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-fuchsia-500" /></div>}>
+      <PublicVenueTicketsContent />
+    </Suspense>
   );
 }
