@@ -1,11 +1,41 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+
+function StarRow({ value, interactive = false, onRate, onHover, onHoverEnd }: {
+  value: number;
+  interactive?: boolean;
+  onRate?: (v: number) => void;
+  onHover?: (v: number) => void;
+  onHoverEnd?: () => void;
+}) {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map(star => (
+        <button
+          key={star}
+          type="button"
+          disabled={!interactive}
+          onClick={() => interactive && onRate?.(star)}
+          onMouseEnter={() => interactive && onHover?.(star)}
+          onMouseLeave={() => interactive && onHoverEnd?.()}
+          className={`transition-transform ${interactive ? 'hover:scale-125 cursor-pointer' : 'cursor-default'}`}
+        >
+          <span className={`material-icons text-lg ${
+            star <= value ? 'text-yellow-400' : 'text-slate-700'
+          }`}>
+            {star <= (interactive ? value : Math.round(value)) ? 'star' : 'star_border'}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 interface Review {
   id: string;
@@ -83,30 +113,6 @@ export default function VenueReviews({ venueId, venueName }: VenueReviewsProps) 
     }
   };
 
-  const StarRow = ({ value, interactive = false }: { value: number; interactive?: boolean }) => (
-    <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map(star => (
-        <button
-          key={star}
-          type="button"
-          disabled={!interactive}
-          onClick={() => interactive && setRating(star)}
-          onMouseEnter={() => interactive && setHoverRating(star)}
-          onMouseLeave={() => interactive && setHoverRating(0)}
-          className={`transition-transform ${interactive ? 'hover:scale-125 cursor-pointer' : 'cursor-default'}`}
-        >
-          <span className={`material-icons text-lg ${
-            star <= (interactive ? (hoverRating || value) : value)
-              ? 'text-yellow-400'
-              : 'text-slate-700'
-          }`}>
-            {star <= (interactive ? (hoverRating || value) : Math.round(value)) ? 'star' : 'star_border'}
-          </span>
-        </button>
-      ))}
-    </div>
-  );
-
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
@@ -143,7 +149,7 @@ export default function VenueReviews({ venueId, venueName }: VenueReviewsProps) 
             <div className="text-center space-y-2">
               <p className="text-xs font-bold text-slate-400">{t('reviews.rate_venue', { name: venueName })}</p>
               <div className="flex justify-center">
-                <StarRow value={rating} interactive />
+                <StarRow value={hoverRating || rating} interactive onRate={setRating} onHover={setHoverRating} onHoverEnd={() => setHoverRating(0)} />
               </div>
             </div>
 

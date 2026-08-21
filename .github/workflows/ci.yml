@@ -57,8 +57,11 @@ jobs:
       - name: Run unit tests
         run: npm test
 
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
       - name: Run Firestore Rules tests
-        run: npx firebase emulators:exec --only firestore "npm run test:rules"
+        run: firebase emulators:exec --only firestore "npm run test:rules"
 
   ci-summary:
     runs-on: ubuntu-latest
