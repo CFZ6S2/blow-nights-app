@@ -183,58 +183,93 @@ export default function BusinessLandingPage() {
             <p className="text-slate-400">{t('business.plansDescription')}</p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {/* Plan Radar */}
-            <div className="bg-slate-950 border border-slate-800 rounded-3xl p-8 hover:border-slate-700 transition-all">
-              <h3 className="text-2xl font-black">{t('business.planRadarTitle')}</h3>
-              <p className="text-slate-400 text-sm mt-2 mb-6">{t('business.planRadarDesc')}</p>
-              <div className="mb-8">
-                <span className="text-4xl font-black">39€</span>
-                <span className="text-slate-500 font-medium">/mes</span>
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Plan Básico */}
+            <div className="bg-slate-950 border border-slate-800 rounded-3xl p-8 hover:border-slate-700 transition-all flex flex-col justify-between">
+              <div>
+                <h3 className="text-2xl font-black">{t('business.planBásicoTitle', 'Básico')}</h3>
+                <p className="text-slate-400 text-sm mt-2 mb-6">{t('business.planBásicoDesc', 'Visibilidad básica en el mapa y radar de la ciudad.')}</p>
+                <div className="mb-8">
+                  <span className="text-4xl font-black">20€</span>
+                  <span className="text-slate-500 font-medium">/mes</span>
+                </div>
+                <ul className="space-y-4 mb-8">
+                  {[
+                    t('business.basicoFeat1', 'Ficha del local en el mapa'),
+                    t('business.basicoFeat2', 'Contador de aforo básico'),
+                    t('business.basicoFeat3', 'Horarios y servicios pasivos')
+                  ].map((feature, i) => (
+                    <li key={i} className="flex items-start gap-3 text-sm text-slate-300 font-medium">
+                      <CheckCircle2 className="w-5 h-5 text-slate-600 shrink-0" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="space-y-4 mb-8">
-                {[t('business.radarFeat1'), t('business.radarFeat2'), t('business.radarFeat3'), t('business.radarFeat4')].map((feature, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-slate-300 font-medium">
-                    <CheckCircle2 className="w-5 h-5 text-slate-600 shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
               <Link href="/business/login" className="block w-full py-4 text-center rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold transition-all">
-                {t('business.startRadarBtn')}
+                {t('business.startBásicoBtn', 'Elegir Básico')}
               </Link>
             </div>
 
-            {/* Plan PRO */}
-            <div className="relative bg-gradient-to-b from-fuchsia-900/40 to-slate-950 border-2 border-fuchsia-500/50 rounded-3xl p-8 shadow-2xl shadow-fuchsia-900/20 transform md:-translate-y-4">
+            {/* Plan Promo */}
+            <div className="bg-slate-950 border border-indigo-500/40 rounded-3xl p-8 hover:border-indigo-500/80 transition-all flex flex-col justify-between relative shadow-xl">
+              <div>
+                <h3 className="text-2xl font-black text-indigo-400">{t('business.planPromoTitle', 'Promo / Destacado')}</h3>
+                <p className="text-slate-400 text-sm mt-2 mb-6">{t('business.planPromoDesc', 'Posicionamiento destacado y banners promocionales.')}</p>
+                <div className="mb-8">
+                  <span className="text-4xl font-black text-white">50€</span>
+                  <span className="text-slate-500 font-medium">/mes</span>
+                </div>
+                <ul className="space-y-4 mb-8">
+                  {[
+                    t('business.promoFeat1', 'Todo lo del Plan Básico'),
+                    t('business.promoFeat2', 'Icono destacado en el mapa'),
+                    t('business.promoFeat3', 'Notificaciones PUSH a usuarios en la zona'),
+                    t('business.promoFeat4', 'Estadísticas de aforo avanzadas')
+                  ].map((feature, i) => (
+                    <li key={i} className="flex items-start gap-3 text-sm text-indigo-200/80 font-medium">
+                      <CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <Link href="/business/login" className="block w-full py-4 text-center rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all shadow-lg shadow-indigo-500/20">
+                {t('business.startPromoBtn', 'Elegir Promo')}
+              </Link>
+            </div>
+
+            {/* Plan Ticketing */}
+            <div className="relative bg-gradient-to-b from-fuchsia-900/40 to-slate-950 border-2 border-fuchsia-500/50 rounded-3xl p-8 shadow-2xl shadow-fuchsia-900/20 flex flex-col justify-between transform md:-translate-y-2">
               <div className="absolute top-0 inset-x-0 flex justify-center -translate-y-1/2">
-                <span className="bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full">
-                  {t('business.mostPopular')}
+                <span className="bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg">
+                  {t('business.mostPopular', 'Completo')}
                 </span>
               </div>
-              <h3 className="text-2xl font-black text-white">{t('business.planProTitle')}</h3>
-              <p className="text-fuchsia-200/60 text-sm mt-2 mb-6">{t('business.planProDesc')}</p>
-              <div className="mb-8">
-                <span className="text-4xl font-black text-white">89€</span>
-                <span className="text-fuchsia-200/50 font-medium">/mes</span>
+              <div>
+                <h3 className="text-2xl font-black text-white">{t('business.planTicketingTitle', 'Ticketing & Entradas')}</h3>
+                <p className="text-fuchsia-200/60 text-sm mt-2 mb-6">{t('business.planTicketingDesc', 'Venta directa de entradas, Stripe Express y gestión de RRPPs.')}</p>
+                <div className="mb-8">
+                  <span className="text-4xl font-black text-white">100€</span>
+                  <span className="text-fuchsia-200/50 font-medium">/mes</span>
+                </div>
+                <ul className="space-y-4 mb-8">
+                  {[
+                    t('business.ticketingFeat1', 'Todo lo de Básico y Promo'),
+                    t('business.ticketingFeat2', 'Venta ilimitada de entradas y pases VIP'),
+                    t('business.ticketingFeat3', 'Onboarding directo con Stripe Connect Express'),
+                    t('business.ticketingFeat4', 'Asignación de RRPPs y links de comisión'),
+                    t('business.ticketingFeat5', 'Escáner QR de puerta tokenizado')
+                  ].map((feature, i) => (
+                    <li key={i} className="flex items-start gap-3 text-sm text-fuchsia-100/80 font-medium">
+                      <CheckCircle2 className="w-5 h-5 text-fuchsia-400 shrink-0" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="space-y-4 mb-8">
-                {[
-                  t('business.proFeat1'),
-                  t('business.proFeat2'),
-                  t('business.proFeat3'),
-                  t('business.proFeat4'),
-                  t('business.proFeat5'),
-                  t('business.proFeat6')
-                ].map((feature, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-fuchsia-100/80 font-medium">
-                    <CheckCircle2 className="w-5 h-5 text-fuchsia-400 shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
               <Link href="/business/login" className="block w-full py-4 text-center rounded-2xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white font-bold transition-all shadow-lg shadow-fuchsia-500/25">
-                {t('business.startProBtn')}
+                {t('business.startTicketingBtn', 'Elegir Ticketing')}
               </Link>
             </div>
           </div>
