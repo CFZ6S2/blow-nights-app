@@ -125,6 +125,8 @@ gay-meet/
 └── firebase.json         # Firebase project configuration
 ```
 
+> **Para más detalles sobre la arquitectura de doble frontend (Blow Nights vs DarkNights) y el backend unificado, revisa el archivo [ARCHITECTURE.md](ARCHITECTURE.md).**
+
 ---
 
 ## 📄 License
