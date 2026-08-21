@@ -9,24 +9,8 @@ export default function LanguageSelector() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
-  // To avoid hydration mismatch if i18n is not ready
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  if (!mounted) return null;
-
-  const currentLang = i18n.language || 'es';
+  // Always render immediately on server & client
+  const currentLang = i18n?.language || 'es';
 
   const languages = [
     { code: 'es', label: 'ES', icon: '🇪🇸' },

@@ -72,11 +72,11 @@ export default function PWAInstallPrompt() {
           </div>
           
           <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-black text-slate-900 tracking-tight uppercase mb-1">{t('pwa.install_title')}</h4>
-            <p className="text-[10px] text-slate-500 leading-tight">
+            <h4 className="text-sm font-black text-white tracking-tight uppercase mb-1">{t('pwa.install_title', 'Instala la App')}</h4>
+            <p className="text-[10px] text-slate-400 leading-tight">
               {platform === 'ios' 
-                ? t('pwa.install_ios') 
-                : t('pwa.install_android')}
+                ? t('pwa.install_ios', "Toca el botón compartir ⎋ y selecciona 'Añadir a la pantalla de inicio'.") 
+                : t('pwa.install_android', 'Instala la app en tu teléfono para acceder más rápido y recibir notificaciones.')}
             </p>
           </div>
 
@@ -86,14 +86,14 @@ export default function PWAInstallPrompt() {
                 onClick={handleInstallAndroid}
                 className="px-6 py-3 rounded-full bg-white text-black font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all"
               >
-                {t('pwa.install_btn')}
+                {t('pwa.install_btn', 'Instalar')}
               </button>
             )}
             <button 
               onClick={() => setShowPrompt(false)}
-              className="px-6 py-3 rounded-full bg-white/5 text-slate-500 font-black text-[10px] uppercase tracking-widest border border-white/5 hover:bg-white/10 transition-all"
+              className="px-6 py-3 rounded-full bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest border border-white/5 hover:bg-white/10 transition-all"
             >
-              {t('pwa.close_btn')}
+              {t('pwa.close_btn', 'Cerrar')}
             </button>
           </div>
         </div>

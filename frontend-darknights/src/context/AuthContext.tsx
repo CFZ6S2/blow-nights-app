@@ -68,10 +68,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
     }, 3000);
 
-    // Registro de Service Worker para PWA
+    // Registro de Service Worker para PWA con verificación forzada de nueva versión
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(err => {
+        navigator.serviceWorker.register('/sw.js').then((reg) => {
+          reg.update();
+        }).catch(err => {
           console.error('SW registration failed: ', err);
         });
       });
