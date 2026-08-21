@@ -365,6 +365,8 @@
   "setup.step1": "TU IDENTIDAD",
   "setup.step2": "MÁS SOBRE TI",
   "setup.step3": "TU GALERÍA",
+  "setup.step_prefix": "Paso ",
+  "setup.step_infix": " de ",
   "premium.monthly": "Mensual",
   "premium.yearly": "Anual",
   "premium.current_plan": "Plan Actual",
