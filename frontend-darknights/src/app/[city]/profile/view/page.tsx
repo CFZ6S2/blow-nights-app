@@ -95,6 +95,24 @@ function PublicProfileContent() {
 
   const handleChat = async () => {
     if (!currentUser) return router.push('/login');
+    
+    // Si no es VIP, comprobamos si tienen un match mutuo en la colección 'matches'
+    if (!currentProfile?.premium) {
+      const { getDocs, query, collection, where } = await import('firebase/firestore');
+      const matchesRef = collection(db, 'matches');
+      const q = query(matchesRef, where('users', 'array-contains', currentUser.uid));
+      const matchDocs = await getDocs(q);
+      
+      const hasMatch = matchDocs.docs.some(doc => {
+        const users = doc.data().users || [];
+        return users.includes(id);
+      });
+
+      if (!hasMatch) {
+        return router.push('/premium');
+      }
+    }
+
     triggerHaptic(10);
     const chatId = await getOrCreateChat(currentUser.uid, id!);
     router.push(cityPath(`/chat/detail?id=${chatId}`));

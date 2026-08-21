@@ -58,13 +58,23 @@ function ChatDetailContent() {
       if (chatDoc.exists()) {
         const otherId = chatDoc.data()?.users.find((uid: string) => uid !== user?.uid);
         if (otherId) {
+          if (!myProfile?.premium) {
+            const { getDocs, query, collection, where } = await import('firebase/firestore');
+            const matchesRef = collection(db, 'matches');
+            const q = query(matchesRef, where('users', 'array-contains', user!.uid));
+            const matchDocs = await getDocs(q);
+            const hasMatch = matchDocs.docs.some(d => (d.data().users || []).includes(otherId));
+            if (!hasMatch) {
+              return router.push('/premium');
+            }
+          }
           const userDoc = await getDoc(doc(db, 'users', otherId));
           setOtherUser(userDoc.data());
         }
       }
     };
     if (user && chatId) fetchOtherUser();
-  }, [chatId, user?.uid]);
+  }, [chatId, user?.uid, myProfile?.premium]);
 
   useEffect(() => {
     if (isNearBottom) {
