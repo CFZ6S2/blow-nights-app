@@ -1,4 +1,4 @@
-const CACHE_NAME = 'blownights-cache-v4';
+const CACHE_NAME = 'darknights-cache-v5';
 const STATIC_CACHE_URLS = [
   '/manifest.json',
   '/icons/icon-192.png',
