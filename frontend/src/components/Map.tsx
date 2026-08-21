@@ -14,6 +14,29 @@ import ProfileOverlay from './ProfileOverlay';
 import { User, Chill } from '@/types';
 import { useCity } from '@/context/CityContext';
 import { calculateDistance } from '@/lib/geo';
+
+class MapErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-white p-6 text-center">
+          <span className="material-icons text-4xl text-red-500 mb-2">warning</span>
+          <p className="font-bold mb-2">Tu navegador no soporta mapas 3D</p>
+          <p className="text-xs text-slate-400">Por favor, desactiva el modo incógnito o habilita la aceleración por hardware (WebGL).</p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 import SwipeCards from './SwipeCards';
 import { useTranslation } from 'react-i18next';
 import { Search } from 'lucide-react';
@@ -253,15 +276,16 @@ const IsolatedMap = memo(({
   handleViewProfile, handleVenueClick, handleChillClick
 }: any) => {
   return (
-    <Map
-      {...viewState}
-      ref={mapRef}
-      onMove={(evt: any) => setViewState(evt.viewState)}
-      mapStyle="https://tiles.openfreemap.org/styles/dark"
-      style={mapContainerStyle}
-      onLoad={onMapLoad}
-    >
-      <NavigationControl position="top-left" />
+    <MapErrorBoundary>
+      <Map
+        {...viewState}
+        ref={mapRef}
+        onMove={(evt: any) => setViewState(evt.viewState)}
+        mapStyle="https://tiles.openfreemap.org/styles/dark"
+        style={mapContainerStyle}
+        onLoad={onMapLoad}
+      >
+        <NavigationControl position="top-left" />
 
       {radarFilter.mode === 'users' && filteredUsers.map((u: any, index: number) => (
         <UserMarker 
@@ -290,6 +314,7 @@ const IsolatedMap = memo(({
         />
       ))}
     </Map>
+    </MapErrorBoundary>
   );
 }, (prev: any, next: any) => {
   return prev.radarFilter === next.radarFilter &&

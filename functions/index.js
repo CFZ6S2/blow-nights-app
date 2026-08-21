@@ -12,6 +12,7 @@ const likes = require("./modules/likes");
 const organizers = require("./modules/organizers");
 const scheduled = require("./modules/scheduled");
 const membership = require("./modules/membership");
+const partners = require("./modules/partners");
 
 // Auth & Users
 exports.onUserCreate = auth.onUserCreate;
@@ -24,6 +25,8 @@ exports.adminDeleteUser = auth.adminDeleteUser;
 exports.getAdminAnalytics = adminModule.getAdminAnalytics;
 exports.submitOrganizerApplication = organizers.submitOrganizerApplication;
 exports.approveOrganizer = organizers.approveOrganizer;
+exports.requestPartnerAccess = partners.requestPartnerAccess;
+exports.approvePartnerAccess = partners.approvePartnerAccess;
 
 // Scheduled
 exports.autoCompleteEventsAndSubscriptions = scheduled.autoCompleteEventsAndSubscriptions;

@@ -207,7 +207,7 @@ exports.banUser = onCall({ enforceAppCheck: true }, async (request) => {
   return { success: true, uid };
 });
 
-exports.adminDeleteUser = onCall({ enforceAppCheck: true }, async (request) => {
+exports.adminDeleteUser = onCall({ enforceAppCheck: false }, async (request) => {
   const { auth: caller, data } = request;
   if (!caller) throw new HttpsError("unauthenticated", "Login required");
 

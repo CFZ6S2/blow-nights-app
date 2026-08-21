@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTickets } from '@/hooks/useTickets';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/lib/firebase';
-import QRCodeSVG from 'react-qr-code';
+import DynamicQR from '@/components/DynamicQR';
 
 export default function WalletPage() {
   const { t } = useTranslation();
@@ -172,11 +172,14 @@ export default function WalletPage() {
               </div>
 
               <div id="ticket-content" className="print:text-black">
-                {selectedTicket.status === 'valid' && selectedTicket.qrToken && (
+                {selectedTicket.status === 'valid' && (selectedTicket.qrToken || selectedTicket.secretKey) && (
                   <div className="flex justify-center mb-6">
-                    <div className="bg-white p-4 rounded-3xl print:border-4 print:border-black">
-                      <QRCodeSVG value={selectedTicket.qrToken} size={200} />
-                    </div>
+                      <DynamicQR 
+                        ticketId={selectedTicket.id}
+                        secretKey={selectedTicket.secretKey} 
+                        fallbackToken={selectedTicket.qrToken} 
+                        size={200} 
+                      />
                   </div>
                 )}
 

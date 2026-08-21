@@ -99,66 +99,46 @@ export default function SuperAdminPage() {
 
   useEffect(() => {
     if (!isSuperAdmin) return;
-    const errNoop = () => {};
-    const unsubVenues = onSnapshot(collection(db, 'venues'), (snap) => {
-      const v: any[] = [];
-      snap.forEach(d => v.push({ id: d.id, ...d.data() }));
-      setVenues(v);
-    }, errNoop);
+    const fetchData = async () => {
+      try {
+        const [
+          venuesSnap, citiesSnap, partnersSnap, appsSnap,
+          rrppAppsSnap, orgAppsSnap, promotersSnap, rolesSnap
+        ] = await Promise.all([
+          getDocs(query(collection(db, 'venues'), limit(100))),
+          getDocs(query(collection(db, 'cities'), limit(100))),
+          getDocs(query(collection(db, 'users'), where('isAssociatePartner', '==', true), limit(100))),
+          getDocs(query(collection(db, 'partner_applications'), where('status', '==', 'pending'), limit(100))),
+          getDocs(query(collection(db, 'rrpp_applications'), where('status', '==', 'pending'), limit(100))),
+          getDocs(query(collection(db, 'organizer_applications'), where('status', '==', 'pending'), limit(100))),
+          getDocs(query(collectionGroup(db, 'promoters'), limit(100))),
+          getDocs(query(collection(db, 'users'), where('role', 'in', ['venue', 'cityAdmin', 'admin', 'superadmin', 'rrpp', 'door', 'ambassador']), limit(100)))
+        ]);
 
-    const unsubCities = onSnapshot(collection(db, 'cities'), (snap) => {
-      const c: any[] = [];
-      snap.forEach(d => c.push({ id: d.id, ...d.data() }));
-      setCities(c);
-    }, errNoop);
+        const v: any[] = []; venuesSnap.forEach(d => v.push({ id: d.id, ...d.data() })); setVenues(v);
+        const c: any[] = []; citiesSnap.forEach(d => c.push({ id: d.id, ...d.data() })); setCities(c);
+        const p: any[] = []; partnersSnap.forEach(d => p.push({ id: d.id, ...d.data() })); setPartners(p);
+        const a: any[] = []; appsSnap.forEach(d => a.push({ id: d.id, ...d.data() })); setApplications(a);
+        const r: any[] = []; rrppAppsSnap.forEach(d => r.push({ id: d.id, ...d.data() })); setRrppApplications(r);
+        const o: any[] = []; orgAppsSnap.forEach(d => o.push({ id: d.id, ...d.data() })); setOrganizerApps(o);
+        
+        const prom: any[] = [];
+        promotersSnap.forEach(d => {
+          const pathSegments = d.ref.path.split('/');
+          const venueId = pathSegments[1];
+          const eventId = pathSegments[3];
+          prom.push({ id: d.id, venueId, eventId, ...d.data() });
+        });
+        setPromoters(prom);
 
-    const unsubPartners = onSnapshot(query(collection(db, 'users'), where('isAssociatePartner', '==', true)), (snap) => {
-      const p: any[] = [];
-      snap.forEach(d => p.push({ id: d.id, ...d.data() }));
-      setPartners(p);
-    }, errNoop);
+        const rol: any[] = []; rolesSnap.forEach(d => rol.push({ id: d.id, ...d.data() })); setRecentAssignments(rol);
+      } catch (err) {
+        console.error("Error fetching super-admin data:", err);
+      }
+    };
 
-    const unsubApps = onSnapshot(query(collection(db, 'partner_applications'), where('status', '==', 'pending')), (snap) => {
-      const a: any[] = [];
-      snap.forEach(d => a.push({ id: d.id, ...d.data() }));
-      setApplications(a);
-    }, errNoop);
-
-    const unsubRrppApps = onSnapshot(query(collection(db, 'rrpp_applications'), where('status', '==', 'pending')), (snap) => {
-      const r: any[] = [];
-      snap.forEach(d => r.push({ id: d.id, ...d.data() }));
-      setRrppApplications(r);
-    }, errNoop);
-
-    const unsubOrganizerApps = onSnapshot(query(collection(db, 'organizer_applications'), where('status', '==', 'pending')), (snap) => {
-      const o: any[] = [];
-      snap.forEach(d => o.push({ id: d.id, ...d.data() }));
-      setOrganizerApps(o);
-    }, errNoop);
-
-    const unsubPromoters = onSnapshot(collectionGroup(db, 'promoters'), (snap) => {
-      const p: any[] = [];
-      snap.forEach(d => {
-        // d.ref.path: venues/VENUE_ID/events/EVENT_ID/promoters/PROMOTER_ID
-        const pathSegments = d.ref.path.split('/');
-        const venueId = pathSegments[1];
-        const eventId = pathSegments[3];
-        p.push({ id: d.id, venueId, eventId, ...d.data() });
-      });
-      setPromoters(p);
-    }, errNoop);
-
-    const unsubRoles = onSnapshot(
-      query(collection(db, 'users'), where('role', 'in', ['venue', 'cityAdmin', 'admin', 'superadmin', 'rrpp', 'door', 'ambassador'])),
-      (snap) => {
-        const r: any[] = [];
-        snap.forEach(d => r.push({ id: d.id, ...d.data() }));
-        setRecentAssignments(r);
-      },
-      errNoop
-    );
-
-    return () => { unsubVenues(); unsubCities(); unsubPartners(); unsubApps(); unsubRrppApps(); unsubOrganizerApps(); unsubPromoters(); unsubRoles(); };
+    fetchData();
+    return () => {};
   }, [isSuperAdmin]);
 
   useEffect(() => {
@@ -1110,13 +1090,21 @@ export default function SuperAdminPage() {
                           <div className="mt-4 flex gap-2">
                             <button 
                               onClick={async () => {
-                                if(confirm('¿Marcar como contactado/aprobado? Recuerda crear luego la plaza y asignarle el ID.')) {
-                                  await updateDoc(doc(db, 'partner_applications', app.id), { status: 'approved' });
+                                if(confirm(`¿Aprobar solicitud de ${app.name}? Esto creará su cuenta de usuario y le asignará el rol de local.`)) {
+                                  try {
+                                    const approvePartnerAccess = httpsCallable(functions, 'approvePartnerAccess');
+                                    const res = await approvePartnerAccess({ applicationId: app.id, action: 'approve' });
+                                    const data = res.data as any;
+                                    alert(data.message + (data.passwordResetLink ? `\n\nLink de recuperación generado. Se lo puedes enviar por WhatsApp:\n${data.passwordResetLink}` : ''));
+                                  } catch (error) {
+                                    console.error(error);
+                                    alert('Error al aprobar el partner.');
+                                  }
                                 }
                               }} 
                               className="px-4 py-2 bg-fuchsia-600 hover:bg-fuchsia-500 rounded-lg text-xs font-bold uppercase transition-colors"
                             >
-                              Marcar Revisada
+                              Aprobar Solicitud
                             </button>
                             <a href={`https://wa.me/${app.phone.replace(/\D/g, '')}?text=Hola%20${app.name},%20te%20escribo%20desde%20Blow%20Nights...`} target="_blank" rel="noreferrer" className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-xs font-bold uppercase transition-colors flex items-center gap-1">
                               WhatsApp

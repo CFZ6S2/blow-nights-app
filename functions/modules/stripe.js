@@ -653,7 +653,8 @@ exports.stripeWebhook = onRequest(async (req, res) => {
       }
     } else if (isTicket) {
       const crypto = require("crypto");
-      const qrToken = crypto.randomBytes(32).toString("hex");
+      const qrToken = crypto.randomBytes(32).toString("hex"); // Fallback for old clients
+      const secretKey = crypto.randomBytes(16).toString("hex"); // For Dynamic QR
       const pinCode = Math.floor(1000 + Math.random() * 9000).toString();
       const venueId = session.metadata.venueId;
       const eventId = session.metadata.eventId;
@@ -661,59 +662,112 @@ exports.stripeWebhook = onRequest(async (req, res) => {
       const reservationId = session.metadata.reservationId;
       const isIndependent = session.metadata.isIndependent === "true";
 
-      let venueOwnerId = null;
-      let cityId = "";
-
-      if (isIndependent) {
-        const eventDoc = await db.collection("events").doc(eventId).get();
-        if (eventDoc.exists) {
-          venueOwnerId = eventDoc.data().organizerId;
-          cityId = eventDoc.data().cityId || "";
-        }
-      } else if (venueId) {
-        const venueDoc = await db.collection("venues").doc(venueId).get();
-        if (venueDoc.exists) {
-          venueOwnerId = venueDoc.data().ownerId;
-          cityId = venueDoc.data().cityId || "";
-        }
-      }
-
-      let rrppCommission = 0;
-      if (rrppId && venueId && !isIndependent) {
-        const rrppDoc = await db.collection("venues").doc(venueId).collection("promoters").doc(rrppId).get();
-        if (rrppDoc.exists && rrppDoc.data().is_active) {
-          const rrppData = rrppDoc.data();
-          if (rrppData.commission_type === 'fixed') {
-            rrppCommission = rrppData.commission_value || 0;
-          } else {
-            rrppCommission = (session.amount_total / 100) * (rrppData.commission_value / 100);
+      await db.runTransaction(async (transaction) => {
+        let venueOwnerId = null;
+        let cityId = "";
+        let pricingRef = null;
+        let eventRef = null;
+        
+        if (isIndependent) {
+          eventRef = db.collection("events").doc(eventId);
+          const eventDoc = await transaction.get(eventRef);
+          if (eventDoc.exists) {
+            const data = eventDoc.data();
+            venueOwnerId = data.organizerId;
+            cityId = data.cityId || "";
+            
+            const ticketTypeStr = session.metadata.ticketType || "general";
+            const tiers = data.ticket_tiers || [];
+            const tierIndex = tiers.findIndex((t) => t.id === ticketTypeStr);
+            if (tierIndex !== -1) {
+              const tier = tiers[tierIndex];
+              const sold = tier.sold || 0;
+              if (tier.quota !== undefined && tier.quota !== null && sold >= tier.quota) {
+                // AGOTADO - Emitir reembolso automático (esto debería hacerse tras la transacción, pero podemos lanzar error y procesarlo fuera)
+                throw new Error("TICKETS_SOLD_OUT");
+              }
+              tiers[tierIndex].sold = sold + 1;
+              transaction.update(eventRef, { ticket_tiers: tiers });
+            }
+          }
+        } else if (venueId) {
+          pricingRef = db.collection("venues").doc(venueId);
+          const venueDoc = await transaction.get(pricingRef);
+          if (venueDoc.exists) {
+            const data = venueDoc.data();
+            venueOwnerId = data.ownerId;
+            cityId = data.cityId || "";
+            
+            const ticketTypeStr = session.metadata.ticketType || "general";
+            const pricing = data.ticketPricing?.[ticketTypeStr];
+            if (pricing && pricing.quota !== undefined && pricing.quota !== null) {
+              const sold = pricing.sold || 0;
+              if (sold >= pricing.quota) {
+                throw new Error("TICKETS_SOLD_OUT");
+              }
+              const newPricing = { ...data.ticketPricing };
+              newPricing[ticketTypeStr].sold = sold + 1;
+              transaction.update(pricingRef, { ticketPricing: newPricing });
+            }
           }
         }
-      }
 
-      await db.collection("tickets").add({
-        userId: session.metadata.giftUserId || firebaseUID || null,
-        customerEmail: session.customer_details?.email || session.customer_email || null,
-        venueId,
-        eventId: eventId || null,
-        venueOwnerId: venueOwnerId || "",
-        cityId,
-        ticketType: session.metadata.ticketType || "general",
-        rrpp_id: rrppId || null,
-        rrpp_commission: rrppCommission,
-        qrToken,
-        pinCode,
-        status: "valid",
-        purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
-        stripeSessionId: session.id,
-        isIndependent,
+        let rrppCommission = 0;
+        if (rrppId && venueId && !isIndependent) {
+          const rrppDoc = await transaction.get(db.collection("venues").doc(venueId).collection("promoters").doc(rrppId));
+          if (rrppDoc.exists && rrppDoc.data().is_active) {
+            const rrppData = rrppDoc.data();
+            if (rrppData.commission_type === 'fixed') {
+              rrppCommission = rrppData.commission_value || 0;
+            } else {
+              rrppCommission = (session.amount_total / 100) * (rrppData.commission_value / 100);
+            }
+          }
+        }
+
+        const ticketRef = db.collection("tickets").doc();
+        transaction.set(ticketRef, {
+          userId: session.metadata.giftUserId || firebaseUID || null,
+          customerEmail: session.customer_details?.email || session.customer_email || null,
+          venueId,
+          eventId: eventId || null,
+          venueOwnerId: venueOwnerId || "",
+          cityId,
+          ticketType: session.metadata.ticketType || "general",
+          rrpp_id: rrppId || null,
+          rrpp_commission: rrppCommission,
+          qrToken,
+          secretKey,
+          pinCode,
+          status: "valid",
+          purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
+          stripeSessionId: session.id,
+          isIndependent,
+        });
+
+        if (reservationId && venueId && eventId && !isIndependent) {
+          transaction.update(db.collection("venues").doc(venueId).collection("events").doc(eventId).collection("reservations").doc(reservationId), {
+            status: "completed"
+          });
+        }
+        
+        // Asignamos variables para usarlas fuera de la transacción si es necesario
+        session.metadata._resolvedCityId = cityId;
+        session.metadata._resolvedOwnerId = venueOwnerId;
+      }).catch(async (error) => {
+        if (error.message === "TICKETS_SOLD_OUT") {
+          console.warn("Entradas agotadas durante el pago, reembolsando sesión:", session.id);
+          const paymentIntent = session.payment_intent;
+          if (paymentIntent) {
+            await stripe.refunds.create({ payment_intent: paymentIntent });
+            console.log("Reembolso automático emitido por overbooking.");
+          }
+          throw new Error("REEMBOLSO_EMITIDO_OVERBOOKING"); // Prevenir que siga el webhook normal
+        }
+        throw error;
       });
 
-      if (reservationId && venueId && eventId && !isIndependent) {
-        await db.collection("venues").doc(venueId).collection("events").doc(eventId).collection("reservations").doc(reservationId).update({
-          status: "completed"
-        });
-      }
+      const cityId = session.metadata._resolvedCityId;
 
       const PLATFORM_FEE_CENTS = 100;
       if (cityId) {

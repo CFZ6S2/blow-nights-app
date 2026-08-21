@@ -18,6 +18,7 @@ import VenueConfigTab from '@/components/venue-admin/VenueConfigTab';
 import VenueCatalogTab from '@/components/venue-admin/VenueCatalogTab';
 import EventsTab from '@/components/venue-admin/EventsTab';
 import { useTranslation } from 'react-i18next';
+import SetupWizard from './SetupWizard';
 
 export default function VenueAdminPage() {
   const { t } = useTranslation();
@@ -152,23 +153,22 @@ export default function VenueAdminPage() {
   }
 
   if (myVenues.length === 0) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-white pb-32">
-        <main className="relative z-10 p-6 md:p-12 max-w-2xl mx-auto">
-          <header className="pt-8 space-y-2 mb-8">
-            <h1 className="text-2xl font-black tracking-tight flex items-center gap-3">
-              <span className="material-icons text-fuchsia-400">storefront</span>
-              {t('venue_admin_title')}
-            </h1>
-          </header>
-          <div className="text-center py-16 space-y-4">
-            <span className="material-icons text-5xl text-slate-700">store</span>
-            <p className="text-sm text-slate-500">{t('venue_admin_no_venues')}</p>
-            <p className="text-[10px] text-slate-600">Contacta con el administrador para dar de alta tu local</p>
+    // Check if the user already requested delegated management to show a different screen or just let the wizard handle it
+    if ((profile as any)?.delegatedManagement) {
+      return (
+        <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6">
+          <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <span className="material-icons text-4xl text-indigo-500">handshake</span>
           </div>
-        </main>
-      </div>
-    );
+          <h2 className="text-2xl font-black mb-2 text-center">Gestión Delegada Activa</h2>
+          <p className="text-slate-400 max-w-sm mx-auto mb-8 text-center">
+            Estamos configurando y gestionando tu local. Nuestro equipo te informará de cualquier novedad.
+          </p>
+        </div>
+      );
+    }
+
+    return <SetupWizard user={user} profile={profile} />;
   }
 
   const validTickets = tickets.filter((t) => t.status === 'valid').length;

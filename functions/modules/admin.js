@@ -16,12 +16,22 @@ exports.getAdminAnalytics = onCall({ enforceAppCheck: true }, async (request) =>
 
   try {
     // 1. Consultas de agregación nativas de Firestore (cuentan documentos sin descargarlos)
-    const [usersCountSnap, onlineCountSnap, premiumCountSnap, reportsCountSnap, verifCountSnap] = await Promise.all([
+    const [
+      usersCountSnap, onlineCountSnap, premiumCountSnap, reportsCountSnap, verifCountSnap,
+      venuesCountSnap, citiesCountSnap, partnerAppsCountSnap, rrppAppsCountSnap,
+      organizerAppsCountSnap, promotersCountSnap
+    ] = await Promise.all([
       db.collection("users").count().get(),
       db.collection("users").where("online", "==", true).count().get(),
       db.collection("users").where("premium", "==", true).count().get(),
       db.collection("reports").where("status", "==", "pending").count().get(),
       db.collection("verifications").where("status", "==", "pending").count().get(),
+      db.collection("venues").count().get(),
+      db.collection("cities").count().get(),
+      db.collection("partner_applications").where("status", "==", "pending").count().get(),
+      db.collection("rrpp_applications").where("status", "==", "pending").count().get(),
+      db.collection("organizer_applications").where("status", "==", "pending").count().get(),
+      db.collectionGroup("promoters").count().get()
     ]);
 
     return {
@@ -32,6 +42,12 @@ exports.getAdminAnalytics = onCall({ enforceAppCheck: true }, async (request) =>
         premiumUsers: premiumCountSnap.data().count,
         pendingReports: reportsCountSnap.data().count,
         pendingVerifications: verifCountSnap.data().count,
+        totalVenues: venuesCountSnap.data().count,
+        totalCities: citiesCountSnap.data().count,
+        pendingPartnerApps: partnerAppsCountSnap.data().count,
+        pendingRrppApps: rrppAppsCountSnap.data().count,
+        pendingOrganizerApps: organizerAppsCountSnap.data().count,
+        totalPromoters: promotersCountSnap.data().count
       }
     };
   } catch (error) {

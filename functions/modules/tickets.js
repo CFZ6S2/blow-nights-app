@@ -296,17 +296,59 @@ exports.validateTicket = onCall({ enforceAppCheck: true }, async (request) => {
   const { qrToken } = data;
   if (!qrToken) throw new HttpsError("invalid-argument", "qrToken es obligatorio.");
 
-  const ticketsSnap = await db.collection("tickets")
-    .where("qrToken", "==", qrToken)
-    .limit(1)
-    .get();
+  let searchToken = qrToken;
+  let isDynamic = false;
+  let ticketId = null;
+  let timestamp = null;
+  let signature = null;
 
-  if (ticketsSnap.empty) {
-    throw new HttpsError("not-found", "Entrada no encontrada.");
+  if (qrToken.startsWith("dyn:")) {
+    const parts = qrToken.split(":");
+    if (parts.length === 4) {
+      isDynamic = true;
+      ticketId = parts[1];
+      timestamp = parseInt(parts[2], 10);
+      signature = parts[3];
+      searchToken = null;
+    }
   }
 
-  const ticketDoc = ticketsSnap.docs[0];
-  const ticket = ticketDoc.data();
+  let ticketDoc;
+  let ticket;
+
+  if (isDynamic) {
+    ticketDoc = await db.collection("tickets").doc(ticketId).get();
+    if (!ticketDoc.exists) throw new HttpsError("not-found", "Entrada no encontrada.");
+    ticket = ticketDoc.data();
+
+    const now = Date.now();
+    if (now - timestamp > 60000 || timestamp > now + 5000) {
+      throw new HttpsError("failed-precondition", "El código QR ha caducado. Pide al cliente que enseñe el código actual.");
+    }
+
+    const crypto = require("crypto");
+    const secretKey = ticket.secretKey;
+    if (!secretKey) throw new HttpsError("failed-precondition", "Esta entrada no soporta QR dinámico.");
+    
+    const expectedSignature = crypto.createHmac("sha256", secretKey)
+      .update(`${ticketId}:${timestamp}`)
+      .digest("hex");
+      
+    if (signature !== expectedSignature) {
+      throw new HttpsError("invalid-argument", "Firma del QR inválida. Posible captura de pantalla falsa.");
+    }
+  } else {
+    const ticketsSnap = await db.collection("tickets")
+      .where("qrToken", "==", searchToken)
+      .limit(1)
+      .get();
+
+    if (ticketsSnap.empty) {
+      throw new HttpsError("not-found", "Entrada no encontrada.");
+    }
+    ticketDoc = ticketsSnap.docs[0];
+    ticket = ticketDoc.data();
+  }
 
   const venueDoc = await db.collection("venues").doc(ticket.venueId).get();
   const venue = venueDoc.exists ? venueDoc.data() : null;
@@ -504,6 +546,7 @@ exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: true }, async (
 
   const crypto = require("crypto");
   const qrToken = crypto.randomBytes(32).toString("hex");
+  const secretKey = crypto.randomBytes(16).toString("hex");
   const pinCode = Math.floor(1000 + Math.random() * 9000).toString();
 
   const ticketPayload = {
@@ -519,6 +562,7 @@ exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: true }, async (
     promoter_name: promoter.name || 'RRPP',
     rrpp_commission: 0,
     qrToken,
+    secretKey,
     pinCode,
     flyerUrl: eventData.flyerUrl || null,
     eventTitle: eventData.title || eventData.name || 'Evento RRPP',
@@ -721,6 +765,7 @@ exports.generateOrganizerQRTicket = onCall({ enforceAppCheck: true }, async (req
 
   const crypto = require('crypto');
   const qrToken = crypto.randomBytes(32).toString('hex');
+  const secretKey = crypto.randomBytes(16).toString('hex');
   const pinCode = Math.floor(1000 + Math.random() * 9000).toString();
 
   const ticketPayload = {
@@ -734,6 +779,7 @@ exports.generateOrganizerQRTicket = onCall({ enforceAppCheck: true }, async (req
     channel: 'organizer_direct',
     rrpp_commission: 0,
     qrToken,
+    secretKey,
     pinCode,
     flyerUrl: eventData.flyerUrl || null,
     eventTitle: eventData.title || eventData.name || 'Evento',
