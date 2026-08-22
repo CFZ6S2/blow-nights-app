@@ -400,12 +400,14 @@ exports.validateTicket = onCall({ enforceAppCheck: false }, async (request) => {
 });
 
 exports.validateTicketByDoorToken = onCall({ enforceAppCheck: false }, async (request) => {
-  const { data } = request;
+  const { data, auth } = request;
   const { qrToken, doorAccessToken, eventId, venueId } = data;
 
   if (!qrToken || !doorAccessToken || !eventId || !venueId) {
     throw new HttpsError("invalid-argument", "Missing parameters.");
   }
+
+  const doorUserId = auth?.uid || null;
 
   let eventSnap;
   if (venueId === eventId) {
@@ -413,7 +415,7 @@ exports.validateTicketByDoorToken = onCall({ enforceAppCheck: false }, async (re
   } else {
     eventSnap = await db.collection("venues").doc(venueId).collection("events").doc(eventId).get();
   }
-  
+
   if (!eventSnap.exists) throw new HttpsError("not-found", "Evento no encontrado.");
   const event = eventSnap.data();
 
@@ -423,7 +425,7 @@ exports.validateTicketByDoorToken = onCall({ enforceAppCheck: false }, async (re
   }
   const secrets = secretsSnap.data();
   const tokenInDb = secrets.scanner_token || secrets.door_access_token;
-  
+
   if (tokenInDb !== doorAccessToken) {
     throw new HttpsError("permission-denied", "Token de puerta inválido.");
   }
@@ -442,6 +444,8 @@ exports.validateTicketByDoorToken = onCall({ enforceAppCheck: false }, async (re
     return { valid: false, message: "PERTENECE A OTRO EVENTO" };
   }
 
+  const validatedBy = doorUserId || `door_token_${eventId}`;
+
   const result = await db.runTransaction(async (transaction) => {
     const freshDoc = await transaction.get(ticketDoc.ref);
     const freshTicket = freshDoc.data();
@@ -456,20 +460,42 @@ exports.validateTicketByDoorToken = onCall({ enforceAppCheck: false }, async (re
     transaction.update(ticketDoc.ref, {
       status: "used",
       usedAt: admin.firestore.FieldValue.serverTimestamp(),
-      validatedBy: `door_scanner_${eventId}`,
+      validatedBy,
+      doorUserId,
     });
 
     return { valid: true };
   });
 
-  if (!result.valid) return result;
+  if (!result.valid) {
+    await db.collection("validation_logs").add({
+      ticketId: ticketDoc.id,
+      eventId,
+      venueId,
+      doorUserId,
+      result: result.message,
+      validatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return result;
+  }
 
   const tier = event.ticket_tiers?.find(t => t.id === ticket.ticketType || t.name === ticket.ticketType);
   const perks = tier?.perks || "1 Copa General";
 
-  await eventSnap.ref.update({
-    "stats.total_checked_in": admin.firestore.FieldValue.increment(1)
-  });
+  await Promise.all([
+    eventSnap.ref.update({
+      "stats.total_checked_in": admin.firestore.FieldValue.increment(1)
+    }),
+    db.collection("validation_logs").add({
+      ticketId: ticketDoc.id,
+      eventId,
+      venueId,
+      doorUserId,
+      result: "valid",
+      ticketType: tier?.name || ticket.ticketType,
+      validatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }),
+  ]);
 
   return {
     valid: true,

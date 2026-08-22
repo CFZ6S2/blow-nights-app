@@ -38,6 +38,12 @@ function adminDb() {
   return authedDb("admin-uid", { role: "admin" });
 }
 
+async function seed(fn) {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await fn(ctx.firestore());
+  });
+}
+
 // ── Users ──
 
 describe("users", () => {
@@ -47,56 +53,50 @@ describe("users", () => {
   });
 
   test("authenticated user can read another profile", async () => {
-    const admin = adminDb();
-    await admin.collection("users").doc("user1").set({ nick: "test" });
+    await seed(async (db) => { await db.collection("users").doc("user1").set({ nick: "test" }); });
 
     const db = authedDb("user2");
     await assertSucceeds(db.collection("users").doc("user1").get());
   });
 
   test("user can update own profile with safe fields", async () => {
-    const admin = adminDb();
-    await admin.collection("users").doc("user1").set({ nick: "old", edad: 21 });
+    await seed(async (db) => { await db.collection("users").doc("user1").set({ nick: "old", edad: 21 }); });
 
     const db = authedDb("user1");
     await assertSucceeds(db.collection("users").doc("user1").update({ nick: "new" }));
   });
 
   test("user cannot set own role", async () => {
-    const admin = adminDb();
-    await admin.collection("users").doc("user1").set({ nick: "test" });
+    await seed(async (db) => { await db.collection("users").doc("user1").set({ nick: "test" }); });
 
     const db = authedDb("user1");
     await assertFails(db.collection("users").doc("user1").update({ role: "admin" }));
   });
 
   test("user cannot set own premium", async () => {
-    const admin = adminDb();
-    await admin.collection("users").doc("user1").set({ nick: "test" });
+    await seed(async (db) => { await db.collection("users").doc("user1").set({ nick: "test" }); });
 
     const db = authedDb("user1");
     await assertFails(db.collection("users").doc("user1").update({ premium: true }));
   });
 
   test("user cannot set isAdmin", async () => {
-    const admin = adminDb();
-    await admin.collection("users").doc("user1").set({ nick: "test" });
+    await seed(async (db) => { await db.collection("users").doc("user1").set({ nick: "test" }); });
 
     const db = authedDb("user1");
     await assertFails(db.collection("users").doc("user1").update({ isAdmin: true }));
   });
 
   test("user cannot update another user's profile", async () => {
-    const admin = adminDb();
-    await admin.collection("users").doc("user2").set({ nick: "test" });
+    await seed(async (db) => { await db.collection("users").doc("user2").set({ nick: "test" }); });
 
     const db = authedDb("user1");
     await assertFails(db.collection("users").doc("user2").update({ nick: "hacked" }));
   });
 
   test("admin can update any profile", async () => {
+    await seed(async (db) => { await db.collection("users").doc("user1").set({ nick: "test" }); });
     const admin = adminDb();
-    await admin.collection("users").doc("user1").set({ nick: "test" });
     await assertSucceeds(admin.collection("users").doc("user1").update({ nick: "admin-edit" }));
   });
 
@@ -111,16 +111,14 @@ describe("users", () => {
   });
 
   test("user cannot set age under 18", async () => {
-    const admin = adminDb();
-    await admin.collection("users").doc("user1").set({ nick: "test", edad: 20 });
+    await seed(async (db) => { await db.collection("users").doc("user1").set({ nick: "test", edad: 20 }); });
 
     const db = authedDb("user1");
     await assertFails(db.collection("users").doc("user1").update({ edad: 17 }));
   });
 
   test("user can set age 18+", async () => {
-    const admin = adminDb();
-    await admin.collection("users").doc("user1").set({ nick: "test", edad: 20 });
+    await seed(async (db) => { await db.collection("users").doc("user1").set({ nick: "test", edad: 20 }); });
 
     const db = authedDb("user1");
     await assertSucceeds(db.collection("users").doc("user1").update({ edad: 18 }));
@@ -131,8 +129,7 @@ describe("users", () => {
 
 describe("matches", () => {
   test("only participants can read matches", async () => {
-    const admin = adminDb();
-    await admin.collection("matches").doc("m1").set({ users: ["u1", "u2"] });
+    await seed(async (db) => { await db.collection("matches").doc("m1").set({ users: ["u1", "u2"] }); });
 
     const db1 = authedDb("u1");
     await assertSucceeds(db1.collection("matches").doc("m1").get());
@@ -171,16 +168,15 @@ describe("verifications", () => {
   });
 
   test("user cannot update own verification", async () => {
-    const admin = adminDb();
-    await admin.collection("verifications").doc("user1").set({ status: "pending" });
+    await seed(async (db) => { await db.collection("verifications").doc("user1").set({ status: "pending" }); });
 
     const db = authedDb("user1");
     await assertFails(db.collection("verifications").doc("user1").update({ status: "approved" }));
   });
 
   test("admin can update verification", async () => {
+    await seed(async (db) => { await db.collection("verifications").doc("user1").set({ status: "pending" }); });
     const admin = adminDb();
-    await admin.collection("verifications").doc("user1").set({ status: "pending" });
     await assertSucceeds(admin.collection("verifications").doc("user1").update({ status: "approved" }));
   });
 });
@@ -189,11 +185,8 @@ describe("verifications", () => {
 
 describe("chills", () => {
   test("anyone can read a chill by ID", async () => {
-    const admin = adminDb();
-    await admin.collection("chills").doc("c1").set({
-      host_uid: "host1",
-      title: "Test Chill",
-      accepted_users: [],
+    await seed(async (db) => {
+      await db.collection("chills").doc("c1").set({ host_uid: "host1", title: "Test Chill", accepted_users: [] });
     });
 
     const db = unauthDb();
@@ -242,11 +235,8 @@ describe("chills", () => {
   });
 
   test("only host can update a chill", async () => {
-    const admin = adminDb();
-    await admin.collection("chills").doc("c1").set({
-      host_uid: "host1",
-      title: "Test",
-      accepted_users: [],
+    await seed(async (db) => {
+      await db.collection("chills").doc("c1").set({ host_uid: "host1", title: "Test", accepted_users: [] });
     });
 
     const hostDb = authedDb("host1");
@@ -260,60 +250,32 @@ describe("chills", () => {
 // ── Chills Private Subcollection ──
 
 describe("chills/private", () => {
-  test("host can read private info", async () => {
-    const admin = adminDb();
-    await admin.collection("chills").doc("c1").set({
-      host_uid: "host1",
-      accepted_users: ["u1"],
+  beforeEach(async () => {
+    await seed(async (db) => {
+      await db.collection("chills").doc("c1").set({ host_uid: "host1", accepted_users: ["u1"] });
+      await db.collection("chills").doc("c1").collection("private").doc("info").set({ exact_address: "Calle Test 123" });
     });
-    await admin.collection("chills").doc("c1").collection("private").doc("info").set({
-      exact_address: "Calle Test 123",
-    });
+  });
 
+  test("host can read private info", async () => {
     const db = authedDb("host1");
     await assertSucceeds(db.collection("chills").doc("c1").collection("private").doc("info").get());
   });
 
   test("accepted user can read private info", async () => {
-    const admin = adminDb();
-    await admin.collection("chills").doc("c1").set({
-      host_uid: "host1",
-      accepted_users: ["u1"],
-    });
-    await admin.collection("chills").doc("c1").collection("private").doc("info").set({
-      exact_address: "Calle Test 123",
-    });
-
     const db = authedDb("u1");
     await assertSucceeds(db.collection("chills").doc("c1").collection("private").doc("info").get());
   });
 
   test("non-accepted user cannot read private info", async () => {
-    const admin = adminDb();
-    await admin.collection("chills").doc("c1").set({
-      host_uid: "host1",
-      accepted_users: ["u1"],
-    });
-    await admin.collection("chills").doc("c1").collection("private").doc("info").set({
-      exact_address: "Calle Test 123",
-    });
-
     const db = authedDb("u2");
     await assertFails(db.collection("chills").doc("c1").collection("private").doc("info").get());
   });
 
   test("no client can write to private subcollection", async () => {
-    const admin = adminDb();
-    await admin.collection("chills").doc("c1").set({
-      host_uid: "host1",
-      accepted_users: [],
-    });
-
     const db = authedDb("host1");
     await assertFails(
-      db.collection("chills").doc("c1").collection("private").doc("info").set({
-        exact_address: "hacked",
-      })
+      db.collection("chills").doc("c1").collection("private").doc("info").set({ exact_address: "hacked" })
     );
   });
 });
@@ -322,11 +284,8 @@ describe("chills/private", () => {
 
 describe("chill_requests", () => {
   test("anyone can read a chill request by ID", async () => {
-    const admin = adminDb();
-    await admin.collection("chill_requests").doc("r1").set({
-      user_uid: "u1",
-      chill_id: "c1",
-      status: "pending",
+    await seed(async (db) => {
+      await db.collection("chill_requests").doc("r1").set({ user_uid: "u1", chill_id: "c1", status: "pending" });
     });
 
     const db = unauthDb();
@@ -341,30 +300,20 @@ describe("chill_requests", () => {
   test("user can create own request", async () => {
     const db = authedDb("u1");
     await assertSucceeds(
-      db.collection("chill_requests").doc("r1").set({
-        user_uid: "u1",
-        chill_id: "c1",
-        status: "pending",
-      })
+      db.collection("chill_requests").doc("r1").set({ user_uid: "u1", chill_id: "c1", status: "pending" })
     );
   });
 
   test("user cannot create request as another user", async () => {
     const db = authedDb("u1");
     await assertFails(
-      db.collection("chill_requests").doc("r1").set({
-        user_uid: "u2",
-        chill_id: "c1",
-        status: "pending",
-      })
+      db.collection("chill_requests").doc("r1").set({ user_uid: "u2", chill_id: "c1", status: "pending" })
     );
   });
 
   test("owner can update/delete own request", async () => {
-    const admin = adminDb();
-    await admin.collection("chill_requests").doc("r1").set({
-      user_uid: "u1",
-      status: "pending",
+    await seed(async (db) => {
+      await db.collection("chill_requests").doc("r1").set({ user_uid: "u1", status: "pending" });
     });
 
     const db = authedDb("u1");
@@ -373,10 +322,8 @@ describe("chill_requests", () => {
   });
 
   test("other user cannot update/delete request", async () => {
-    const admin = adminDb();
-    await admin.collection("chill_requests").doc("r1").set({
-      user_uid: "u1",
-      status: "pending",
+    await seed(async (db) => {
+      await db.collection("chill_requests").doc("r1").set({ user_uid: "u1", status: "pending" });
     });
 
     const db = authedDb("u2");
@@ -388,48 +335,30 @@ describe("chill_requests", () => {
 // ── Tickets ──
 
 describe("tickets", () => {
-  test("ticket owner can read own ticket", async () => {
-    const admin = adminDb();
-    await admin.collection("tickets").doc("t1").set({
-      userId: "u1",
-      venueOwnerId: "v1",
-      eventId: "e1",
+  beforeEach(async () => {
+    await seed(async (db) => {
+      await db.collection("tickets").doc("t1").set({ userId: "u1", venueOwnerId: "v1", eventId: "e1" });
     });
+  });
 
+  test("ticket owner can read own ticket", async () => {
     const db = authedDb("u1");
     await assertSucceeds(db.collection("tickets").doc("t1").get());
   });
 
   test("venue owner can read ticket", async () => {
-    const admin = adminDb();
-    await admin.collection("tickets").doc("t1").set({
-      userId: "u1",
-      venueOwnerId: "v1",
-    });
-
     const db = authedDb("v1");
     await assertSucceeds(db.collection("tickets").doc("t1").get());
   });
 
   test("unrelated user cannot read ticket", async () => {
-    const admin = adminDb();
-    await admin.collection("tickets").doc("t1").set({
-      userId: "u1",
-      venueOwnerId: "v1",
-    });
-
     const db = authedDb("stranger");
     await assertFails(db.collection("tickets").doc("t1").get());
   });
 
   test("clients cannot create tickets", async () => {
     const db = authedDb("u1");
-    await assertFails(
-      db.collection("tickets").doc("t1").set({
-        userId: "u1",
-        venueOwnerId: "v1",
-      })
-    );
+    await assertFails(db.collection("tickets").doc("t2").set({ userId: "u1", venueOwnerId: "v1" }));
   });
 });
 
@@ -439,38 +368,26 @@ describe("partner_applications", () => {
   test("user can create own application", async () => {
     const db = authedDb("u1");
     await assertSucceeds(
-      db.collection("partner_applications").doc("app1").set({
-        userId: "u1",
-        message: "I want to be a partner",
-      })
+      db.collection("partner_applications").doc("app1").set({ userId: "u1", message: "I want to be a partner" })
     );
   });
 
   test("user cannot create application for another user", async () => {
     const db = authedDb("u1");
     await assertFails(
-      db.collection("partner_applications").doc("app1").set({
-        userId: "u2",
-        message: "Spoofed",
-      })
+      db.collection("partner_applications").doc("app1").set({ userId: "u2", message: "Spoofed" })
     );
   });
 
   test("user can read own application", async () => {
-    const admin = adminDb();
-    await admin.collection("partner_applications").doc("app1").set({
-      userId: "u1",
-    });
+    await seed(async (db) => { await db.collection("partner_applications").doc("app1").set({ userId: "u1" }); });
 
     const db = authedDb("u1");
     await assertSucceeds(db.collection("partner_applications").doc("app1").get());
   });
 
   test("user cannot update/delete own application", async () => {
-    const admin = adminDb();
-    await admin.collection("partner_applications").doc("app1").set({
-      userId: "u1",
-    });
+    await seed(async (db) => { await db.collection("partner_applications").doc("app1").set({ userId: "u1" }); });
 
     const db = authedDb("u1");
     await assertFails(db.collection("partner_applications").doc("app1").update({ status: "approved" }));
@@ -482,10 +399,8 @@ describe("partner_applications", () => {
 
 describe("promotions", () => {
   test("any authenticated user can read promotions", async () => {
-    const admin = adminDb();
-    await admin.collection("promotions").doc("p1").set({
-      venueOwnerId: "v1",
-      cityId: "madrid",
+    await seed(async (db) => {
+      await db.collection("promotions").doc("p1").set({ venueOwnerId: "v1", cityId: "madrid" });
     });
 
     const db = authedDb("u1");
@@ -495,19 +410,13 @@ describe("promotions", () => {
   test("venue owner can create promotion", async () => {
     const db = authedDb("v1");
     await assertSucceeds(
-      db.collection("promotions").doc("p1").set({
-        venueOwnerId: "v1",
-        cityId: "madrid",
-        title: "Happy Hour",
-      })
+      db.collection("promotions").doc("p1").set({ venueOwnerId: "v1", cityId: "madrid", title: "Happy Hour" })
     );
   });
 
   test("venue owner can delete own promotion", async () => {
-    const admin = adminDb();
-    await admin.collection("promotions").doc("p1").set({
-      venueOwnerId: "v1",
-      cityId: "madrid",
+    await seed(async (db) => {
+      await db.collection("promotions").doc("p1").set({ venueOwnerId: "v1", cityId: "madrid" });
     });
 
     const db = authedDb("v1");
@@ -515,10 +424,8 @@ describe("promotions", () => {
   });
 
   test("other user cannot delete promotion", async () => {
-    const admin = adminDb();
-    await admin.collection("promotions").doc("p1").set({
-      venueOwnerId: "v1",
-      cityId: "madrid",
+    await seed(async (db) => {
+      await db.collection("promotions").doc("p1").set({ venueOwnerId: "v1", cityId: "madrid" });
     });
 
     const db = authedDb("u1");
@@ -530,16 +437,14 @@ describe("promotions", () => {
 
 describe("settings", () => {
   test("anyone can read platform settings", async () => {
-    const admin = adminDb();
-    await admin.collection("settings").doc("platform").set({ maintenance: false });
+    await seed(async (db) => { await db.collection("settings").doc("platform").set({ maintenance: false }); });
 
     const db = unauthDb();
     await assertSucceeds(db.collection("settings").doc("platform").get());
   });
 
   test("non-admin cannot write settings", async () => {
-    const admin = adminDb();
-    await admin.collection("settings").doc("platform").set({ maintenance: false });
+    await seed(async (db) => { await db.collection("settings").doc("platform").set({ maintenance: false }); });
 
     const db = authedDb("u1");
     await assertFails(db.collection("settings").doc("platform").update({ maintenance: true }));

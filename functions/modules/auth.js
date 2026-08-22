@@ -144,6 +144,34 @@ exports.deleteUserData = onCall(async (request) => {
     if (!snap.empty) await batch.commit();
   };
 
+  const anonymizeTickets = async () => {
+    const snap = await db.collection("tickets").where("userId", "==", uid).get();
+    if (snap.empty) return;
+    const batch = db.batch();
+    snap.docs.forEach((d) => {
+      batch.update(d.ref, {
+        userId: "deleted_user",
+        client_name: "Usuario eliminado",
+        customerEmail: admin.firestore.FieldValue.delete(),
+        deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+    await batch.commit();
+  };
+
+  const anonymizeEarnings = async () => {
+    const snap = await db.collection("users").doc(uid).collection("earnings").get();
+    if (snap.empty) return;
+    const batch = db.batch();
+    snap.docs.forEach((d) => {
+      batch.update(d.ref, {
+        userName: "deleted_user",
+        deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+    await batch.commit();
+  };
+
   await Promise.all([
     deleteByField("likes", "fromId"),
     deleteByField("likes", "toId"),
@@ -152,23 +180,17 @@ exports.deleteUserData = onCall(async (request) => {
     deleteByField("pings", "fromUserId"),
     deleteByField("pings", "toUserId"),
     deleteByField("checkins", "userId"),
-    deleteByField("tickets", "userId"),
+    anonymizeTickets(),
     deleteByField("chill_requests", "user_uid"),
     deleteByField("reports", "reportedBy"),
     deleteByArrayField("matches", "users"),
+    anonymizeEarnings(),
   ]);
 
   const blocksSnap = await db.collection("users").doc(uid).collection("blocks").get();
   if (!blocksSnap.empty) {
     const batch = db.batch();
     blocksSnap.docs.forEach((d) => batch.delete(d.ref));
-    await batch.commit();
-  }
-
-  const earningsSnap = await db.collection("users").doc(uid).collection("earnings").get();
-  if (!earningsSnap.empty) {
-    const batch = db.batch();
-    earningsSnap.docs.forEach((d) => batch.delete(d.ref));
     await batch.commit();
   }
 
@@ -245,6 +267,34 @@ exports.adminDeleteUser = onCall(async (request) => {
     if (!snap.empty) await batch.commit();
   };
 
+  const anonymizeTickets = async () => {
+    const snap = await db.collection("tickets").where("userId", "==", uid).get();
+    if (snap.empty) return;
+    const batch = db.batch();
+    snap.docs.forEach((d) => {
+      batch.update(d.ref, {
+        userId: "deleted_user",
+        client_name: "Usuario eliminado",
+        customerEmail: admin.firestore.FieldValue.delete(),
+        deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+    await batch.commit();
+  };
+
+  const anonymizeEarnings = async () => {
+    const snap = await db.collection("users").doc(uid).collection("earnings").get();
+    if (snap.empty) return;
+    const batch = db.batch();
+    snap.docs.forEach((d) => {
+      batch.update(d.ref, {
+        userName: "deleted_user",
+        deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+    await batch.commit();
+  };
+
   await Promise.all([
     deleteByField("likes", "fromId"),
     deleteByField("likes", "toId"),
@@ -253,23 +303,17 @@ exports.adminDeleteUser = onCall(async (request) => {
     deleteByField("pings", "fromUserId"),
     deleteByField("pings", "toUserId"),
     deleteByField("checkins", "userId"),
-    deleteByField("tickets", "userId"),
+    anonymizeTickets(),
     deleteByField("chill_requests", "user_uid"),
     deleteByField("reports", "reportedBy"),
     deleteByField("matches", "users"),
+    anonymizeEarnings(),
   ]);
 
   const blocksSnap = await db.collection("users").doc(uid).collection("blocks").get();
   if (!blocksSnap.empty) {
     const batch = db.batch();
     blocksSnap.docs.forEach((d) => batch.delete(d.ref));
-    await batch.commit();
-  }
-
-  const earningsSnap = await db.collection("users").doc(uid).collection("earnings").get();
-  if (!earningsSnap.empty) {
-    const batch = db.batch();
-    earningsSnap.docs.forEach((d) => batch.delete(d.ref));
     await batch.commit();
   }
 

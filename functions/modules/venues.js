@@ -3,6 +3,7 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { geohashForLocation, distanceBetween } = require("geofire-common");
 const { admin, db } = require("../lib/init");
+const crypto = require("crypto");
 
 exports.updateGeohash = onDocumentWritten("locations/{userId}", async (event) => {
   const data = event.data?.after?.data();
@@ -299,7 +300,7 @@ exports.createRRPPParty = onCall(async (request) => {
 
   // Create Event
   const eventId = new Date().toISOString().split('T')[0] + '-' + Math.random().toString(36).substr(2, 5);
-  const scannerToken = 'DOOR-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+  const scannerToken = 'DOOR-' + crypto.randomBytes(4).toString('hex').toUpperCase();
   const eventRef = db.collection(`venues/${venueId}/events`).doc(eventId);
   
   batch.set(eventRef, {
@@ -316,7 +317,7 @@ exports.createRRPPParty = onCall(async (request) => {
   const userDoc = await db.collection('users').doc(callerUid).get();
   const promoterName = userDoc.exists ? userDoc.data().nick : 'RRPP';
   
-  const token = Math.random().toString(36).substr(2, 6).toUpperCase();
+  const token = crypto.randomBytes(4).toString('hex').toUpperCase();
   const promoterRef = db.collection(`venues/${venueId}/events/${eventId}/promoters`).doc();
   
   batch.set(promoterRef, {
