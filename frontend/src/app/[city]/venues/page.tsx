@@ -94,10 +94,7 @@ export default function VenuesPage() {
     if (!user || checkingIn) return;
     setCheckingIn(true);
     try {
-      if (activeCheckin) {
-        await deleteDoc(doc(db, 'checkins', activeCheckin.id));
-      }
-
+      // The backend function 'checkInUser' handles replacing existing checkins transactionally.
       const checkInUser = httpsCallable(functions, 'checkInUser');
       await checkInUser({
         venueId,
