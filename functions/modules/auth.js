@@ -62,6 +62,23 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
   batch.set(db.collection("users").doc(uid), userDoc, { merge: true });
   batch.set(db.collection("subscriptions").doc(uid), subscriptionDoc, { merge: true });
 
+  // --- RECLAMACIÓN AUTOMÁTICA DE ENTRADAS DE INVITADO ---
+  if (email) {
+    try {
+      const ticketsSnapshot = await db.collection("tickets")
+        .where("customerEmail", "==", email)
+        .where("userId", "==", null)
+        .get();
+      
+      ticketsSnapshot.forEach(doc => {
+        batch.update(doc.ref, { userId: uid });
+        console.log(`Ticket invitado ${doc.id} auto-asignado a usuario ${uid} (${email})`);
+      });
+    } catch (err) {
+      console.error(`Error al buscar tickets huérfanos para ${email}:`, err);
+    }
+  }
+
   return batch.commit();
 });
 
