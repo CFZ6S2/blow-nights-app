@@ -129,7 +129,7 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
   }
 }
 
-exports.createCheckoutSession = onCall(async (request) => {
+exports.createCheckoutSession = onCall({ secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -170,7 +170,7 @@ exports.createCheckoutSession = onCall(async (request) => {
   }
 });
 
-exports.createVenueSubscriptionCheckout = onCall(async (request) => {
+exports.createVenueSubscriptionCheckout = onCall({ secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -247,7 +247,7 @@ exports.createVenueSubscriptionCheckout = onCall(async (request) => {
   }
 });
 
-exports.createChillPassCheckout = onCall(async (request) => {
+exports.createChillPassCheckout = onCall({ secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -338,7 +338,7 @@ exports.createChillPassCheckout = onCall(async (request) => {
   }
 });
 
-exports.createPingCheckoutSession = onCall(async (request) => {
+exports.createPingCheckoutSession = onCall({ secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -423,7 +423,7 @@ exports.createPingCheckoutSession = onCall(async (request) => {
   }
 });
 
-exports.createStripeConnectAccount = onCall(async (request) => {
+exports.createStripeConnectAccount = onCall({ secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -463,7 +463,7 @@ exports.createStripeConnectAccount = onCall(async (request) => {
   }
 });
 
-exports.createStripeAccountLink = onCall(async (request) => {
+exports.createStripeAccountLink = onCall({ secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -488,7 +488,7 @@ exports.createStripeAccountLink = onCall(async (request) => {
   return { url: accountLink.url };
 });
 
-exports.createQRPackageCheckout = onCall(async (request) => {
+exports.createQRPackageCheckout = onCall({ secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
   const { data } = request;
   const stripe = getStripe();
   if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
@@ -526,7 +526,7 @@ exports.createQRPackageCheckout = onCall(async (request) => {
   }
 });
 
-exports.stripeWebhook = onRequest(async (req, res) => {
+exports.stripeWebhook = onRequest({ secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"] }, async (req, res) => {
   const stripe = getStripe();
   if (!stripe) return res.status(500).send("Stripe no configurado.");
 
@@ -784,7 +784,7 @@ exports.stripeWebhook = onRequest(async (req, res) => {
   res.json({ received: true });
 });
 
-exports.createStripePortalSession = onCall(async (request) => {
+exports.createStripePortalSession = onCall({ secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Necesitas estar logueado");
 

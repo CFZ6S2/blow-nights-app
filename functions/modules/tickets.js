@@ -2,7 +2,7 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { admin, db, getStripe } = require("../lib/init");
 const { startTimer } = require("../lib/perf");
 
-exports.createTicketCheckout = onCall(async (request) => {
+exports.createTicketCheckout = onCall({ secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
   const timer = startTimer("createTicketCheckout");
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
@@ -97,7 +97,7 @@ exports.createTicketCheckout = onCall(async (request) => {
   return { sessionId: session.id, url: session.url };
 });
 
-exports.purchaseVenueTicket = onCall(async (request) => {
+exports.purchaseVenueTicket = onCall({ secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -151,7 +151,7 @@ exports.purchaseVenueTicket = onCall(async (request) => {
   return { sessionId: session.id, url: session.url };
 });
 
-exports.purchasePublicVenueTicket = onCall(async (request) => {
+exports.purchasePublicVenueTicket = onCall({ secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
   const { data } = request;
   
   const stripe = getStripe();
@@ -204,7 +204,7 @@ exports.purchasePublicVenueTicket = onCall(async (request) => {
   return { sessionId: session.id, url: session.url };
 });
 
-exports.purchaseIndependentEventTicket = onCall(async (request) => {
+exports.purchaseIndependentEventTicket = onCall({ secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 

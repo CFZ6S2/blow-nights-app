@@ -8,7 +8,7 @@ const { admin, db, getStripe } = require('../lib/init');
  * Create a Checkout Session for a membership tier (Free is default, no Stripe).
  * Expected data: { tier: 'plus'|'black', period: 'monthly'|'yearly', origin }
  */
-exports.createUserMembershipCheckout = onCall(async (request) => {
+exports.createUserMembershipCheckout = onCall({ secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Login requerido.');
   const { tier, period, origin } = data;
@@ -68,7 +68,7 @@ exports.createUserMembershipCheckout = onCall(async (request) => {
  * One‑time checkout for the Black 8h pass (5 €).
  * Expected data: { origin }
  */
-exports.createBlack8hCheckout = onCall(async (request) => {
+exports.createBlack8hCheckout = onCall({ secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Login requerido.');
   const { origin } = data;
