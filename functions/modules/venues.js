@@ -123,19 +123,15 @@ exports.checkInUser = onCall({ enforceAppCheck: false }, async (request) => {
     }
 
     if (previousVenueId && previousVenueId !== venueId) {
-      // We don't know if the previous check-in was a venue or event. Try venues first, but since it's a tx update, we might fail if it doesn't exist.
-      // To be safe, we just use set with merge if we don't know. 
+      // Instead of reading inside the transaction (which causes massive contention) or using update (which throws if missing),
+      // we use set with merge on both possible locations (venues and events) for safety since we don't know which one it is.
+      // This avoids breaking concurrent check-ins.
       const prevVenueRef = db.collection('venues').doc(previousVenueId);
       const prevEventRef = db.collection('events').doc(previousVenueId);
       const prevLiveRef = db.collection('live_sense').doc(previousVenueId);
       
-      // In a transaction, we should really read first. 
-      const pvSnap = await tx.get(prevVenueRef);
-      if (pvSnap.exists) {
-        tx.update(prevVenueRef, { currentCount: admin.firestore.FieldValue.increment(-1) });
-      } else {
-        tx.update(prevEventRef, { currentCount: admin.firestore.FieldValue.increment(-1) });
-      }
+      tx.set(prevVenueRef, { currentCount: admin.firestore.FieldValue.increment(-1) }, { merge: true });
+      tx.set(prevEventRef, { currentCount: admin.firestore.FieldValue.increment(-1) }, { merge: true });
       tx.set(prevLiveRef, { current_count: admin.firestore.FieldValue.increment(-1), updated_at: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
     }
 
