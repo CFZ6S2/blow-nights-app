@@ -280,17 +280,17 @@ export default function SetupProfilePage() {
                       <span className="material-icons text-sm">edit</span>
                     </div>
                   </div>
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Toca para subir tu foto principal</p>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{t('setupProfile.upload')}</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Tu Apodo</label>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">{t('setupProfile.name')}</label>
                     <input
                       type="text"
                       value={nick}
                       onChange={(e) => setNick(e.target.value)}
-                      placeholder="Ej: Marc"
+                      placeholder={t('setupProfile.namePlaceholder')}
                       className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-white font-bold outline-none focus:bg-white/[0.08] transition-all"
                     />
                   </div>
@@ -391,7 +391,7 @@ export default function SetupProfilePage() {
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Intereses / Tags</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">{t('setupProfile.interests')}</label>
                   <div className="flex flex-wrap gap-2">
                     {['Plan Tranquilo', 'Fiesta', 'Gimnasio', 'Cine', 'Gaming', 'Viajes', 'Música', 'Gastronomía', 'Solo Chat', 'Quedada Real'].map((tag) => (
                       <button
@@ -418,11 +418,11 @@ export default function SetupProfilePage() {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Sobre ti</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">{t('setupProfile.bio')}</label>
                   <textarea
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    placeholder="Algo corto y directo..."
+                    placeholder={t('setupProfile.bioPlaceholder')}
                     rows={3}
                     className="w-full bg-white/5 border border-white/10 rounded-3xl p-5 text-white font-bold outline-none resize-none transition-all"
                   />
@@ -497,7 +497,7 @@ export default function SetupProfilePage() {
                 onClick={prevStep}
                 className="flex-1 bg-white/5 hover:bg-white/10 text-white font-black py-6 rounded-[2rem] text-xs uppercase tracking-widest transition-all border border-white/10"
               >
-                Atrás
+                {t('setupProfile.skip')}
               </button>
             )}
             
@@ -506,7 +506,7 @@ export default function SetupProfilePage() {
                 onClick={nextStep}
                 className="flex-[2] bg-white text-black font-black py-6 rounded-[2rem] text-xs uppercase tracking-[0.3em] hover:bg-slate-200 transition-all shadow-2xl active:scale-95"
               >
-                Continuar
+                {t('setupProfile.continue')}
               </button>
             ) : (
               <button
@@ -514,14 +514,14 @@ export default function SetupProfilePage() {
                 disabled={isSubmitting}
                 className={`flex-[2] bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white font-black py-6 rounded-[2rem] text-xs uppercase tracking-[0.3em] shadow-[0_20px_50px_rgba(192,38,211,0.3)] transition-all ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95'}`}
               >
-                {isSubmitting ? 'Guardando...' : 'Finalizar Perfil'}
+                {isSubmitting ? 'Guardando...' : t('setupProfile.continue')}
               </button>
             )}
           </div>
         </div>
 
         <p className="text-center text-[9px] text-slate-600 uppercase tracking-[0.2em]">
-          Tus datos están protegidos por cifrado de grado bancario. <br />
+          {t('setupProfile.subtitle')} <br />
           Al continuar, aceptas nuestras <Link href="/rules" className="underline text-slate-500">Normas de la Comunidad</Link>.
         </p>
       </div>

@@ -128,7 +128,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
               className="w-full sm:w-auto px-10 py-5 rounded-2xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white font-[900] text-[13px] uppercase tracking-[0.15em] transition-all shadow-[0_15px_40px_rgba(217,70,239,0.35)] text-center flex items-center justify-center gap-2 transform hover:scale-105"
             >
               <span>🎟️</span>
-              <span>Comprar Entradas Sin Registro</span>
+              <span>{t('landing.features.ticketsDesc')}</span>
             </Link>
             <button
               onClick={handleStart}
@@ -180,10 +180,10 @@ export default function LandingPage({ onStart }: LandingPageProps) {
               <span>🎟️ VENTA DIRECTA SIN REGISTRO</span>
             </div>
             <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight">
-              ¿Vas de fiesta esta noche? <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-indigo-400">Compra tu entrada en 10 segundos</span>
+              {t('landing.hero.title')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-indigo-400"></span>
             </h2>
             <p className="text-slate-300 text-xs md:text-sm max-w-xl">
-              Elige tu garito favorito, selecciona tu pase VIP o general y recibe tu QR anti-fraude sin necesidad de registrarte.
+              {t('landing.hero.subtitle')}
             </p>
           </div>
 
@@ -191,7 +191,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             href="/entradas"
             className="px-8 py-5 bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-fuchsia-500/25 transition-all transform hover:scale-105 shrink-0 whitespace-nowrap"
           >
-            Ver Entradas & Garitos →
+            {t('landing.hero.cta')}
           </Link>
         </div>
       </section>
@@ -328,8 +328,8 @@ export default function LandingPage({ onStart }: LandingPageProps) {
               </span>
               <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Live Sense</span>
             </div>
-            <h2 className="text-3xl md:text-5xl font-[900] tracking-tight">¿Dónde hay ambiente<br className="hidden sm:block" /><span className="text-emerald-400"> ahora mismo</span>?</h2>
-            <p className="text-slate-400 text-sm leading-relaxed max-w-lg mx-auto">Mira en tiempo real cuánta gente hay en cada local. Sin registro, sin cuenta, sin filtros.</p>
+            <h2 className="text-3xl md:text-5xl font-[900] tracking-tight">{t('landing.features.title')}</h2>
+            <p className="text-slate-400 text-sm leading-relaxed max-w-lg mx-auto">{t('landing.features.radarDesc')}</p>
           </motion.div>
 
           {liveSenseVenues.length > 0 ? (
@@ -377,15 +377,15 @@ export default function LandingPage({ onStart }: LandingPageProps) {
               <div className="w-20 h-20 rounded-3xl bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-center mx-auto mb-6">
                 <span className="text-4xl">🌙</span>
               </div>
-              <p className="text-lg font-black text-white mb-2">Aún no ha empezado la noche</p>
-              <p className="text-sm text-slate-500 max-w-md mx-auto">Cuando la gente haga check-in en los locales, aquí verás en tiempo real cuánta gente hay en cada sitio.</p>
+              <p className="text-lg font-black text-white mb-2">The night hasn't started yet</p>
+              <p className="text-sm text-slate-500 max-w-md mx-auto"></p>
             </motion.div>
           )}
 
           <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center space-y-4 pt-4">
             <p className="text-sm text-slate-500">¿Quieres ver <span className="text-white font-bold">quién</span> está dentro y mandar un <span className="text-fuchsia-400 font-bold">Toque 🔥</span>?</p>
             <button onClick={handleStart} className="px-8 py-3 bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-full hover:scale-105 active:scale-95 transition-transform shadow-lg shadow-fuchsia-500/20">
-              Crea tu perfil en 1 clic
+              {t('landing.cta.button')}
             </button>
           </motion.div>
         </div>
@@ -513,13 +513,13 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             className="text-center space-y-4"
           >
             <span className="px-4 py-1.5 rounded-full bg-fuchsia-500/10 border border-fuchsia-500/20 text-[11px] font-black uppercase tracking-[0.25em] text-fuchsia-400 backdrop-blur-md">
-              Ecosistema Blow Nights
+              {t('landing.features.title')}
             </span>
             <h2 className="text-4xl md:text-6xl font-[1000] tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-fuchsia-300">
-              ¿Cuál es tu rol esta noche?
+              {t('landing.cta.title')}
             </h2>
             <p className="text-slate-400 max-w-xl mx-auto text-base font-medium">
-              Tanto si buscas salir de fiesta, promover salas o gestionar un club, Blow Nights tiene una experiencia diseñada para ti.
+              
             </p>
           </motion.div>
 

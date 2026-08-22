@@ -98,9 +98,9 @@ function LoginInner() {
               className="mt-0.5 w-5 h-5 rounded-md border-2 border-white/20 bg-white/5 accent-fuchsia-500 cursor-pointer flex-shrink-0"
             />
             <span className="text-[10px] text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors">
-              Confirmo que tengo <span className="text-white font-bold">+18 años</span> y acepto los{' '}
-              <Link href="/terms" className="text-fuchsia-400 underline">Términos</Link> y la{' '}
-              <Link href="/privacy" className="text-fuchsia-400 underline">Política de Privacidad</Link>.
+              {t('login.confirm_age_1')} <span className="text-white font-bold">{t('login.confirm_age_2')}</span> {t('login.confirm_age_3')}{' '}
+              <Link href="/terms" className="text-fuchsia-400 underline">{t('login.terms')}</Link> y la{' '}
+              <Link href="/privacy" className="text-fuchsia-400 underline">{t('login.privacy')}</Link>.
             </span>
           </label>
 
@@ -115,30 +115,30 @@ function LoginInner() {
 
           {/* Separación Clara de Registros Profesionales */}
           <div className="pt-6 border-t border-white/10 space-y-3 text-center">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">¿Perteneces al sector profesional?</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t('login.pro_question')}</p>
             <div className="grid grid-cols-2 gap-3 pt-1">
               <Link
                 href="/rrpp/register"
                 className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-center text-xs font-bold text-fuchsia-400 transition-all flex flex-col items-center gap-1"
               >
                 <span className="material-icons text-base">badge</span>
-                <span>Registro RRPP</span>
+                <span>{t('login.pro_rrpp')}</span>
               </Link>
               <Link
                 href="/business/login"
                 className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-center text-xs font-bold text-indigo-400 transition-all flex flex-col items-center gap-1"
               >
                 <span className="material-icons text-base">storefront</span>
-                <span>Acceso Locales</span>
+                <span>{t('login.pro_venues')}</span>
               </Link>
             </div>
           </div>
 
           <div className="flex justify-between gap-2 pt-2">
             {[
-              { icon: 'shield', label: 'Seguro' },
-              { icon: 'lock', label: 'Privado' },
-              { icon: 'verified', label: 'Real' }
+              { icon: 'shield', label: t('login.badge_secure') },
+              { icon: 'lock', label: t('login.badge_private') },
+              { icon: 'verified', label: t('login.badge_real') }
             ].map((b, i) => (
               <div key={i} className="flex flex-col items-center gap-1 opacity-40">
                 <span className="material-icons text-base">{b.icon}</span>

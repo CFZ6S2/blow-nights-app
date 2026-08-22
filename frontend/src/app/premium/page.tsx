@@ -53,7 +53,7 @@ export default function PremiumPage() {
 
   const handleSubscribe = async (tier: 'plus' | 'black') => {
     if (!profile?.cityId) {
-      alert('Debes seleccionar tu ciudad antes de adquirir la membresía.');
+      alert(t('premium.alert_city'));
       router.push('/setup-profile');
       return;
     }
@@ -84,7 +84,7 @@ export default function PremiumPage() {
 
   const handleBlack8h = async () => {
     if (!profile?.cityId) {
-      alert('Debes seleccionar tu ciudad antes.');
+      alert(t('premium.alert_city'));
       router.push('/setup-profile');
       return;
     }
@@ -124,7 +124,7 @@ export default function PremiumPage() {
       if (data?.url) window.location.href = data.url;
     } catch (err) {
       console.error(err);
-      alert('Error al abrir el portal de gestión.');
+      alert(t('premium.error_portal'));
     } finally {
       setIsSubmitting(false);
     }
@@ -177,8 +177,8 @@ export default function PremiumPage() {
         {isPromoLifetime && (
           <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 p-6 rounded-3xl text-center space-y-2 mb-8">
             <div className="text-4xl">👑</div>
-            <h3 className="text-xl font-black text-yellow-500">Fundador Black de por vida</h3>
-            <p className="text-sm text-slate-300">Fuiste uno de los 100 primeros. Disfruta de todos los beneficios Black gratis para siempre.</p>
+            <h3 className="text-xl font-black text-yellow-500">{t('premium.founder_title')}</h3>
+            <p className="text-sm text-slate-300">{t('premium.founder_desc')}</p>
           </div>
         )}
 
@@ -216,21 +216,21 @@ export default function PremiumPage() {
               </div>
             </div>
             <ul className="space-y-4 text-xs font-bold text-slate-400 flex-grow">
-              <li className="flex items-center gap-3"><span className="material-icons text-white/50 text-sm">check_circle</span> Mapa con usuarios cercanos</li>
-              <li className="flex items-center gap-3"><span className="material-icons text-white/50 text-sm">check_circle</span> Chat ilimitado con matches</li>
-              <li className="flex items-center gap-3"><span className="material-icons text-white/50 text-sm">check_circle</span> 3 pings al día</li>
-              <li className="flex items-center gap-3"><span className="material-icons text-white/50 text-sm">check_circle</span> Ver locales y eventos</li>
+              <li className="flex items-center gap-3"><span className="material-icons text-white/50 text-sm">check_circle</span> {t('premium.feat_map')}</li>
+              <li className="flex items-center gap-3"><span className="material-icons text-white/50 text-sm">check_circle</span> {t('premium.feat_chat')}</li>
+              <li className="flex items-center gap-3"><span className="material-icons text-white/50 text-sm">check_circle</span> {t('premium.feat_pings_3')}</li>
+              <li className="flex items-center gap-3"><span className="material-icons text-white/50 text-sm">check_circle</span> {t('premium.feat_venues')}</li>
             </ul>
             {membershipTier === 'free' && !isPromoLifetime && (
               <div className="mt-8">
                 <div className="bg-black/40 border border-indigo-500/30 p-4 rounded-2xl relative overflow-hidden group">
                   <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/10 to-fuchsia-600/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                   <h4 className="text-sm font-black text-indigo-400 mb-1">Black 8h Pass</h4>
-                  <p className="text-[10px] text-slate-400 mb-3 leading-relaxed">Obtén todas las ventajas Black (excepto crear Chills) por una noche.</p>
+                  <p className="text-[10px] text-slate-400 mb-3 leading-relaxed">{t('premium.black8h_desc')}</p>
                   
                   {timeLeft ? (
                     <div className="bg-indigo-500/20 text-indigo-300 font-mono text-center py-2 rounded-xl text-xs font-bold border border-indigo-500/30">
-                      Activo: {timeLeft}
+                      {t('premium.active')}: {timeLeft}
                     </div>
                   ) : (
                     <button
@@ -238,7 +238,7 @@ export default function PremiumPage() {
                       onClick={handleBlack8h}
                       className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-xl text-xs transition-all shadow-lg shadow-indigo-500/20"
                     >
-                      Comprar por 5€
+                      {t('premium.buy_for', { price: 5 })}
                     </button>
                   )}
                 </div>
@@ -246,7 +246,7 @@ export default function PremiumPage() {
             )}
             {membershipTier === 'free' && !isPromoLifetime && (
               <div className="mt-4 text-center">
-                <span className="text-[10px] font-bold text-slate-500 uppercase">Tu plan actual</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">{t('premium.current_plan')}</span>
               </div>
             )}
           </motion.div>
@@ -264,12 +264,12 @@ export default function PremiumPage() {
               </div>
             </div>
             <ul className="space-y-4 text-xs font-bold text-slate-300 flex-grow">
-              <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">add_circle</span> <span className="text-white">Todo lo Free</span></li>
-              <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">visibility</span> Ver quién te ha visitado</li>
-              <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">visibility_off</span> Modo fantasma</li>
-              <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">bolt</span> 10 pings al día</li>
-              <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">rocket_launch</span> 1 boost gratis al mes</li>
-              <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">tune</span> Filtros avanzados</li>
+              <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">add_circle</span> <span className="text-white">{t('premium.all_free')}</span></li>
+              <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">visibility</span> {t('premium.feat_visitors')}</li>
+              <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">visibility_off</span> {t('premium.feat_ghost')}</li>
+              <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">bolt</span> {t('premium.feat_pings_10')}</li>
+              <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">rocket_launch</span> {t('premium.feat_boost')}</li>
+              <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">tune</span> {t('premium.feat_filters')}</li>
               <li className="flex items-center gap-3"><span className="material-icons text-fuchsia-500 text-sm">favorite</span> Ver quién te dio like</li>
             </ul>
             <div className="mt-8">
@@ -279,12 +279,12 @@ export default function PremiumPage() {
                   onClick={() => handleSubscribe('plus')}
                   className="w-full bg-white text-black font-black py-4 rounded-2xl hover:bg-slate-200 transition-all uppercase tracking-widest text-[10px]"
                 >
-                  Mejorar a Plus
+                  {t('premium.upgrade_plus')}
                 </button>
               )}
               {isPlus && (
                 <div className="text-center py-4 bg-fuchsia-500/10 rounded-2xl border border-fuchsia-500/30">
-                  <span className="text-[10px] font-bold text-fuchsia-400 uppercase">Tu plan actual</span>
+                  <span className="text-[10px] font-bold text-fuchsia-400 uppercase">{t('premium.current_plan')}</span>
                 </div>
               )}
             </div>
@@ -308,13 +308,13 @@ export default function PremiumPage() {
               </div>
             </div>
             <ul className="space-y-4 text-xs font-bold text-slate-300 flex-grow">
-              <li className="flex items-center gap-3"><span className="material-icons text-slate-100 text-sm">add_circle</span> <span className="text-white">Todo lo Plus</span></li>
-              <li className="flex items-center gap-3"><span className="material-icons text-slate-100 text-sm">bolt</span> Pings ilimitados</li>
-              <li className="flex items-center gap-3"><span className="material-icons text-slate-100 text-sm">rocket_launch</span> Boosts ilimitados</li>
-              <li className="flex items-center gap-3"><span className="material-icons text-slate-100 text-sm">shield</span> Modo incógnito</li>
-              <li className="flex items-center gap-3"><span className="material-icons text-slate-100 text-sm">stars</span> Badge VIP & Prioridad</li>
-              <li className="flex items-center gap-3 font-black text-white bg-white/10 p-2 rounded-xl border border-white/20"><span className="material-icons text-sm">nightlife</span> Crear Chills y Afters</li>
-              <li className="flex items-center gap-3"><span className="material-icons text-slate-100 text-sm">block</span> Sin promos de venues</li>
+              <li className="flex items-center gap-3"><span className="material-icons text-slate-100 text-sm">add_circle</span> <span className="text-white">{t('premium.all_plus')}</span></li>
+              <li className="flex items-center gap-3"><span className="material-icons text-slate-100 text-sm">bolt</span> {t('premium.feat_pings_unlimited')}</li>
+              <li className="flex items-center gap-3"><span className="material-icons text-slate-100 text-sm">rocket_launch</span> {t('premium.feat_boosts_unlimited')}</li>
+              <li className="flex items-center gap-3"><span className="material-icons text-slate-100 text-sm">shield</span> {t('premium.feat_incognito')}</li>
+              <li className="flex items-center gap-3"><span className="material-icons text-slate-100 text-sm">stars</span> {t('premium.feat_vip')}</li>
+              <li className="flex items-center gap-3 font-black text-white bg-white/10 p-2 rounded-xl border border-white/20"><span className="material-icons text-sm">nightlife</span> {t('premium.feat_chills')}</li>
+              <li className="flex items-center gap-3"><span className="material-icons text-slate-100 text-sm">block</span> {t('premium.feat_no_ads')}</li>
             </ul>
             <div className="mt-8">
               {(!isBlack && !isPromoLifetime) && (
@@ -323,12 +323,12 @@ export default function PremiumPage() {
                   onClick={() => handleSubscribe('black')}
                   className="w-full bg-gradient-to-r from-slate-200 to-white text-black font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-transform uppercase tracking-widest text-[10px] shadow-[0_0_20px_rgba(255,255,255,0.3)]"
                 >
-                  Hazte Black
+                  {t('premium.upgrade_black')}
                 </button>
               )}
               {(isBlack || isPromoLifetime) && (
                 <div className="text-center py-4 bg-white/10 rounded-2xl border border-white/30">
-                  <span className="text-[10px] font-black text-white uppercase tracking-widest">Tu plan actual</span>
+                  <span className="text-[10px] font-black text-white uppercase tracking-widest">{t('premium.current_plan')}</span>
                 </div>
               )}
             </div>
