@@ -101,8 +101,8 @@ export default function VenuesPage() {
       const checkInUser = httpsCallable(functions, 'checkInUser');
       await checkInUser({
         venueId,
-        visibility: isAnon ? 'anonymous' : visibilityMode,
-        anonymous: isAnon
+        visibility: visibilityMode,
+        anonymous: visibilityMode === 'anonymous'
       });
     } catch (err) {
       console.error('Error checking in:', err);
