@@ -1,6 +1,5 @@
 const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { admin, db } = require("../lib/init");
-const { getStripe } = require("./stripe");
+const { admin, db, getStripe } = require("../lib/init");
 
 exports.dailyStripeReconciliation = onSchedule("every day 04:00", async (event) => {
   const stripe = getStripe();
