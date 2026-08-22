@@ -98,10 +98,19 @@ exports.checkInUser = onCall({ enforceAppCheck: false }, async (request) => {
   const expiresAt = admin.firestore.Timestamp.fromMillis(Date.now() + CHECKIN_DURATION_MS);
 
   await db.runTransaction(async (tx) => {
-    const venueSnap = await tx.get(venueRef);
-    if (!venueSnap.exists) throw new HttpsError('not-found', 'Venue no encontrado');
-    const venueData = venueSnap.data();
-    if (venueData.isActive === false) throw new HttpsError('failed-precondition', 'Venue inactivo');
+    let targetRef = db.collection('venues').doc(venueId);
+    let targetSnap = await tx.get(targetRef);
+    let isEvent = false;
+
+    if (!targetSnap.exists) {
+      targetRef = db.collection('events').doc(venueId);
+      targetSnap = await tx.get(targetRef);
+      isEvent = true;
+    }
+
+    if (!targetSnap.exists) throw new HttpsError('not-found', 'Venue no encontrado');
+    const targetData = targetSnap.data();
+    if (targetData.isActive === false) throw new HttpsError('failed-precondition', 'Venue inactivo');
 
     const previousCheckinSnap = await tx.get(checkinRef);
     let previousVenueId = null;
@@ -114,21 +123,31 @@ exports.checkInUser = onCall({ enforceAppCheck: false }, async (request) => {
     }
 
     if (previousVenueId && previousVenueId !== venueId) {
+      // We don't know if the previous check-in was a venue or event. Try venues first, but since it's a tx update, we might fail if it doesn't exist.
+      // To be safe, we just use set with merge if we don't know. 
       const prevVenueRef = db.collection('venues').doc(previousVenueId);
+      const prevEventRef = db.collection('events').doc(previousVenueId);
       const prevLiveRef = db.collection('live_sense').doc(previousVenueId);
-      tx.update(prevVenueRef, { currentCount: admin.firestore.FieldValue.increment(-1) });
+      
+      // In a transaction, we should really read first. 
+      const pvSnap = await tx.get(prevVenueRef);
+      if (pvSnap.exists) {
+        tx.update(prevVenueRef, { currentCount: admin.firestore.FieldValue.increment(-1) });
+      } else {
+        tx.update(prevEventRef, { currentCount: admin.firestore.FieldValue.increment(-1) });
+      }
       tx.set(prevLiveRef, { current_count: admin.firestore.FieldValue.increment(-1), updated_at: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
     }
 
     if (previousVenueId !== venueId) {
-      tx.update(venueRef, { currentCount: admin.firestore.FieldValue.increment(1) });
+      tx.update(targetRef, { currentCount: admin.firestore.FieldValue.increment(1) });
       const hour = new Date().getHours();
       tx.set(liveSenseRef, { 
         current_count: admin.firestore.FieldValue.increment(1),
-        venue_name: venueData.name || "",
-        venue_type: venueData.type || "",
-        cityId: venueData.cityId || "",
-        capacity: venueData.capacity || null,
+        venue_name: targetData.name || targetData.title || "",
+        venue_type: targetData.type || "event",
+        cityId: targetData.cityId || "",
+        capacity: targetData.capacity || null,
         updated_at: admin.firestore.FieldValue.serverTimestamp(),
         [`hourly_entries.h${hour}`]: admin.firestore.FieldValue.increment(1),
       }, { merge: true });
