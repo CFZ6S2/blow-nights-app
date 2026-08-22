@@ -90,7 +90,7 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
             destination: ambassadorStripe,
             description: `Ambassador 25% ${sourceType} ${relatedId || ''}`,
             transfer_group: finalSplitId,
-          });
+          }, { idempotencyKey: `transfer_${finalSplitId}_ambassador` });
           payoutInfo.status = 'paid';
         } catch (err) {
           console.error('Error transfer Ambassador:', err);
@@ -113,7 +113,7 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
             destination: partnerStripeId,
             description: `CityManager ${sourceType} ${relatedId || ''}`,
             transfer_group: finalSplitId,
-          });
+          }, { idempotencyKey: `transfer_${finalSplitId}_cm` });
           payoutInfo.status = 'paid';
        } catch (err) {
           console.error('Error transfer City Manager:', err);
@@ -836,7 +836,7 @@ exports.stripeWebhook = onRequest({ secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHO
           console.warn("Entradas agotadas durante el pago, reembolsando sesión:", session.id);
           const paymentIntent = session.payment_intent;
           if (paymentIntent) {
-            await stripe.refunds.create({ payment_intent: paymentIntent });
+            await stripe.refunds.create({ payment_intent: paymentIntent }, { idempotencyKey: `refund_overbooking_${session.id}` });
             console.log("Reembolso automático emitido por overbooking.");
           }
           throw new Error("REEMBOLSO_EMITIDO_OVERBOOKING"); // Prevenir que siga el webhook normal
