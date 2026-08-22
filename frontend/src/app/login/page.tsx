@@ -29,8 +29,6 @@ function LoginInner() {
     if (role && role !== 'user') {
       const roleRedirects: Record<string, string> = {
         rrpp: '/rrpp',
-        venue: '/venue-admin',
-        venueOwner: '/venue-admin',
         cityAdmin: '/city-manager',
         door: '/door',
         ambassador: '/ambassador',

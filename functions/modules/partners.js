@@ -111,6 +111,13 @@ exports.approvePartnerAccess = onCall({ enforceAppCheck: false }, async (request
 
     const assignedRole = appData.type === 'city_manager' ? 'cityManager' : 'venueOwner';
     const existingClaims = (await admin.auth().getUser(targetUid)).customClaims || {};
+
+    const protectedRoles = ['superadmin', 'admin', 'cityManager'];
+    if (protectedRoles.includes(existingClaims.role)) {
+      throw new HttpsError('failed-precondition',
+        `El usuario ${appData.email} ya tiene rol "${existingClaims.role}". No se puede degradar a "${assignedRole}".`);
+    }
+
     await admin.auth().setCustomUserClaims(targetUid, { ...existingClaims, role: assignedRole });
 
     const userUpdate = {

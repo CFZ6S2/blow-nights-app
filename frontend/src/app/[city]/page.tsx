@@ -59,8 +59,6 @@ export default function Home() {
     if (role === 'cityAdmin' && !isCityAdmin) return;
 
     const redirects: Record<string, string> = {
-      venue: '/venue-admin',
-      venueOwner: '/venue-admin',
       cityAdmin: '/city-manager',
       door: '/door',
       ambassador: '/ambassador',
@@ -120,8 +118,6 @@ export default function Home() {
 
   const role = profile.role;
   const redirects: Record<string, string> = {
-    venue: '/venue-admin',
-    venueOwner: '/venue-admin',
     cityAdmin: '/city-manager',
     door: '/door',
     ambassador: '/ambassador',
