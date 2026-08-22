@@ -315,24 +315,24 @@ export default function LandingPage({ onStart }: LandingPageProps) {
       </section>
 
       {/* ═══ LIVE SENSE ═══ */}
-      {liveSenseVenues.length > 0 && (
-        <section className="py-24 md:py-32 px-6 border-t border-white/[0.04] relative overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-[20%] left-[-10%] w-[40%] h-[40%] bg-emerald-600/8 blur-[140px] rounded-full" />
-          </div>
-          <div className="max-w-5xl mx-auto space-y-12 relative z-10">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center space-y-3">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-4">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                </span>
-                <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Live Sense</span>
-              </div>
-              <h2 className="text-3xl md:text-5xl font-[900] tracking-tight">¿Dónde hay ambiente<br className="hidden sm:block" /><span className="text-emerald-400"> ahora mismo</span>?</h2>
-              <p className="text-slate-400 text-sm leading-relaxed max-w-lg mx-auto">Mira en tiempo real cuánta gente hay en cada local. Sin registro, sin cuenta, sin filtros.</p>
-            </motion.div>
+      <section className="py-24 md:py-32 px-6 border-t border-white/[0.04] relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-[20%] left-[-10%] w-[40%] h-[40%] bg-emerald-600/8 blur-[140px] rounded-full" />
+        </div>
+        <div className="max-w-5xl mx-auto space-y-12 relative z-10">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center space-y-3">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-4">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Live Sense</span>
+            </div>
+            <h2 className="text-3xl md:text-5xl font-[900] tracking-tight">¿Dónde hay ambiente<br className="hidden sm:block" /><span className="text-emerald-400"> ahora mismo</span>?</h2>
+            <p className="text-slate-400 text-sm leading-relaxed max-w-lg mx-auto">Mira en tiempo real cuánta gente hay en cada local. Sin registro, sin cuenta, sin filtros.</p>
+          </motion.div>
 
+          {liveSenseVenues.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {liveSenseVenues.map((v, i) => {
                 const ratio = v.capacity ? v.current_count / v.capacity : null;
@@ -372,16 +372,24 @@ export default function LandingPage({ onStart }: LandingPageProps) {
                 );
               })}
             </div>
-
-            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center space-y-4 pt-4">
-              <p className="text-sm text-slate-500">¿Quieres ver <span className="text-white font-bold">quién</span> está dentro y mandar un <span className="text-fuchsia-400 font-bold">Toque 🔥</span>?</p>
-              <button onClick={handleStart} className="px-8 py-3 bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-full hover:scale-105 active:scale-95 transition-transform shadow-lg shadow-fuchsia-500/20">
-                Crea tu perfil en 1 clic
-              </button>
+          ) : (
+            <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center py-12">
+              <div className="w-20 h-20 rounded-3xl bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-center mx-auto mb-6">
+                <span className="text-4xl">🌙</span>
+              </div>
+              <p className="text-lg font-black text-white mb-2">Aún no ha empezado la noche</p>
+              <p className="text-sm text-slate-500 max-w-md mx-auto">Cuando la gente haga check-in en los locales, aquí verás en tiempo real cuánta gente hay en cada sitio.</p>
             </motion.div>
-          </div>
-        </section>
-      )}
+          )}
+
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center space-y-4 pt-4">
+            <p className="text-sm text-slate-500">¿Quieres ver <span className="text-white font-bold">quién</span> está dentro y mandar un <span className="text-fuchsia-400 font-bold">Toque 🔥</span>?</p>
+            <button onClick={handleStart} className="px-8 py-3 bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-full hover:scale-105 active:scale-95 transition-transform shadow-lg shadow-fuchsia-500/20">
+              Crea tu perfil en 1 clic
+            </button>
+          </motion.div>
+        </div>
+      </section>
 
       {/* ═══ HOW IT WORKS ═══ */}
       <section className="py-24 md:py-32 px-6 border-t border-white/[0.04]">
