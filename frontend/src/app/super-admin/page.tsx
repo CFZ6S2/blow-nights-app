@@ -101,10 +101,7 @@ export default function SuperAdminPage() {
     if (!isSuperAdmin) return;
     const fetchData = async () => {
       try {
-        const [
-          venuesSnap, citiesSnap, partnersSnap, appsSnap,
-          rrppAppsSnap, orgAppsSnap, promotersSnap, rolesSnap
-        ] = await Promise.all([
+        const queries = [
           getDocs(query(collection(db, 'venues'), limit(100))),
           getDocs(query(collection(db, 'cities'), limit(100))),
           getDocs(query(collection(db, 'users'), where('isAssociatePartner', '==', true), limit(100))),
@@ -112,18 +109,22 @@ export default function SuperAdminPage() {
           getDocs(query(collection(db, 'rrpp_applications'), where('status', '==', 'pending'), limit(100))),
           getDocs(query(collection(db, 'organizer_applications'), where('status', '==', 'pending'), limit(100))),
           getDocs(query(collectionGroup(db, 'promoters'), limit(100))),
-          getDocs(query(collection(db, 'users'), where('role', 'in', ['venue', 'cityAdmin', 'admin', 'superadmin', 'rrpp', 'door', 'ambassador']), limit(100)))
-        ]);
+          getDocs(query(collection(db, 'users'), where('role', 'in', ['venue', 'venueOwner', 'cityAdmin', 'admin', 'superadmin', 'rrpp', 'door', 'ambassador']), limit(100)))
+        ];
+        const results = await Promise.allSettled(queries);
+        const snap = (i: number): any => results[i].status === 'fulfilled' ? (results[i] as any).value : { forEach: () => {}, docs: [] };
+        const venuesSnap = snap(0); const citiesSnap = snap(1); const partnersSnap = snap(2); const appsSnap = snap(3);
+        const rrppAppsSnap = snap(4); const orgAppsSnap = snap(5); const promotersSnap = snap(6); const rolesSnap = snap(7);
 
-        const v: any[] = []; venuesSnap.forEach(d => v.push({ id: d.id, ...d.data() })); setVenues(v);
-        const c: any[] = []; citiesSnap.forEach(d => c.push({ id: d.id, ...d.data() })); setCities(c);
-        const p: any[] = []; partnersSnap.forEach(d => p.push({ id: d.id, ...d.data() })); setPartners(p);
-        const a: any[] = []; appsSnap.forEach(d => {
+        const v: any[] = []; venuesSnap.forEach((d: any) => v.push({ id: d.id, ...d.data() })); setVenues(v);
+        const c: any[] = []; citiesSnap.forEach((d: any) => c.push({ id: d.id, ...d.data() })); setCities(c);
+        const p: any[] = []; partnersSnap.forEach((d: any) => p.push({ id: d.id, ...d.data() })); setPartners(p);
+        const a: any[] = []; appsSnap.forEach((d: any) => {
           const dat = d.data();
           if (dat.type === 'city_manager') {
             a.push({ id: d.id, ...dat });
           } else if (dat.type === 'venue') {
-            const city = c.find(cityItem => cityItem.id === dat.cityId);
+            const city = c.find((cityItem: any) => cityItem.id === dat.cityId);
             const hasManager = city && city.partnerId;
             if (!hasManager) {
               a.push({ id: d.id, ...dat });
@@ -131,11 +132,11 @@ export default function SuperAdminPage() {
           }
         });
         setApplications(a);
-        const r: any[] = []; rrppAppsSnap.forEach(d => r.push({ id: d.id, ...d.data() })); setRrppApplications(r);
-        const o: any[] = []; orgAppsSnap.forEach(d => o.push({ id: d.id, ...d.data() })); setOrganizerApps(o);
-        
+        const r: any[] = []; rrppAppsSnap.forEach((d: any) => r.push({ id: d.id, ...d.data() })); setRrppApplications(r);
+        const o: any[] = []; orgAppsSnap.forEach((d: any) => o.push({ id: d.id, ...d.data() })); setOrganizerApps(o);
+
         const prom: any[] = [];
-        promotersSnap.forEach(d => {
+        promotersSnap.forEach((d: any) => {
           const pathSegments = d.ref.path.split('/');
           const venueId = pathSegments[1];
           const eventId = pathSegments[3];
@@ -143,7 +144,7 @@ export default function SuperAdminPage() {
         });
         setPromoters(prom);
 
-        const rol: any[] = []; rolesSnap.forEach(d => rol.push({ id: d.id, ...d.data() })); setRecentAssignments(rol);
+        const rol: any[] = []; rolesSnap.forEach((d: any) => rol.push({ id: d.id, ...d.data() })); setRecentAssignments(rol);
       } catch (err) {
         console.error("Error fetching super-admin data:", err);
       }
