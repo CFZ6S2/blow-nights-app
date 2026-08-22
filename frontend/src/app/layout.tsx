@@ -70,7 +70,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://firestore.googleapis.com" />
         <link rel="preconnect" href="https://firebaseinstallations.googleapis.com" />
         <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap" as="style" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap" rel="stylesheet" crossOrigin="anonymous" />
       </head>
       <body className="min-h-full flex flex-col bg-slate-950 text-white">
         <I18nProvider>
