@@ -162,7 +162,7 @@ export default function PremiumPage() {
               onClick={() => setPeriod('yearly')}
               className={`px-6 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-2 ${period === 'yearly' ? 'bg-gradient-to-r from-fuchsia-500 to-indigo-500 text-white shadow-lg' : 'text-white/70 hover:text-white'}`}
             >
-              {t('premium.yearly')} <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">-40%</span>
+              {t('premium.yearly')} <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">-25%</span>
             </button>
           </div>
         </div>
@@ -259,7 +259,7 @@ export default function PremiumPage() {
             <div className="space-y-2 mb-8">
               <h3 className="text-xl font-black uppercase tracking-widest text-fuchsia-400">Plus</h3>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-black">{period === 'monthly' ? '10€' : '69,99€'}</span>
+                <span className="text-4xl font-black">{period === 'monthly' ? '10€' : '90€'}</span>
                 <span className="text-slate-500 text-xs font-black">/{period === 'monthly' ? 'mes' : 'año'}</span>
               </div>
             </div>
@@ -303,7 +303,7 @@ export default function PremiumPage() {
             <div className="space-y-2 mb-8">
               <h3 className="text-xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-slate-300 to-white">Black</h3>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-black text-white">{period === 'monthly' ? '20€' : '139,99€'}</span>
+                <span className="text-4xl font-black text-white">{period === 'monthly' ? '20€' : '180€'}</span>
                 <span className="text-slate-500 text-xs font-black">/{period === 'monthly' ? 'mes' : 'año'}</span>
               </div>
             </div>

@@ -69,6 +69,31 @@
       ]
     },
     {
+      "target": "gay-meet-app-mvp-26",
+      "public": "frontend/out",
+      "cleanUrls": true,
+      "trailingSlash": false,
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [{ "source": "**", "destination": "/index.html" }],
+      "headers": [
+        {
+          "source": "**",
+          "headers": [
+            { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
+            { "key": "X-Frame-Options", "value": "DENY" },
+            { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+            { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+            { "key": "Permissions-Policy", "value": "camera=*, microphone=*, geolocation=*" },
+            { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" }
+          ]
+        },
+        { "source": "/_next/static/**", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+        { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] },
+        { "source": "/icons/**", "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }] }
+      ]
+    },
+    {
       "target": "darknights",
       "public": "darknights/frontend/out",
       "cleanUrls": true,

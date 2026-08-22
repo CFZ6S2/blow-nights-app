@@ -14,6 +14,7 @@ interface VenueWithTickets {
   address?: string;
   coverImage?: string;
   cityId?: string;
+  ciudad?: string;
   ticketPricing?: Record<string, any>;
   ticket_tiers?: any[];
   externalTicketUrl?: string;
