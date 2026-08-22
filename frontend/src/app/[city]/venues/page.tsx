@@ -96,10 +96,11 @@ export default function VenuesPage() {
     try {
       // The backend function 'checkInUser' handles replacing existing checkins transactionally.
       const checkInUser = httpsCallable(functions, 'checkInUser');
+      const anonymous = visibilityMode === 'anonymous';
       await checkInUser({
         venueId,
-        visibility: isAnon ? 'anonymous' : visibilityMode,
-        anonymous: isAnon
+        visibility: anonymous ? 'anonymous' : visibilityMode,
+        anonymous
       });
     } catch (err) {
       console.error('Error checking in:', err);
