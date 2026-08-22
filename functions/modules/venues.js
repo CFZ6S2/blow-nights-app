@@ -123,15 +123,14 @@ exports.checkInUser = onCall({ enforceAppCheck: false }, async (request) => {
     }
 
     if (previousVenueId && previousVenueId !== venueId) {
-      // Instead of reading inside the transaction (which causes massive contention) or using update (which throws if missing),
-      // we use set with merge on both possible locations (venues and events) for safety since we don't know which one it is.
-      // This avoids breaking concurrent check-ins.
-      const prevVenueRef = db.collection('venues').doc(previousVenueId);
-      const prevEventRef = db.collection('events').doc(previousVenueId);
+      // Determine if previous check-in was an event by checking the checkin document
+      const isPrevEvent = previousCheckinSnap.data().isEvent === true;
+      const prevTargetRef = isPrevEvent 
+        ? db.collection('events').doc(previousVenueId)
+        : db.collection('venues').doc(previousVenueId);
       const prevLiveRef = db.collection('live_sense').doc(previousVenueId);
       
-      tx.set(prevVenueRef, { currentCount: admin.firestore.FieldValue.increment(-1) }, { merge: true });
-      tx.set(prevEventRef, { currentCount: admin.firestore.FieldValue.increment(-1) }, { merge: true });
+      tx.update(prevTargetRef, { currentCount: admin.firestore.FieldValue.increment(-1) });
       tx.set(prevLiveRef, { current_count: admin.firestore.FieldValue.increment(-1), updated_at: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
     }
 
@@ -153,8 +152,9 @@ exports.checkInUser = onCall({ enforceAppCheck: false }, async (request) => {
       userId: auth.uid,
       realUserId: anonymous ? null : auth.uid,
       venueId,
-      venueName: venueData.name || "",
-      cityId: venueData.cityId || "",
+      isEvent,
+      venueName: targetData.name || targetData.title || "",
+      cityId: targetData.cityId || "",
       visibility: visibility || "public",
       anonymous: anonymous || false,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
