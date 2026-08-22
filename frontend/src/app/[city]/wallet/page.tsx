@@ -7,7 +7,7 @@ import { useCityRouter } from '@/hooks/useCityRouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTickets } from '@/hooks/useTickets';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/lib/firebase';
+import { functions, db } from '@/lib/firebase';
 import DynamicQR from '@/components/DynamicQR';
 
 export default function WalletPage() {
