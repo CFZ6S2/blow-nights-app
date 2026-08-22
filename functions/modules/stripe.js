@@ -682,7 +682,7 @@ exports.stripeWebhook = onRequest({ secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHO
           await territorialSplit(stripe, db, { amountCents: session.amount_total, cityId, sourceType: "venue_saas", relatedId: venueId, splitId: session.id, platform: session.metadata?.platform || 'blownights' });
         }
       }
-    } else if (firebaseUID || session.metadata?.type === "public_ticket") {
+    } else if (firebaseUID || session.metadata?.type === "public_ticket" || session.metadata?.type === "ticket") {
      const isTicket = session.metadata?.type === "ticket" || session.metadata?.type === "public_ticket";
      const isPublicTicket = session.metadata?.type === "public_ticket";
      const isChillPass = session.metadata?.type === "chill_pass";
@@ -740,8 +740,9 @@ exports.stripeWebhook = onRequest({ secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHO
       }
     } else if (isTicket) {
       const crypto = require("crypto");
-      const qrToken = crypto.randomBytes(32).toString("hex"); // Fallback for old clients
-      const secretKey = crypto.randomBytes(16).toString("hex"); // For Dynamic QR
+      const guestId = !firebaseUID ? crypto.randomUUID() : null;
+      const qrToken = crypto.randomBytes(32).toString("hex");
+      const secretKey = crypto.randomBytes(16).toString("hex");
       const pinCode = Math.floor(1000 + Math.random() * 9000).toString();
       const venueId = session.metadata.venueId;
       const eventId = session.metadata.eventId;
@@ -813,8 +814,8 @@ exports.stripeWebhook = onRequest({ secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHO
         }
 
         const ticketRef = db.collection("tickets").doc();
-        const { qrToken, secretKey, ...publicPayload } = {
-          userId: session.metadata.giftUserId || firebaseUID || null,
+        const { qrToken: qt, secretKey: sk, ...publicPayload } = {
+          userId: session.metadata.giftUserId || firebaseUID || guestId,
           customerEmail: session.customer_details?.email || session.customer_email || null,
           venueId,
           eventId: eventId || null,
@@ -827,6 +828,8 @@ exports.stripeWebhook = onRequest({ secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHO
           secretKey,
           pinCode,
           status: "valid",
+          isGuest: !firebaseUID,
+          guestId: guestId || null,
           purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
           stripeSessionId: session.id,
           isIndependent,

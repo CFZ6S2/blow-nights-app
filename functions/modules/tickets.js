@@ -98,57 +98,66 @@ exports.createTicketCheckout = onCall({ enforceAppCheck: false, secrets: ["STRIP
 });
 
 exports.purchaseVenueTicket = onCall({ enforceAppCheck: false, secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
-  const { data, auth } = request;
-  if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
+    const { data, auth } = request;
+    if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
+  
+    const stripe = getStripe();
+    if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
+  
+    const { venueId, ticketType, origin } = data;
+    if (!venueId || !ticketType) {
+      throw new HttpsError("invalid-argument", "venueId y ticketType son obligatorios.");
+    }
+  
+    const venueDoc = await db.collection("venues").doc(venueId).get();
+    if (!venueDoc.exists) throw new HttpsError("not-found", "Local no encontrado.");
+    const venueData = venueDoc.data();
+  
+    const pricing = venueData.ticketPricing?.[ticketType];
+    if (!pricing) throw new HttpsError("not-found", "Tipo de entrada no encontrado.");
+  
+    const stripeAccountId = venueData.stripeAccountId;
+    if (!stripeAccountId) throw new HttpsError("failed-precondition", "El local no tiene Stripe configurado.");
+  
+    const ticketPriceCents = pricing.amount || 0;
+    const platformFeeCents = 100;
 
-  const stripe = getStripe();
-  if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
-
-  const { venueId, ticketType, origin } = data;
-  if (!venueId || !ticketType) {
-    throw new HttpsError("invalid-argument", "venueId y ticketType son obligatorios.");
-  }
-
-  const venueDoc = await db.collection("venues").doc(venueId).get();
-  if (!venueDoc.exists) throw new HttpsError("not-found", "Local no encontrado.");
-  const venueData = venueDoc.data();
-
-  const pricing = venueData.ticketPricing?.[ticketType];
-  if (!pricing) throw new HttpsError("not-found", "Tipo de entrada no encontrado.");
-
-  const stripeAccountId = venueData.stripeAccountId;
-  if (!stripeAccountId) throw new HttpsError("failed-precondition", "El local no tiene Stripe configurado.");
-
-  const ticketPriceCents = pricing.amount || 0;
-  const platformFeeCents = 100;
-
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    line_items: [{
-      price_data: {
-        currency: "eur",
-        product_data: { name: `${venueData.name} - ${pricing.name || ticketType}` },
-        unit_amount: ticketPriceCents,
+    // BYPASS FOR PRODUCTION TESTING WITHOUT ACTIVE CONNECT ACCOUNT
+    const isBypass = stripeAccountId === 'acct_1U7IE6L1fBKMMPTs';
+    
+    const sessionPayload = {
+      payment_method_types: ["card"],
+      line_items: [{
+        price_data: {
+          currency: "eur",
+          product_data: { name: `${venueData.name} - ${pricing.name || ticketType}` },
+          unit_amount: ticketPriceCents,
+        },
+        quantity: 1,
+      }],
+      mode: "payment",
+      success_url: `${origin}/wallet?success=true`,
+      cancel_url: `${origin}/wallet?canceled=true`,
+      metadata: {
+        firebaseUID: auth.uid,
+        giftUserId: data.giftUserId || null,
+        venueId,
+        ticketType,
+        type: "ticket",
+        platform: origin?.includes('darknights') ? 'darknights' : (data.platform || 'blownights'),
       },
-      quantity: 1,
-    }],
-    mode: "payment",
-    payment_intent_data: {
-      application_fee_amount: platformFeeCents,
-    },
-    success_url: `${origin}/wallet?success=true`,
-    cancel_url: `${origin}/wallet?canceled=true`,
-    metadata: {
-      firebaseUID: auth.uid,
-      giftUserId: data.giftUserId || null,
-      venueId,
-      ticketType,
-      type: "ticket",
-      platform: origin?.includes('darknights') ? 'darknights' : (data.platform || 'blownights'),
-    },
-  }, { stripeAccount: stripeAccountId });
+    };
 
-  return { sessionId: session.id, url: session.url };
+    if (!isBypass) {
+      sessionPayload.payment_intent_data = {
+        application_fee_amount: platformFeeCents,
+      };
+    }
+
+    const sessionOptions = isBypass ? undefined : { stripeAccount: stripeAccountId };
+    const session = await stripe.checkout.sessions.create(sessionPayload, sessionOptions);
+
+    return { sessionId: session.id, url: session.url };
 });
 
 exports.purchasePublicVenueTicket = onCall({ enforceAppCheck: false, secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
