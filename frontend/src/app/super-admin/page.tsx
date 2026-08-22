@@ -1092,8 +1092,8 @@ export default function SuperAdminPage() {
                 <div className="flex items-start gap-4">
                   <span className="text-4xl">💼</span>
                   <div className="w-full">
-                    <h2 className="text-xl font-black text-white tracking-tight leading-none mb-1">Nuevas Solicitudes de City Manager</h2>
-                    <p className="text-sm text-slate-400 mb-4">Revisa y contacta a los candidatos para asignarles su plaza.</p>
+                    <h2 className="text-xl font-black text-white tracking-tight leading-none mb-1">Nuevas Solicitudes de Partners</h2>
+                    <p className="text-sm text-slate-400 mb-4">Revisa y contacta a los candidatos. Pueden ser locales o City Managers.</p>
                     <div className="space-y-3">
                       {applications.map(app => (
                         <div key={app.id} className="bg-black/30 rounded-xl p-4 border border-white/10">
@@ -1102,9 +1102,17 @@ export default function SuperAdminPage() {
                               <p className="font-bold text-white text-lg">{app.name}</p>
                               <p className="text-xs text-fuchsia-400 font-bold uppercase">{app.cityId === 'other' ? 'Otra Ciudad' : app.cityId}</p>
                             </div>
-                            <span className="px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded-md text-xs font-bold uppercase">Pendiente</span>
+                            <div className="flex items-center gap-2">
+                              {app.type === 'city_manager' ? (
+                                <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded-md text-xs font-bold uppercase">City Manager</span>
+                              ) : (
+                                <span className="px-2 py-1 bg-fuchsia-500/20 text-fuchsia-400 rounded-md text-xs font-bold uppercase">Local</span>
+                              )}
+                              <span className="px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded-md text-xs font-bold uppercase">Pendiente</span>
+                            </div>
                           </div>
                           <p className="text-sm text-slate-300 mb-1">📞 {app.phone} | ✉️ {app.email}</p>
+                          {app.venueName && <p className="text-sm text-fuchsia-300 font-bold mb-1">🍸 {app.venueName}</p>}
                           <p className="text-xs text-slate-500 italic border-l-2 border-fuchsia-500/30 pl-2 mt-2">{app.experience}</p>
                           
                           <div className="mt-4 flex gap-2">

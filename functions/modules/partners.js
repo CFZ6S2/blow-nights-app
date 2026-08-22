@@ -4,20 +4,27 @@ const { admin, db } = require("../lib/init");
 exports.requestPartnerAccess = onCall(async (request) => {
   const { data } = request;
 
-  const { name, email, phone, cityId } = data;
+  const { name, email, phone, cityId, type, venueName } = data;
   if (!name || !email || !phone) {
     throw new HttpsError('invalid-argument', 'Nombre, email y teléfono son obligatorios.');
   }
 
+  const applicationType = type === 'city_manager' ? 'city_manager' : 'venue';
+
   try {
-    await db.collection('partner_applications').add({
+    const doc = {
       name,
       email: email.toLowerCase().trim(),
       phone,
       cityId: cityId || 'other',
+      type: applicationType,
       status: 'pending',
       createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
+    };
+    if (applicationType === 'venue' && venueName) {
+      doc.venueName = venueName;
+    }
+    await db.collection('partner_applications').add(doc);
 
     return { success: true, message: 'Solicitud enviada correctamente.' };
   } catch (error) {
@@ -85,11 +92,12 @@ exports.approvePartnerAccess = onCall(async (request) => {
       }
     }
 
+    const assignedRole = appData.type === 'city_manager' ? 'cityManager' : 'venueOwner';
     const existingClaims = (await admin.auth().getUser(targetUid)).customClaims || {};
-    await admin.auth().setCustomUserClaims(targetUid, { ...existingClaims, role: 'venueOwner' });
+    await admin.auth().setCustomUserClaims(targetUid, { ...existingClaims, role: assignedRole });
 
     await db.collection('users').doc(targetUid).set({
-      role: 'venueOwner',
+      role: assignedRole,
       email: appData.email,
       nick: appData.name,
       phone: appData.phone,
