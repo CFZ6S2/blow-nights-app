@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot, doc, setDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, functions } from '@/lib/firebase';
 import { httpsCallable } from 'firebase/functions';
