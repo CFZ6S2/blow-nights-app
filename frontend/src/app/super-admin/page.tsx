@@ -213,11 +213,19 @@ export default function SuperAdminPage() {
     if (!searchNick.trim()) return;
     setSearchingUser(true);
     try {
-      const end = searchNick.replace(/.$/, c => String.fromCharCode(c.charCodeAt(0) + 1));
-      const q = query(collection(db, 'users'), where('nick', '>=', searchNick), where('nick', '<', end));
-      const snap = await getDocs(q);
-      const users: any[] = [];
-      snap.forEach(d => users.push({ id: d.id, ...d.data() }));
+      const term = searchNick.trim();
+      const isEmail = term.includes('@');
+      let users: any[] = [];
+      if (isEmail) {
+        const qEmail = query(collection(db, 'users'), where('email', '==', term.toLowerCase()));
+        const snap = await getDocs(qEmail);
+        snap.forEach(d => users.push({ id: d.id, ...d.data() }));
+      } else {
+        const end = term.replace(/.$/, c => String.fromCharCode(c.charCodeAt(0) + 1));
+        const q = query(collection(db, 'users'), where('nick', '>=', term), where('nick', '<', end));
+        const snap = await getDocs(q);
+        snap.forEach(d => users.push({ id: d.id, ...d.data() }));
+      }
       setSearchResults(users);
     } catch (e) {
       console.error(e);
@@ -228,11 +236,12 @@ export default function SuperAdminPage() {
   };
 
   const handleAssignOwner = async (venueId: string, targetUser: any) => {
-    if (!confirm(`¿Asignar "${targetUser.nick}" como dueño de este local?`)) return;
+    if (!confirm(`¿Asignar "${targetUser.nick || targetUser.email}" como dueño de este local?`)) return;
     try {
       const assignRoleFunc = httpsCallable(functions, 'assignRole');
-      await assignRoleFunc({ uid: targetUser.id, role: 'venue' });
+      await assignRoleFunc({ uid: targetUser.id, role: 'venueOwner' });
       await updateDoc(doc(db, 'venues', venueId), { ownerId: targetUser.id });
+      await updateDoc(doc(db, 'users', targetUser.id), { role: 'venueOwner', venueId });
       alert('Propietario asignado correctamente.');
       setAssigningVenueId(null);
     } catch (e) {
@@ -1165,6 +1174,28 @@ export default function SuperAdminPage() {
           </section>
           </div>
 
+          <section className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl space-y-4">
+            <h2 className="text-sm font-black uppercase tracking-widest text-emerald-400">Setup Stripe Products</h2>
+            <p className="text-xs text-slate-400">Crea los productos y precios en Stripe (solo ejecutar una vez).</p>
+            <button
+              onClick={async () => {
+                const el = document.getElementById('stripe-setup-result');
+                if (el) el.textContent = 'Creando productos...';
+                try {
+                  const setup = httpsCallable(functions, 'setupStripeProducts');
+                  const res: any = await setup({});
+                  if (el) el.textContent = Object.entries(res.data).map(([k, v]) => `${k}=${v}`).join('\n');
+                } catch (e: any) {
+                  if (el) el.textContent = 'Error: ' + e.message;
+                }
+              }}
+              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-xs uppercase transition-colors"
+            >
+              Crear Productos en Stripe
+            </button>
+            <pre id="stripe-setup-result" className="bg-black/50 p-4 rounded-xl text-xs font-mono text-green-400 whitespace-pre-wrap select-all min-h-[40px]"></pre>
+          </section>
+
           <section className="bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4 h-[60vh] flex flex-col">
             <h2 className="text-sm font-black uppercase tracking-widest text-slate-300">Ciudades Operativas</h2>
             <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
@@ -1342,13 +1373,13 @@ export default function SuperAdminPage() {
                   {assigningVenueId === v.id && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="mt-4 pt-4 border-t border-white/10">
                       <div className="flex gap-2">
-                        <input placeholder="Buscar por nickname..." value={searchNick} onChange={e => setSearchNick(e.target.value)} className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs focus:border-fuchsia-500 outline-none" />
+                        <input placeholder="Buscar por nickname o email..." value={searchNick} onChange={e => setSearchNick(e.target.value)} className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs focus:border-fuchsia-500 outline-none" />
                         <button onClick={handleSearchUser} disabled={searchingUser} className="bg-blue-600 px-3 py-2 rounded-lg text-xs font-bold">Buscar</button>
                       </div>
                       <div className="mt-3 space-y-2">
                         {searchResults.map(u => (
                           <div key={u.id} className="flex justify-between items-center bg-white/5 p-2 rounded-lg">
-                            <span className="text-xs font-bold">{u.nick}</span>
+                            <span className="text-xs font-bold">{u.nick} <span className="text-slate-500 font-normal">{u.email || u.id}</span></span>
                             <button onClick={() => handleAssignOwner(v.id, u)} className="text-[10px] bg-green-600 px-2 py-1 rounded font-bold">Elegir</button>
                           </div>
                         ))}
