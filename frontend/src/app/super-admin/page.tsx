@@ -863,12 +863,34 @@ export default function SuperAdminPage() {
                     <span className="material-icons text-sm">chat</span> Enviar Mensaje Directo
                   </button>
 
-                  <button 
+                  <button
                     disabled={adminActionLoading || selectedUserDetail.role === 'rrpp'}
                     onClick={() => handleFastTrackRRPP(selectedUserDetail.id)}
                     className="w-full flex items-center justify-center gap-2 bg-fuchsia-900/20 hover:bg-fuchsia-900/40 text-fuchsia-400 border border-fuchsia-500/20 px-4 py-3 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
                   >
                     <span className="material-icons text-sm">assignment_ind</span> {selectedUserDetail.role === 'rrpp' ? 'Ya es RRPP' : 'Convertir a RRPP'}
+                  </button>
+
+                  <button
+                    disabled={adminActionLoading || selectedUserDetail.role === 'venueOwner'}
+                    onClick={async () => {
+                      const venueId = prompt('ID del venue a asignar (lo encuentras en Directorio Local):');
+                      if (!venueId?.trim()) return;
+                      try {
+                        const assignRoleFunc = httpsCallable(functions, 'assignRole');
+                        await assignRoleFunc({ uid: selectedUserDetail.id, role: 'venueOwner' });
+                        await updateDoc(doc(db, 'venues', venueId.trim()), { ownerId: selectedUserDetail.id });
+                        await updateDoc(doc(db, 'users', selectedUserDetail.id), { role: 'venueOwner', venueId: venueId.trim() });
+                        alert('Venue Owner asignado correctamente.');
+                        setSelectedUserDetail({ ...selectedUserDetail, role: 'venueOwner', venueId: venueId.trim() });
+                      } catch (e: any) {
+                        console.error(e);
+                        alert('Error: ' + e.message);
+                      }
+                    }}
+                    className="w-full flex items-center justify-center gap-2 bg-blue-900/20 hover:bg-blue-900/40 text-blue-400 border border-blue-500/20 px-4 py-3 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
+                  >
+                    <span className="material-icons text-sm">storefront</span> {selectedUserDetail.role === 'venueOwner' ? 'Ya es Venue Owner' : 'Convertir a Venue Owner'}
                   </button>
 
                   <button 
