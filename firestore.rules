@@ -148,6 +148,14 @@ service cloud.firestore {
              || (resource.data.ownerId == 'community' && request.auth.uid == resource.data.createdBy)
            ));
 
+      match /promoters/{promoterId} {
+        allow read: if isAdmin() || (request.auth != null && (
+          request.auth.uid == promoterId || 
+          request.auth.uid == get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId
+        ));
+        allow write: if isAdmin() || (request.auth != null && request.auth.uid == get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId);
+      }
+
       match /events/{eventId} {
         allow read: if true;
         allow write: if isAdmin() || (request.auth != null && request.auth.uid == get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId
