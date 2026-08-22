@@ -580,17 +580,37 @@ exports.stripeWebhook = onRequest({ secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHO
   const session = event.data.object;
   const firebaseUID = session.metadata?.firebaseUID;
 
+  let webhookState = "new";
   const eventRef = db.collection("processed_stripe_events").doc(event.id);
+  
   try {
     await db.runTransaction(async (tx) => {
       const eventDoc = await tx.get(eventRef);
-      if (eventDoc.exists) throw new Error("DUPLICATE");
-      tx.set(eventRef, { processedAt: admin.firestore.FieldValue.serverTimestamp(), type: event.type });
+      if (eventDoc.exists) {
+        const data = eventDoc.data();
+        if (data.status === "completed") {
+          webhookState = "completed";
+          return;
+        }
+        if (data.status === "processing") {
+          const startedAt = data.startedAt?.toMillis ? data.startedAt.toMillis() : Date.now();
+          if (Date.now() - startedAt < 5 * 60 * 1000) {
+            webhookState = "processing";
+            return;
+          }
+        }
+      }
+      tx.set(eventRef, { status: "processing", startedAt: admin.firestore.FieldValue.serverTimestamp(), type: event.type }, { merge: true });
     });
   } catch (e) {
-    if (e.message === "DUPLICATE") return res.json({ received: true, duplicate: true });
-    throw e;
+    console.error("Error setting webhook state:", e);
+    return res.status(500).send("State DB error");
   }
+
+  if (webhookState === "completed") return res.json({ received: true, duplicate: true, status: "completed" });
+  if (webhookState === "processing") return res.status(409).send("Currently processing in another invocation");
+
+  try {
 
   if (event.type === "checkout.session.completed") {
     if (session.metadata?.type === "rrpp_qr_pack" || session.metadata?.type === "qr_credits_pack") {
@@ -762,7 +782,7 @@ exports.stripeWebhook = onRequest({ secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHO
         }
 
         const ticketRef = db.collection("tickets").doc();
-        transaction.set(ticketRef, {
+        const { qrToken, secretKey, ...publicPayload } = {
           userId: session.metadata.giftUserId || firebaseUID || null,
           customerEmail: session.customer_details?.email || session.customer_email || null,
           venueId,
@@ -779,6 +799,13 @@ exports.stripeWebhook = onRequest({ secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHO
           purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
           stripeSessionId: session.id,
           isIndependent,
+        };
+        transaction.set(ticketRef, publicPayload);
+
+        const privateRef = ticketRef.collection("private").doc("secrets");
+        transaction.set(privateRef, {
+          qrToken,
+          secretKey,
         });
 
         if (reservationId && venueId && eventId && !isIndependent) {
@@ -870,13 +897,24 @@ exports.stripeWebhook = onRequest({ secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHO
       await db.collection("subscriptions").doc(uid).update({ status: isPromoMember ? "promo_lifetime" : "canceled" });
     }
   }
-
+  await eventRef.update({ status: "completed", completedAt: admin.firestore.FieldValue.serverTimestamp() });
   res.json({ received: true });
+  } catch (error) {
+    console.error("Webhook processing error:", error);
+    if (error.message === "REEMBOLSO_EMITIDO_OVERBOOKING") {
+      await eventRef.update({ status: "completed", result: "refunded_overbooking", completedAt: admin.firestore.FieldValue.serverTimestamp() });
+      return res.json({ received: true, result: "refunded_overbooking" });
+    }
+    res.status(500).send("Internal Server Error");
+  }
 });
 
 exports.createStripePortalSession = onCall({ secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Necesitas estar logueado");
+
+  const stripe = getStripe();
+  if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
 
   const { venueId } = data;
   let customerId = null;

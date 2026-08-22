@@ -326,8 +326,11 @@ exports.validateTicket = onCall({ enforceAppCheck: false }, async (request) => {
       throw new HttpsError("failed-precondition", "El código QR ha caducado. Pide al cliente que enseñe el código actual.");
     }
 
+    const privateDoc = await ticketDoc.ref.collection("private").doc("secrets").get();
+    if (!privateDoc.exists) throw new HttpsError("failed-precondition", "Esta entrada no tiene secretos configurados.");
+    const secretKey = privateDoc.data().secretKey;
+
     const crypto = require("crypto");
-    const secretKey = ticket.secretKey;
     if (!secretKey) throw new HttpsError("failed-precondition", "Esta entrada no soporta QR dinámico.");
     
     const expectedSignature = crypto.createHmac("sha256", secretKey)
@@ -338,15 +341,16 @@ exports.validateTicket = onCall({ enforceAppCheck: false }, async (request) => {
       throw new HttpsError("invalid-argument", "Firma del QR inválida. Posible captura de pantalla falsa.");
     }
   } else {
-    const ticketsSnap = await db.collection("tickets")
+    const secretsSnap = await db.collectionGroup("private")
       .where("qrToken", "==", searchToken)
       .limit(1)
       .get();
 
-    if (ticketsSnap.empty) {
+    if (secretsSnap.empty) {
       throw new HttpsError("not-found", "Entrada no encontrada.");
     }
-    ticketDoc = ticketsSnap.docs[0];
+    const secretDoc = secretsSnap.docs[0];
+    ticketDoc = await secretDoc.ref.parent.parent.get();
     ticket = ticketDoc.data();
   }
 
@@ -417,10 +421,11 @@ exports.validateTicketByDoorToken = onCall({ enforceAppCheck: false }, async (re
     throw new HttpsError("permission-denied", "Token de puerta inválido.");
   }
 
-  const ticketsSnap = await db.collection("tickets").where("qrToken", "==", qrToken).limit(1).get();
-  if (ticketsSnap.empty) return { valid: false, message: "ENTRADA NO ENCONTRADA" };
+  const secretsSnap = await db.collectionGroup("private").where("qrToken", "==", qrToken).limit(1).get();
+  if (secretsSnap.empty) return { valid: false, message: "ENTRADA NO ENCONTRADA" };
 
-  const ticketDoc = ticketsSnap.docs[0];
+  const secretDoc = secretsSnap.docs[0];
+  const ticketDoc = await secretDoc.ref.parent.parent.get();
   const ticket = ticketDoc.data();
 
   if (ticket.venueId !== venueId) {
@@ -588,7 +593,10 @@ exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: false }, async 
     }
 
     tx.update(quotaRef, { qr_quota: currentQuota - 1 });
-    tx.set(ticketRef, ticketPayload);
+    const { qrToken, secretKey, ...publicPayload } = ticketPayload;
+    tx.set(ticketRef, publicPayload);
+    const privateRef = ticketRef.collection("private").doc("secrets");
+    tx.set(privateRef, { qrToken, secretKey });
   });
 
   timer.stop({ eventId });
@@ -806,7 +814,10 @@ exports.generateOrganizerQRTicket = onCall({ enforceAppCheck: false }, async (re
     }
 
     tx.update(quotaRef, { qr_quota: currentQuota - 1 });
-    tx.set(ticketRef, ticketPayload);
+    const { qrToken, secretKey, ...publicPayload } = ticketPayload;
+    tx.set(ticketRef, publicPayload);
+    const privateRef = ticketRef.collection("private").doc("secrets");
+    tx.set(privateRef, { qrToken, secretKey });
   });
 
   timer.stop({ eventId });
