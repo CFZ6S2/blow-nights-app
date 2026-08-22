@@ -20,9 +20,28 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
       ambassadorStripe = ambassadorDoc.exists ? ambassadorDoc.data()?.stripeAccountId : null;
     }
 
-    let poolCents = amountCents;
-    const ambassadorCents = Math.round(amountCents * 0.25);
-    let ambassadorPaid = false;
+    let ambassadorCents = 0;
+    let cityManagerCents = 0;
+    let centralCents = 0;
+
+    // --- REGLAS MATEMÁTICAS ESTRICTAS DE REPARTO TERRITORIAL ---
+    if (ambassadorId && partnerStripeId) {
+      // 1. Ambassador + City Manager presentes
+      ambassadorCents = Math.round(amountCents * 0.25);      // Ambassador: 25%
+      cityManagerCents = Math.round(amountCents * 0.375);    // CM: 37.5%
+      centralCents = amountCents - ambassadorCents - cityManagerCents; // Central: 37.5% (Resto exacto para evitar huérfanos)
+    } else if (partnerStripeId && !ambassadorId) {
+      // 2. City Manager presente SIN Ambassador
+      cityManagerCents = Math.round(amountCents * 0.50);     // CM: 50%
+      centralCents = amountCents - cityManagerCents;         // Central: 50%
+    } else if (ambassadorId && !partnerStripeId) {
+      // 3. Ambassador presente SIN City Manager
+      ambassadorCents = Math.round(amountCents * 0.25);      // Ambassador: 25%
+      centralCents = amountCents - ambassadorCents;          // Central: 75%
+    } else {
+      // 4. Sin estructura territorial (Venta Directa)
+      centralCents = amountCents;                            // Central: 100%
+    }
 
     const finalSplitId = splitId || db.collection('territorial_splits').doc().id;
     const ledgerRef = db.collection('territorial_splits').doc(finalSplitId);
@@ -61,7 +80,7 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
       payouts: []
     };
 
-    if (ambassadorId) {
+    if (ambassadorId && ambassadorCents > 0) {
       const payoutInfo = { role: 'ambassador', userId: ambassadorId, amountCents: ambassadorCents };
       if (ambassadorStripe) {
         try {
@@ -73,7 +92,6 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
             transfer_group: finalSplitId,
           });
           payoutInfo.status = 'paid';
-          ambassadorPaid = true;
         } catch (err) {
           console.error('Error transfer Ambassador:', err);
           payoutInfo.status = 'failed';
@@ -84,12 +102,9 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
         payoutInfo.error = 'No Stripe connected';
       }
       ledgerData.payouts.push(payoutInfo);
-      poolCents -= ambassadorCents;
     }
 
-    let cityManagerCents = 0;
-    if (partnerStripeId) {
-      cityManagerCents = Math.ceil(poolCents / 2);
+    if (partnerStripeId && cityManagerCents > 0) {
        const payoutInfo = { role: 'city_manager', amountCents: cityManagerCents };
        try {
           await stripe.transfers.create({
@@ -108,7 +123,6 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
        ledgerData.payouts.push(payoutInfo);
     }
 
-    const centralCents = amountCents - (ambassadorId ? ambassadorCents : 0) - cityManagerCents;
     ledgerData.payouts.push({ role: 'central', amountCents: centralCents, status: 'retained' });
     
     const failedPayouts = ledgerData.payouts.filter(p => p.status === 'failed').length;
