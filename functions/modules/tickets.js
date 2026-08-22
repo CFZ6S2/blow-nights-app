@@ -2,7 +2,7 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { admin, db, getStripe } = require("../lib/init");
 const { startTimer } = require("../lib/perf");
 
-exports.createTicketCheckout = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createTicketCheckout = onCall(async (request) => {
   const timer = startTimer("createTicketCheckout");
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
@@ -97,7 +97,7 @@ exports.createTicketCheckout = onCall({ enforceAppCheck: true }, async (request)
   return { sessionId: session.id, url: session.url };
 });
 
-exports.purchaseVenueTicket = onCall({ enforceAppCheck: true }, async (request) => {
+exports.purchaseVenueTicket = onCall(async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -151,7 +151,7 @@ exports.purchaseVenueTicket = onCall({ enforceAppCheck: true }, async (request) 
   return { sessionId: session.id, url: session.url };
 });
 
-exports.purchasePublicVenueTicket = onCall({ enforceAppCheck: false }, async (request) => {
+exports.purchasePublicVenueTicket = onCall(async (request) => {
   const { data } = request;
   
   const stripe = getStripe();
@@ -204,7 +204,7 @@ exports.purchasePublicVenueTicket = onCall({ enforceAppCheck: false }, async (re
   return { sessionId: session.id, url: session.url };
 });
 
-exports.purchaseIndependentEventTicket = onCall({ enforceAppCheck: true }, async (request) => {
+exports.purchaseIndependentEventTicket = onCall(async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -288,7 +288,7 @@ exports.purchaseIndependentEventTicket = onCall({ enforceAppCheck: true }, async
   return { sessionId: session.id, url: session.url };
 });
 
-exports.validateTicket = onCall({ enforceAppCheck: true }, async (request) => {
+exports.validateTicket = onCall(async (request) => {
   const timer = startTimer("validateTicket");
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
@@ -353,7 +353,7 @@ exports.validateTicket = onCall({ enforceAppCheck: true }, async (request) => {
   };
 });
 
-exports.validateTicketByDoorToken = onCall({ enforceAppCheck: true }, async (request) => {
+exports.validateTicketByDoorToken = onCall(async (request) => {
   const { data } = request;
   const { qrToken, doorAccessToken, eventId, venueId } = data;
 
@@ -429,7 +429,7 @@ exports.validateTicketByDoorToken = onCall({ enforceAppCheck: true }, async (req
   };
 });
 
-exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: true }, async (request) => {
+exports.generateDirectPromoterTicket = onCall(async (request) => {
   const timer = startTimer("generateDirectPromoterTicket");
   const { data } = request;
   const { promoterToken, eventId, clientName, tierId } = data;
@@ -556,7 +556,7 @@ exports.generateDirectPromoterTicket = onCall({ enforceAppCheck: true }, async (
   };
 });
 
-exports.closePromoterList = onCall({ enforceAppCheck: true }, async (request) => {
+exports.closePromoterList = onCall(async (request) => {
   const { data } = request;
   const { token } = data;
 
@@ -578,7 +578,7 @@ exports.closePromoterList = onCall({ enforceAppCheck: true }, async (request) =>
   return { success: true };
 });
 
-exports.liquidatePromoter = onCall({ enforceAppCheck: true }, async (request) => {
+exports.liquidatePromoter = onCall(async (request) => {
   const { data } = request;
   const { token } = data;
 
@@ -605,7 +605,7 @@ exports.liquidatePromoter = onCall({ enforceAppCheck: true }, async (request) =>
   return { success: true };
 });
 
-exports.getPromoterStats = onCall({ enforceAppCheck: true }, async (request) => {
+exports.getPromoterStats = onCall(async (request) => {
   const { data } = request;
   const { token } = data;
 
@@ -701,7 +701,7 @@ exports.getPromoterStats = onCall({ enforceAppCheck: true }, async (request) => 
   };
 });
 
-exports.generateOrganizerQRTicket = onCall({ enforceAppCheck: true }, async (request) => {
+exports.generateOrganizerQRTicket = onCall(async (request) => {
   const timer = startTimer("generateOrganizerQRTicket");
   const { data, auth } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Login requerido.');

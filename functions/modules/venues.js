@@ -160,7 +160,7 @@ exports.checkFranchiseTrigger = onDocumentWritten("venues/{venueId}", async (eve
   }
 });
 
-exports.createRRPPParty = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createRRPPParty = onCall(async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Login requerido');
 
@@ -277,7 +277,7 @@ exports.createRRPPParty = onCall({ enforceAppCheck: true }, async (request) => {
   };
 });
 
-exports.deleteRRPPParty = onCall({ enforceAppCheck: true }, async (request) => {
+exports.deleteRRPPParty = onCall(async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Login requerido');
 

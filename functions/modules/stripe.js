@@ -129,7 +129,7 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
   }
 }
 
-exports.createCheckoutSession = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createCheckoutSession = onCall(async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -170,7 +170,7 @@ exports.createCheckoutSession = onCall({ enforceAppCheck: true }, async (request
   }
 });
 
-exports.createVenueSubscriptionCheckout = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createVenueSubscriptionCheckout = onCall(async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -247,7 +247,7 @@ exports.createVenueSubscriptionCheckout = onCall({ enforceAppCheck: true }, asyn
   }
 });
 
-exports.createChillPassCheckout = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createChillPassCheckout = onCall(async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -338,7 +338,7 @@ exports.createChillPassCheckout = onCall({ enforceAppCheck: true }, async (reque
   }
 });
 
-exports.createPingCheckoutSession = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createPingCheckoutSession = onCall(async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -423,7 +423,7 @@ exports.createPingCheckoutSession = onCall({ enforceAppCheck: true }, async (req
   }
 });
 
-exports.createStripeConnectAccount = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createStripeConnectAccount = onCall(async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -463,7 +463,7 @@ exports.createStripeConnectAccount = onCall({ enforceAppCheck: true }, async (re
   }
 });
 
-exports.createStripeAccountLink = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createStripeAccountLink = onCall(async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -488,7 +488,7 @@ exports.createStripeAccountLink = onCall({ enforceAppCheck: true }, async (reque
   return { url: accountLink.url };
 });
 
-exports.createQRPackageCheckout = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createQRPackageCheckout = onCall(async (request) => {
   const { data } = request;
   const stripe = getStripe();
   if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
@@ -784,7 +784,7 @@ exports.stripeWebhook = onRequest(async (req, res) => {
   res.json({ received: true });
 });
 
-exports.createStripePortalSession = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createStripePortalSession = onCall(async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Necesitas estar logueado");
 
