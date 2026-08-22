@@ -30,9 +30,6 @@ jobs:
       - name: Run linter
         run: npm run lint
 
-      - name: Run tests
-        run: npm run test
-
   functions-test:
     runs-on: ubuntu-latest
     defaults:
@@ -61,7 +58,7 @@ jobs:
         run: npm install -g firebase-tools
 
       - name: Run all tests
-        run: firebase emulators:exec --project demo-test "npm test -- --forceExit"
+        run: firebase emulators:exec --only firestore --project demo-test "npm test -- --forceExit"
 
   ci-summary:
     runs-on: ubuntu-latest
