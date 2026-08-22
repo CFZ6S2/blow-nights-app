@@ -25,6 +25,8 @@ export default function BusinessLoginPage() {
   const [phone, setPhone] = useState('');
   const [cityId, setCityId] = useState('');
   const [cities, setCities] = useState<any[]>([]);
+  const [applicationType, setApplicationType] = useState<'venue' | 'city_manager'>('venue');
+  const [venueName, setVenueName] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -82,7 +84,7 @@ export default function BusinessLoginPage() {
     setError('');
     try {
       const requestPartnerAccess = httpsCallable(functions, 'requestPartnerAccess');
-      await requestPartnerAccess({ name, email, phone, cityId });
+      await requestPartnerAccess({ name, email, phone, cityId, type: applicationType, venueName: applicationType === 'venue' ? venueName : undefined });
       setMode('success');
     } catch (err: any) {
       console.error(err);
@@ -162,7 +164,29 @@ export default function BusinessLoginPage() {
                 className="space-y-4"
               >
                 {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold p-3 rounded-xl text-center">{error}</div>}
-                
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">¿Qué necesitas?</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => setApplicationType('venue')} className={`py-3 rounded-xl text-xs font-bold transition-all border ${applicationType === 'venue' ? 'bg-fuchsia-600/20 border-fuchsia-500/50 text-fuchsia-300' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600'}`}>
+                      🍸 Registrar mi Local
+                    </button>
+                    <button type="button" onClick={() => setApplicationType('city_manager')} className={`py-3 rounded-xl text-xs font-bold transition-all border ${applicationType === 'city_manager' ? 'bg-emerald-600/20 border-emerald-500/50 text-emerald-300' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600'}`}>
+                      🏙️ Ser City Manager
+                    </button>
+                  </div>
+                </div>
+
+                {applicationType === 'venue' && (
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Nombre del Local</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Building2 className="w-4 h-4 text-slate-500" /></div>
+                      <input type="text" required value={venueName} onChange={e => setVenueName(e.target.value)} className="w-full bg-slate-950 border border-slate-800 text-white text-sm rounded-xl pl-11 pr-4 py-3 focus:border-fuchsia-500" placeholder="Ej: Club Noche, Bar Aurora..." />
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Tu Nombre</label>
                   <div className="relative">

@@ -60,9 +60,24 @@ exports.cleanupExpiredCheckins = onSchedule({
   if (ops.length) await Promise.all(ops);
 
   for (const [venueId, count] of Object.entries(venueDecrements)) {
-    await db.collection("venues").doc(venueId).update({
+    const venueRef = db.collection("venues").doc(venueId);
+    await venueRef.update({
       currentCount: admin.firestore.FieldValue.increment(-count)
     }).catch(() => {});
+
+    const venueSnap = await venueRef.get().catch(() => null);
+    if (venueSnap?.exists) {
+      const v = venueSnap.data();
+      await db.collection("live_sense").doc(venueId).set({
+        current_count: Math.max(0, (v.currentCount || 0)),
+        venue_name: v.name || "",
+        venue_type: v.type || "",
+        cityId: v.cityId || "",
+        capacity: v.capacity || null,
+        updated_at: admin.firestore.FieldValue.serverTimestamp(),
+        hourly_entries: {},
+      }, { merge: true });
+    }
   }
   console.log(`Cleaned up ${expired.size} expired checkins.`);
 });
@@ -73,9 +88,23 @@ exports.onCheckinCreated = onDocumentCreated("checkins/{checkinId}", async (even
   const venueRef = db.collection("venues").doc(data.venueId);
   const venueSnap = await venueRef.get();
   if (!venueSnap.exists) return null;
-  return venueRef.update({
+  const venueData = venueSnap.data();
+  const newCount = (venueData.currentCount || 0) + 1;
+
+  await venueRef.update({
     currentCount: admin.firestore.FieldValue.increment(1),
   });
+
+  const hour = new Date().getHours();
+  await db.collection("live_sense").doc(data.venueId).set({
+    current_count: newCount,
+    venue_name: venueData.name || "",
+    venue_type: venueData.type || "",
+    cityId: venueData.cityId || data.cityId || "",
+    capacity: venueData.capacity || null,
+    updated_at: admin.firestore.FieldValue.serverTimestamp(),
+    [`hourly_entries.h${hour}`]: admin.firestore.FieldValue.increment(1),
+  }, { merge: true });
 });
 
 exports.checkFranchiseTrigger = onDocumentWritten("venues/{venueId}", async (event) => {
@@ -131,7 +160,7 @@ exports.checkFranchiseTrigger = onDocumentWritten("venues/{venueId}", async (eve
   }
 });
 
-exports.createRRPPParty = onCall({ enforceAppCheck: true }, async (request) => {
+exports.createRRPPParty = onCall(async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Login requerido');
 
@@ -248,7 +277,7 @@ exports.createRRPPParty = onCall({ enforceAppCheck: true }, async (request) => {
   };
 });
 
-exports.deleteRRPPParty = onCall({ enforceAppCheck: true }, async (request) => {
+exports.deleteRRPPParty = onCall(async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Login requerido');
 

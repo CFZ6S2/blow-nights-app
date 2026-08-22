@@ -28,6 +28,10 @@ exports.approveOrganizer = organizers.approveOrganizer;
 exports.requestPartnerAccess = partners.requestPartnerAccess;
 exports.approvePartnerAccess = partners.approvePartnerAccess;
 
+// Partners
+exports.requestPartnerAccess = partners.requestPartnerAccess;
+exports.approvePartnerAccess = partners.approvePartnerAccess;
+
 // Scheduled
 exports.autoCompleteEventsAndSubscriptions = scheduled.autoCompleteEventsAndSubscriptions;
 

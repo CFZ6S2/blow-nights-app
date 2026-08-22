@@ -65,7 +65,7 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
   return batch.commit();
 });
 
-exports.assignRole = onCall({ enforceAppCheck: true }, async (request) => {
+exports.assignRole = onCall(async (request) => {
   const { data, auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -107,7 +107,7 @@ exports.assignRole = onCall({ enforceAppCheck: true }, async (request) => {
   }
 });
 
-exports.deleteUserData = onCall({ enforceAppCheck: true }, async (request) => {
+exports.deleteUserData = onCall(async (request) => {
   const { auth } = request;
   if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
 
@@ -177,7 +177,7 @@ exports.deleteUserData = onCall({ enforceAppCheck: true }, async (request) => {
   return { success: true };
 });
 
-exports.banUser = onCall({ enforceAppCheck: true }, async (request) => {
+exports.banUser = onCall(async (request) => {
   const { auth: caller } = request;
   if (!caller) throw new HttpsError("unauthenticated", "Login required");
 
@@ -207,7 +207,7 @@ exports.banUser = onCall({ enforceAppCheck: true }, async (request) => {
   return { success: true, uid };
 });
 
-exports.adminDeleteUser = onCall({ enforceAppCheck: false }, async (request) => {
+exports.adminDeleteUser = onCall(async (request) => {
   const { auth: caller, data } = request;
   if (!caller) throw new HttpsError("unauthenticated", "Login required");
 
@@ -277,7 +277,7 @@ exports.adminDeleteUser = onCall({ enforceAppCheck: false }, async (request) => 
   return { success: true, uid };
 });
 
-exports.approveRRPP = onCall({ enforceAppCheck: true }, async (request) => {
+exports.approveRRPP = onCall(async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Login requerido.');
 
@@ -333,7 +333,7 @@ exports.approveRRPP = onCall({ enforceAppCheck: true }, async (request) => {
   throw new HttpsError('invalid-argument', 'Acción no válida. Usa "approve" o "reject".');
 });
 
-exports.submitRRPPApplication = onCall({ enforceAppCheck: true }, async (request) => {
+exports.submitRRPPApplication = onCall(async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Login requerido.');
 
