@@ -1,5 +1,8 @@
 const { onCall, HttpsError, onRequest } = require("firebase-functions/v2/https");
 const { admin, db, getStripe } = require("../lib/init");
+const { createStructuredLogger } = require("../lib/logger");
+
+const logger = createStructuredLogger("stripe_financial");
 
 async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, relatedId, currency = 'eur', splitId = null, platform = 'blownights' }) {
   if (platform === 'darknights') {
@@ -43,6 +46,14 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
       centralCents = amountCents;                            // Central: 100%
     }
 
+    // INVARIANTES MATEMÁTICAS ESTRICTAS
+    if (ambassadorCents < 0 || cityManagerCents < 0 || centralCents < 0) {
+      throw new Error("Invalid territorial split: Negative amounts detected.");
+    }
+    if (ambassadorCents + cityManagerCents + centralCents !== amountCents) {
+      throw new Error(`Invalid territorial split: sum of splits (${ambassadorCents} + ${cityManagerCents} + ${centralCents}) does not equal total amount (${amountCents}).`);
+    }
+
     const finalSplitId = splitId || db.collection('territorial_splits').doc().id;
     const ledgerRef = db.collection('territorial_splits').doc(finalSplitId);
 
@@ -65,7 +76,7 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
     });
 
     if (isProcessed) {
-      console.log('Split already processed:', finalSplitId);
+      logger.info('Split already processed', { correlationId: finalSplitId });
       return;
     }
 
@@ -92,12 +103,14 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
             transfer_group: finalSplitId,
           }, { idempotencyKey: `transfer_${finalSplitId}_ambassador` });
           payoutInfo.status = 'paid';
+          logger.financial('Transfer created', finalSplitId, ambassadorCents, { role: 'ambassador', destination: ambassadorStripe });
         } catch (err) {
-          console.error('Error transfer Ambassador:', err);
+          logger.error('Error transfer Ambassador', err, { correlationId: finalSplitId, destination: ambassadorStripe });
           payoutInfo.status = 'failed';
           payoutInfo.error = err.message;
         }
       } else {
+        logger.warn('Ambassador missing Stripe', { correlationId: finalSplitId, userId: ambassadorId });
         payoutInfo.status = 'pending_payout';
         payoutInfo.error = 'No Stripe connected';
       }
@@ -115,8 +128,9 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
             transfer_group: finalSplitId,
           }, { idempotencyKey: `transfer_${finalSplitId}_cm` });
           payoutInfo.status = 'paid';
+          logger.financial('Transfer created', finalSplitId, cityManagerCents, { role: 'city_manager', destination: partnerStripeId });
        } catch (err) {
-          console.error('Error transfer City Manager:', err);
+          logger.error('Error transfer City Manager', err, { correlationId: finalSplitId, destination: partnerStripeId });
           payoutInfo.status = 'failed';
           payoutInfo.error = err.message;
        }
@@ -125,21 +139,24 @@ async function territorialSplit(stripe, db, { amountCents, cityId, sourceType, r
 
     ledgerData.payouts.push({ role: 'central', amountCents: centralCents, status: 'retained' });
     
-    const failedPayouts = ledgerData.payouts.filter(p => p.status === 'failed').length;
-    const pendingPayouts = ledgerData.payouts.filter(p => p.status === 'pending_payout').length;
-    const paidPayouts = ledgerData.payouts.filter(p => p.status === 'paid' || p.status === 'retained').length;
-
-    if (failedPayouts > 0) {
-      ledgerData.status = paidPayouts > 0 ? 'partial' : 'failed';
-    } else if (pendingPayouts > 0) {
-      ledgerData.status = paidPayouts > 0 ? 'partial' : 'pending';
+    // INVARIANTE: La suma de los payouts registrados debe igualar a amountCents
+    const sumPayouts = ledgerData.payouts.reduce((sum, p) => sum + p.amountCents, 0);
+    if (sumPayouts !== amountCents) {
+      logger.error(`INVARIANT FAILED: sumPayouts !== amountCents`, new Error("Math invariant violation"), { correlationId: finalSplitId, sumPayouts, amountCents });
+      ledgerData.status = 'failed';
     } else {
-      ledgerData.status = 'completed';
+      ledgerData.status = ledgerData.payouts.some(p => p.status === 'failed' || p.status === 'pending_payout') ? 'partial' : 'completed';
     }
 
     await ledgerRef.update(ledgerData);
+    
+    if (ledgerData.status === 'completed') {
+      logger.financial('Split completed successfully', finalSplitId, amountCents);
+    } else {
+      logger.financial(`Split finalized with status ${ledgerData.status}`, finalSplitId, amountCents, { payouts: ledgerData.payouts });
+    }
   } catch(e) {
-    console.error('Error en territorialSplit', e);
+    logger.error('Error en territorialSplit', e);
   }
 }
 
@@ -958,3 +975,5 @@ exports.createStripePortalSession = onCall({ secrets: ["STRIPE_SECRET_KEY"] }, a
     throw new HttpsError("internal", error.message);
   }
 });
+
+exports.territorialSplit = territorialSplit;

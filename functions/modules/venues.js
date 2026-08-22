@@ -82,29 +82,92 @@ exports.cleanupExpiredCheckins = onSchedule({
   console.log(`Cleaned up ${expired.size} expired checkins.`);
 });
 
-exports.onCheckinCreated = onDocumentCreated("checkins/{checkinId}", async (event) => {
-  const data = event.data?.data();
-  if (!data?.venueId) return null;
-  const venueRef = db.collection("venues").doc(data.venueId);
-  const venueSnap = await venueRef.get();
-  if (!venueSnap.exists) return null;
-  const venueData = venueSnap.data();
-  const newCount = (venueData.currentCount || 0) + 1;
+exports.checkInUser = onCall({ enforceAppCheck: false }, async (request) => {
+  const { data, auth } = request;
+  if (!auth) throw new HttpsError('unauthenticated', 'Debes estar logueado para hacer check-in');
 
-  await venueRef.update({
-    currentCount: admin.firestore.FieldValue.increment(1),
+  const { venueId, visibility, anonymous } = data;
+  if (!venueId) throw new HttpsError('invalid-argument', 'El venueId es obligatorio');
+
+  const checkinRef = db.collection('checkins').doc(auth.uid);
+  const venueRef = db.collection('venues').doc(venueId);
+  const liveSenseRef = db.collection('live_sense').doc(venueId);
+
+  const CHECKIN_DURATION_MS = 14 * 60 * 60 * 1000; // 14 hours default (next day 2 PM equivalent)
+  const expiresAt = admin.firestore.Timestamp.fromMillis(Date.now() + CHECKIN_DURATION_MS);
+
+  await db.runTransaction(async (tx) => {
+    const venueSnap = await tx.get(venueRef);
+    if (!venueSnap.exists) throw new HttpsError('not-found', 'Venue no encontrado');
+    const venueData = venueSnap.data();
+    if (venueData.isActive === false) throw new HttpsError('failed-precondition', 'Venue inactivo');
+
+    const previousCheckinSnap = await tx.get(checkinRef);
+    let previousVenueId = null;
+    
+    if (previousCheckinSnap.exists) {
+      const prevData = previousCheckinSnap.data();
+      if (prevData.expiresAt.toMillis() > Date.now()) {
+        previousVenueId = prevData.venueId;
+      }
+    }
+
+    if (previousVenueId && previousVenueId !== venueId) {
+      const prevVenueRef = db.collection('venues').doc(previousVenueId);
+      const prevLiveRef = db.collection('live_sense').doc(previousVenueId);
+      tx.update(prevVenueRef, { currentCount: admin.firestore.FieldValue.increment(-1) });
+      tx.set(prevLiveRef, { current_count: admin.firestore.FieldValue.increment(-1), updated_at: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    }
+
+    if (previousVenueId !== venueId) {
+      tx.update(venueRef, { currentCount: admin.firestore.FieldValue.increment(1) });
+      const hour = new Date().getHours();
+      tx.set(liveSenseRef, { 
+        current_count: admin.firestore.FieldValue.increment(1),
+        venue_name: venueData.name || "",
+        venue_type: venueData.type || "",
+        cityId: venueData.cityId || "",
+        capacity: venueData.capacity || null,
+        updated_at: admin.firestore.FieldValue.serverTimestamp(),
+        [`hourly_entries.h${hour}`]: admin.firestore.FieldValue.increment(1),
+      }, { merge: true });
+    }
+
+    tx.set(checkinRef, {
+      userId: auth.uid,
+      realUserId: anonymous ? null : auth.uid,
+      venueId,
+      venueName: venueData.name || "",
+      cityId: venueData.cityId || "",
+      visibility: visibility || "public",
+      anonymous: anonymous || false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      expiresAt
+    });
   });
 
-  const hour = new Date().getHours();
-  await db.collection("live_sense").doc(data.venueId).set({
-    current_count: newCount,
-    venue_name: venueData.name || "",
-    venue_type: venueData.type || "",
-    cityId: venueData.cityId || data.cityId || "",
-    capacity: venueData.capacity || null,
-    updated_at: admin.firestore.FieldValue.serverTimestamp(),
-    [`hourly_entries.h${hour}`]: admin.firestore.FieldValue.increment(1),
-  }, { merge: true });
+  return { success: true };
+});
+
+exports.checkOutUser = onCall({ enforceAppCheck: false }, async (request) => {
+  const { auth } = request;
+  if (!auth) throw new HttpsError('unauthenticated', 'No autenticado');
+
+  const checkinRef = db.collection('checkins').doc(auth.uid);
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(checkinRef);
+    if (!snap.exists) return;
+    const data = snap.data();
+    
+    if (data.expiresAt.toMillis() > Date.now() && data.venueId) {
+      const venueRef = db.collection('venues').doc(data.venueId);
+      const liveSenseRef = db.collection('live_sense').doc(data.venueId);
+      tx.update(venueRef, { currentCount: admin.firestore.FieldValue.increment(-1) });
+      tx.set(liveSenseRef, { current_count: admin.firestore.FieldValue.increment(-1), updated_at: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    }
+    tx.delete(checkinRef);
+  });
+  return { success: true };
 });
 
 exports.checkFranchiseTrigger = onDocumentWritten("venues/{venueId}", async (event) => {

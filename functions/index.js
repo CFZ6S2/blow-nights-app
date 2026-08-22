@@ -14,6 +14,7 @@ const scheduled = require("./modules/scheduled");
 const membership = require("./modules/membership");
 const partners = require("./modules/partners");
 const setupStripe = require("./modules/setup-stripe");
+const financial = require("./modules/financial");
 
 // Auth & Users
 exports.onUserCreate = auth.onUserCreate;
@@ -88,7 +89,8 @@ exports.cleanupExpiredChills = chills.cleanupExpiredChills;
 exports.updateGeohash = venues.updateGeohash;
 exports.cleanupAvailability = venues.cleanupAvailability;
 exports.cleanupExpiredCheckins = venues.cleanupExpiredCheckins;
-exports.onCheckinCreated = venues.onCheckinCreated;
+exports.checkInUser = venues.checkInUser;
+exports.checkOutUser = venues.checkOutUser;
 exports.checkFranchiseTrigger = venues.checkFranchiseTrigger;
 exports.createRRPPParty = venues.createRRPPParty;
 exports.deleteRRPPParty = venues.deleteRRPPParty;
@@ -96,3 +98,6 @@ exports.deleteRRPPParty = venues.deleteRRPPParty;
 // Setup (temporary)
 exports.setupStripeProducts = setupStripe.setupStripeProducts;
 exports.createTestPromoCode = setupStripe.createTestPromoCode;
+
+// Financial
+exports.dailyStripeReconciliation = financial.dailyStripeReconciliation;

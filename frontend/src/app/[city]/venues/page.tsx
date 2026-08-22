@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useCityRouter } from '@/hooks/useCityRouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { collection, query, where, onSnapshot, doc, setDoc, addDoc, deleteDoc, serverTimestamp, Timestamp, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '@/lib/firebase';
 import { useVenues, VENUE_TYPES } from '@/hooks/useVenues';
 import { useCity } from '@/context/CityContext';
 import { fuzzCoordinates } from '@/lib/geo';
@@ -93,39 +94,13 @@ export default function VenuesPage() {
     if (!user || checkingIn) return;
     setCheckingIn(true);
     try {
-      if (activeCheckin) {
-        await deleteDoc(doc(db, 'checkins', activeCheckin.id));
-      }
-
-      const tomorrow2pm = new Date();
-      tomorrow2pm.setDate(tomorrow2pm.getDate() + 1);
-      tomorrow2pm.setHours(14, 0, 0, 0);
-
-      const isAnon = visibilityMode === 'anonymous' || (profile?.cruisingMode ?? false);
-      const checkinData: Record<string, any> = {
-        userId: isAnon ? `anon_${user.uid}` : user.uid,
-        realUserId: user.uid,
+      // The backend function 'checkInUser' handles replacing existing checkins transactionally.
+      const checkInUser = httpsCallable(functions, 'checkInUser');
+      await checkInUser({
         venueId,
-        venueName,
-        cityId: cityId || '',
         visibility: isAnon ? 'anonymous' : visibilityMode,
-        anonymous: isAnon,
-        createdAt: serverTimestamp(),
-        expiresAt: Timestamp.fromDate(tomorrow2pm),
-      };
-
-      if (isAnon && typeof navigator !== 'undefined' && navigator.geolocation) {
-        try {
-          const pos = await new Promise<GeolocationPosition>((res, rej) =>
-            navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 })
-          );
-          const fuzzed = fuzzCoordinates(pos.coords.latitude, pos.coords.longitude);
-          checkinData.lat = fuzzed.lat;
-          checkinData.lng = fuzzed.lng;
-        } catch {}
-      }
-
-      await addDoc(collection(db, 'checkins'), checkinData);
+        anonymous: isAnon
+      });
     } catch (err) {
       console.error('Error checking in:', err);
     } finally {
@@ -136,7 +111,8 @@ export default function VenuesPage() {
   const handleCheckout = async () => {
     if (!activeCheckin) return;
     try {
-      await deleteDoc(doc(db, 'checkins', activeCheckin.id));
+      const checkOutUser = httpsCallable(functions, 'checkOutUser');
+      await checkOutUser();
     } catch (err) {
       console.error('Error checking out:', err);
     }
