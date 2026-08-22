@@ -6,6 +6,8 @@ import { db } from '@/lib/firebase';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
+import { DEFAULT_CITY } from '@/lib/routes';
+
 interface VenueWithTickets {
   id: string;
   name: string;
@@ -78,7 +80,7 @@ export default function EntradasPage() {
         </div>
 
         <div className="relative z-10 max-w-3xl mx-auto space-y-6">
-          <Link href="/madrid/" className="inline-flex items-center gap-2 text-slate-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest">
+          <Link href={`/${DEFAULT_CITY}/`} className="inline-flex items-center gap-2 text-slate-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest">
             <span className="material-icons text-sm">arrow_back</span>
             {t('entradas.back_home')}
           </Link>
@@ -174,7 +176,7 @@ export default function EntradasPage() {
                       whileHover={{ y: -2 }}
                     >
                       <Link
-                        href={`/madrid/venues/detail?id=${e.id}&type=event`}
+                        href={`/${DEFAULT_CITY}/venues/detail?id=${e.id}&type=event`}
                         className="block bg-white/5 border border-white/10 rounded-3xl overflow-hidden hover:border-indigo-500/30 transition-all"
                       >
                         {e.coverImage && (
