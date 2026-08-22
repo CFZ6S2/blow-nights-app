@@ -1,7 +1,7 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { admin, db } = require("../lib/init");
 
-exports.requestPartnerAccess = onCall(async (request) => {
+exports.requestPartnerAccess = onCall({ enforceAppCheck: false }, async (request) => {
   const { data } = request;
 
   const { name, email, phone, cityId, type, venueName } = data;
@@ -33,15 +33,12 @@ exports.requestPartnerAccess = onCall(async (request) => {
   }
 });
 
-exports.approvePartnerAccess = onCall(async (request) => {
+exports.approvePartnerAccess = onCall({ enforceAppCheck: false }, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Login requerido.');
 
   const callerClaims = (await admin.auth().getUser(auth.uid)).customClaims || {};
-  if (callerClaims.role !== 'superadmin' && callerClaims.role !== 'admin') {
-    throw new HttpsError('permission-denied', 'Solo un administrador puede aprobar solicitudes de partner.');
-  }
-
+  
   const { applicationId, action } = data;
   if (!applicationId || !action) {
     throw new HttpsError('invalid-argument', 'applicationId y action son obligatorios.');
@@ -53,6 +50,13 @@ exports.approvePartnerAccess = onCall(async (request) => {
   const appData = appDoc.data();
   if (appData.status !== 'pending') {
     throw new HttpsError('failed-precondition', 'Esta solicitud ya fue procesada.');
+  }
+
+  const isSuperOrAdmin = callerClaims.role === 'superadmin' || callerClaims.role === 'admin';
+  const isCityAdminForThisCity = callerClaims.role === 'cityAdmin' && callerClaims.cityId === appData.cityId;
+
+  if (!isSuperOrAdmin && !isCityAdminForThisCity) {
+    throw new HttpsError('permission-denied', 'No tienes permisos para aprobar esta solicitud.');
   }
 
   if (action === 'reject') {
@@ -92,18 +96,36 @@ exports.approvePartnerAccess = onCall(async (request) => {
       }
     }
 
+    let createdVenueId = null;
+    if (appData.type === 'venue') {
+      const newVenueRef = db.collection('venues').doc();
+      await newVenueRef.set({
+        name: appData.venueName || appData.name,
+        cityId: appData.cityId || 'other',
+        ownerId: targetUid,
+        isActive: true,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      createdVenueId = newVenueRef.id;
+    }
+
     const assignedRole = appData.type === 'city_manager' ? 'cityManager' : 'venueOwner';
     const existingClaims = (await admin.auth().getUser(targetUid)).customClaims || {};
     await admin.auth().setCustomUserClaims(targetUid, { ...existingClaims, role: assignedRole });
 
-    await db.collection('users').doc(targetUid).set({
+    const userUpdate = {
       role: assignedRole,
       email: appData.email,
       nick: appData.name,
       phone: appData.phone,
       city: appData.cityId,
       createdAt: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    };
+    if (createdVenueId) {
+      userUpdate.venueId = createdVenueId;
+    }
+
+    await db.collection('users').doc(targetUid).set(userUpdate, { merge: true });
 
     await appDoc.ref.update({
       status: 'approved',

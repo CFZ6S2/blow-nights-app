@@ -35,6 +35,7 @@ export default function AdminDashboard() {
   
   const [reports, setReports] = useState<any[]>([]);
   const [verifications, setVerifications] = useState<any[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [rrppApps, setRrppApps] = useState<any[]>([]);
   const [processingRrpp, setProcessingRrpp] = useState<string | null>(null);
@@ -112,11 +113,22 @@ export default function AdminDashboard() {
     // Carga inicial paginada de usuarios (primeros 25)
     loadMoreUsers(true);
 
+    // Solicitudes de locales pendientes
+    const unsubApps = onSnapshot(
+      query(collection(db, 'partner_applications'), where('status', '==', 'pending'), where('type', '==', 'venue'), limit(50)),
+      (snapshot) => {
+        const allApps = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
+        setApplications(allApps);
+      },
+      errNoop
+    );
+
     return () => {
       unsubSettings();
       unsubReports();
       unsubVerifications();
       unsubRrppApps();
+      unsubApps();
     };
   }, [isAdmin]);
 
@@ -435,6 +447,97 @@ export default function AdminDashboard() {
                 </div>
               </div>
             ))}
+          </motion.div>
+        )}
+
+        {activeTab === 'verifications' && (
+          <motion.div key="verifications" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-8">
+            {/* Solicitudes de Locales */}
+            <div>
+              <h3 className="text-lg font-black text-fuchsia-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <span className="material-icons">store</span>
+                Solicitudes de Locales
+              </h3>
+              {applications.length === 0 && <p className="text-sm text-slate-500">No hay solicitudes de locales pendientes.</p>}
+              <div className="space-y-4">
+                {applications.map(app => (
+                  <div key={app.id} className="bg-white/5 backdrop-blur-md border border-fuchsia-500/30 rounded-2xl p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-bold text-white text-lg">{app.name}</p>
+                        <p className="text-xs text-fuchsia-400 font-bold uppercase">{app.cityId}</p>
+                      </div>
+                      <span className="px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded-md text-xs font-bold uppercase">Pendiente</span>
+                    </div>
+                    <p className="text-sm text-slate-300 mb-1">📞 {app.phone} | ✉️ {app.email}</p>
+                    {app.venueName && <p className="text-sm text-fuchsia-300 font-bold mb-1">🍸 {app.venueName}</p>}
+                    <div className="mt-4 flex gap-2">
+                      <button 
+                        onClick={async () => {
+                          if(confirm(`¿Aprobar solicitud de ${app.name}?`)) {
+                            try {
+                              const approvePartnerAccess = httpsCallable(functions, 'approvePartnerAccess');
+                              const res = await approvePartnerAccess({ applicationId: app.id, action: 'approve' });
+                              const data = res.data as any;
+                              alert(data.message + (data.passwordResetLink ? `\n\nLink de recuperación generado. Se lo puedes enviar por WhatsApp:\n${data.passwordResetLink}` : ''));
+                            } catch (error) {
+                              console.error(error);
+                              alert('Error al aprobar el partner.');
+                            }
+                          }
+                        }} 
+                        className="px-4 py-2 bg-fuchsia-600 hover:bg-fuchsia-500 rounded-lg text-xs font-bold uppercase transition-colors"
+                      >
+                        Aprobar Local
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          if(confirm(`¿Rechazar solicitud de ${app.name}?`)) {
+                            try {
+                              const approvePartnerAccess = httpsCallable(functions, 'approvePartnerAccess');
+                              await approvePartnerAccess({ applicationId: app.id, action: 'reject' });
+                              alert('Rechazada.');
+                            } catch (error) {
+                              console.error(error);
+                              alert('Error al rechazar.');
+                            }
+                          }
+                        }} 
+                        className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-xs font-bold uppercase transition-colors"
+                      >
+                        Rechazar
+                      </button>
+                      <a href={`https://wa.me/${app.phone.replace(/\D/g, '')}?text=Hola%20${app.name},%20te%20escribo%20desde%20Blow%20Nights...`} target="_blank" rel="noreferrer" className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-xs font-bold uppercase transition-colors flex items-center gap-1">
+                        WhatsApp
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Verificaciones de Usuarios */}
+            <div>
+              <h3 className="text-lg font-black text-emerald-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <span className="material-icons">verified_user</span>
+                Verificaciones de Usuarios
+              </h3>
+              {verifications.length === 0 && <p className="text-sm text-slate-500">No hay verificaciones pendientes.</p>}
+              <div className="space-y-4">
+                {verifications.map(ver => (
+                  <div key={ver.id} className="bg-white/5 backdrop-blur-md border border-emerald-500/30 rounded-2xl p-4">
+                    <p className="font-bold text-white text-lg">Usuario ID: {ver.id}</p>
+                    {ver.images && ver.images.map((img: string, idx: number) => (
+                       <img key={idx} src={img} alt="ID" className="w-full max-w-sm rounded-lg mt-2 object-cover border border-white/10" />
+                    ))}
+                    <div className="mt-4 flex gap-2">
+                      <button onClick={() => handleVerification(ver.id, 'approved')} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-bold uppercase">Aprobar Verificación</button>
+                      <button onClick={() => handleVerification(ver.id, 'rejected')} className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-xs font-bold uppercase">Rechazar</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -30,7 +30,7 @@ const MainMap = dynamic(() => import('@/components/Map'), {
 
 export default function Home() {
   const { t } = useTranslation();
-  const { user, profile, isAdmin, isSuperAdmin, isCityAdmin, loading, logout } = useAuth();
+  const { user, profile, claims, isAdmin, isSuperAdmin, isCityAdmin, loading, logout } = useAuth();
   const { cityPath, router } = useCityRouter();
   const boostCooldown = useMemo(() => new Date(Date.now() - 24*60*60*1000), []);
   const hasRedirected = useRef(false);
@@ -41,9 +41,10 @@ export default function Home() {
       return;
     }
 
-    const role = profile?.role;
+    const role = profile?.role || claims?.role;
 
-    if ((!profile || profile.edad === null || profile.edad === undefined) && role !== 'rrpp') {
+    const noSetupRoles = ['rrpp', 'venue', 'venueOwner', 'cityAdmin', 'admin', 'superadmin', 'door', 'ambassador'];
+    if ((!profile || profile.edad === null || profile.edad === undefined) && (!role || !noSetupRoles.includes(role))) {
       router.push('/setup-profile');
       return;
     }

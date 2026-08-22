@@ -59,8 +59,8 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
   };
 
   const batch = db.batch();
-  batch.set(db.collection("users").doc(uid), userDoc);
-  batch.set(db.collection("subscriptions").doc(uid), subscriptionDoc);
+  batch.set(db.collection("users").doc(uid), userDoc, { merge: true });
+  batch.set(db.collection("subscriptions").doc(uid), subscriptionDoc, { merge: true });
 
   return batch.commit();
 });

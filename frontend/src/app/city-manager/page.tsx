@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db, auth } from '@/lib/firebase';
+import { db, auth, functions } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
 import { motion } from 'framer-motion';
 import { TrendingUp, Building2, Ticket, Users, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -21,6 +22,7 @@ export default function CityManagerDashboard() {
   const [cityData, setCityData] = useState<any>(null);
   const [venues, setVenues] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
   const [metrics, setMetrics] = useState({
     activeVenues: 0,
     monthlyGrossRevenue: 0,
@@ -93,6 +95,18 @@ export default function CityManagerDashboard() {
         });
         setEvents(eList);
 
+        // 5. Buscar solicitudes de locales
+        const aQ = query(collection(db, 'partner_applications'), where('cityId', '==', cData.id));
+        const aSnap = await getDocs(aQ);
+        const aList: any[] = [];
+        aSnap.forEach(d => {
+          const dat = d.data();
+          if (dat.status === 'pending' && dat.type === 'venue') {
+            aList.push({ id: d.id, ...dat });
+          }
+        });
+        setApplications(aList);
+
         setMetrics({
           activeVenues: mActive,
           monthlyGrossRevenue: mGross,
@@ -162,6 +176,62 @@ export default function CityManagerDashboard() {
 
       <main className="max-w-6xl mx-auto px-6 py-8">
         
+        {/* ALERTA SOLICITUDES LOCALES */}
+        {applications.length > 0 && (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-900 border-2 border-fuchsia-500/50 rounded-3xl p-6 shadow-2xl mb-12">
+            <div className="flex items-start gap-4">
+              <span className="text-4xl">💼</span>
+              <div className="w-full">
+                <h2 className="text-xl font-black text-white tracking-tight leading-none mb-1">Solicitudes de Locales Pendientes</h2>
+                <p className="text-sm text-slate-400 mb-4">Nuevos locales que quieren entrar en tu ciudad. Apruébalos para darlos de alta.</p>
+                <div className="space-y-3">
+                  {applications.map(app => (
+                    <div key={app.id} className="bg-black/30 rounded-xl p-4 border border-white/10">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-bold text-white text-lg">{app.name}</p>
+                          <p className="text-xs text-fuchsia-400 font-bold uppercase">{app.cityId}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-1 bg-fuchsia-500/20 text-fuchsia-400 rounded-md text-xs font-bold uppercase">Local</span>
+                          <span className="px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded-md text-xs font-bold uppercase">Pendiente</span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-slate-300 mb-1">📞 {app.phone} | ✉️ {app.email}</p>
+                      {app.venueName && <p className="text-sm text-fuchsia-300 font-bold mb-1">🍸 {app.venueName}</p>}
+                      
+                      <div className="mt-4 flex gap-2">
+                        <button 
+                          onClick={async () => {
+                            if(confirm(`¿Aprobar solicitud de ${app.name}? Esto creará su cuenta de usuario y le asignará el rol de local en tu ciudad.`)) {
+                              try {
+                                const approvePartnerAccess = httpsCallable(functions, 'approvePartnerAccess');
+                                const res = await approvePartnerAccess({ applicationId: app.id, action: 'approve' });
+                                const data = res.data as any;
+                                alert(data.message + (data.passwordResetLink ? `\n\nLink de recuperación generado. Se lo puedes enviar por WhatsApp:\n${data.passwordResetLink}` : ''));
+                                setApplications(prev => prev.filter(a => a.id !== app.id));
+                              } catch (error) {
+                                console.error(error);
+                                alert('Error al aprobar el partner.');
+                              }
+                            }
+                          }} 
+                          className="px-4 py-2 bg-fuchsia-600 hover:bg-fuchsia-500 rounded-lg text-xs font-bold uppercase transition-colors"
+                        >
+                          Aprobar Local
+                        </button>
+                        <a href={`https://wa.me/${app.phone.replace(/\D/g, '')}?text=Hola%20${app.name},%20te%20escribo%20desde%20Blow%20Nights...`} target="_blank" rel="noreferrer" className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-xs font-bold uppercase transition-colors flex items-center gap-1">
+                          WhatsApp
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* REVENUE DASHBOARD */}
         <section className="mb-12">
           <h2 className="text-sm font-black uppercase tracking-widest text-slate-500 mb-4">Métricas Financieras</h2>

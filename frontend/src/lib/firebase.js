@@ -24,10 +24,10 @@ if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY)
   if (process.env.NODE_ENV === 'development') {
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   }
-  initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY),
-    isTokenAutoRefreshEnabled: true,
-  });
+  // initializeAppCheck(app, {
+  //   provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY),
+  //   isTokenAutoRefreshEnabled: true,
+  // });
 }
 
 import { getPerformance } from "firebase/performance";

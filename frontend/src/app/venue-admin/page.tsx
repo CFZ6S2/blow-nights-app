@@ -22,7 +22,7 @@ import SetupWizard from './SetupWizard';
 
 export default function VenueAdminPage() {
   const { t } = useTranslation();
-  const { user, profile, loading, isAdmin } = useAuth();
+  const { user, profile, loading, isAdmin, logout } = useAuth();
   const { isReady: hasRole } = useRequireRole(['venue', 'venueOwner', 'cityAdmin', 'admin', 'superadmin']);
   const router = useRouter();
   const profileRef = useRef(profile);
@@ -198,7 +198,16 @@ export default function VenueAdminPage() {
               <span className="material-icons text-fuchsia-400">storefront</span>
               Panel de Local
             </h1>
-            <CitySelector />
+            <div className="flex items-center gap-2">
+              <CitySelector />
+              <button
+                onClick={logout}
+                className="bg-white/10 hover:bg-red-500/20 hover:text-red-400 transition-colors rounded-xl w-10 h-10 flex items-center justify-center border border-white/10"
+                title="Cerrar sesión"
+              >
+                <span className="material-icons text-sm">logout</span>
+              </button>
+            </div>
           </div>
 
           {myVenues.length > 1 && (

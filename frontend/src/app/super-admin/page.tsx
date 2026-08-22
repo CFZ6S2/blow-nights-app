@@ -118,7 +118,19 @@ export default function SuperAdminPage() {
         const v: any[] = []; venuesSnap.forEach(d => v.push({ id: d.id, ...d.data() })); setVenues(v);
         const c: any[] = []; citiesSnap.forEach(d => c.push({ id: d.id, ...d.data() })); setCities(c);
         const p: any[] = []; partnersSnap.forEach(d => p.push({ id: d.id, ...d.data() })); setPartners(p);
-        const a: any[] = []; appsSnap.forEach(d => a.push({ id: d.id, ...d.data() })); setApplications(a);
+        const a: any[] = []; appsSnap.forEach(d => {
+          const dat = d.data();
+          if (dat.type === 'city_manager') {
+            a.push({ id: d.id, ...dat });
+          } else if (dat.type === 'venue') {
+            const city = c.find(cityItem => cityItem.id === dat.cityId);
+            const hasManager = city && city.partnerId;
+            if (!hasManager) {
+              a.push({ id: d.id, ...dat });
+            }
+          }
+        });
+        setApplications(a);
         const r: any[] = []; rrppAppsSnap.forEach(d => r.push({ id: d.id, ...d.data() })); setRrppApplications(r);
         const o: any[] = []; orgAppsSnap.forEach(d => o.push({ id: d.id, ...d.data() })); setOrganizerApps(o);
         
