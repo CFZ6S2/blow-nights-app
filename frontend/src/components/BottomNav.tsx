@@ -44,6 +44,8 @@ export function BottomNav() {
   };
 
   if (!user) return null;
+  const role = useAuth().claims?.role;
+  if (role === 'venue' || role === 'venueOwner') return null;
 
   const hideOnPaths = ['/login', '/setup-profile', '/door', '/pass', '/rrpp'];
   if (hideOnPaths.some(p => pathname === p || pathname.startsWith(p + '/'))) return null;
