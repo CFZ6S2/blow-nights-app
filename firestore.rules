@@ -285,6 +285,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ── Live Sense (Público, solo lectura) ──
+    match /live_sense/{venueId} {
+      allow get, list: if true;
+      allow write: if false;
+    }
+
     // Wildcard admin rule removed for security. Access is granted per-collection.
   }
 }

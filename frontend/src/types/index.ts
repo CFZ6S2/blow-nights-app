@@ -66,6 +66,7 @@ export interface Venue {
   cityId: string;
   isClaimed?: boolean;
   currentCount: number;
+  capacity?: number;
   affiliatedBy?: string;
   hasTicketing?: boolean;
   boostActive?: boolean;

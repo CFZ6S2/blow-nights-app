@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, limit, getCountFromServer } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, getCountFromServer, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getAnalytics, logEvent } from 'firebase/analytics';
 import app from '@/lib/firebase';
@@ -26,6 +26,7 @@ const fadeUp: any = {
 export default function LandingPage({ onStart }: LandingPageProps) {
   const [onlineCount, setOnlineCount] = useState(0);
   const [venueCount, setVenueCount] = useState(0);
+  const [liveSenseVenues, setLiveSenseVenues] = useState<any[]>([]);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -39,6 +40,19 @@ export default function LandingPage({ onStart }: LandingPageProps) {
       } catch {}
     };
     fetchStats();
+  }, []);
+
+  useEffect(() => {
+    const q = query(
+      collection(db, 'live_sense'),
+      where('current_count', '>', 0),
+      orderBy('current_count', 'desc'),
+      limit(8)
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      setLiveSenseVenues(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return unsub;
   }, []);
 
   const handleStart = () => {
@@ -299,6 +313,75 @@ export default function LandingPage({ onStart }: LandingPageProps) {
           </motion.div>
         </div>
       </section>
+
+      {/* ═══ LIVE SENSE ═══ */}
+      {liveSenseVenues.length > 0 && (
+        <section className="py-24 md:py-32 px-6 border-t border-white/[0.04] relative overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-[20%] left-[-10%] w-[40%] h-[40%] bg-emerald-600/8 blur-[140px] rounded-full" />
+          </div>
+          <div className="max-w-5xl mx-auto space-y-12 relative z-10">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center space-y-3">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-4">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Live Sense</span>
+              </div>
+              <h2 className="text-3xl md:text-5xl font-[900] tracking-tight">¿Dónde hay ambiente<br className="hidden sm:block" /><span className="text-emerald-400"> ahora mismo</span>?</h2>
+              <p className="text-slate-400 text-sm leading-relaxed max-w-lg mx-auto">Mira en tiempo real cuánta gente hay en cada local. Sin registro, sin cuenta, sin filtros.</p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {liveSenseVenues.map((v, i) => {
+                const ratio = v.capacity ? v.current_count / v.capacity : null;
+                const level = !ratio ? (v.current_count > 50 ? 'high' : v.current_count > 15 ? 'medium' : 'low') : (ratio >= 0.95 ? 'full' : ratio >= 0.65 ? 'high' : ratio >= 0.3 ? 'medium' : 'low');
+                const colors: Record<string, { dot: string; text: string; bg: string; bar: string }> = {
+                  low: { dot: 'bg-emerald-400', text: 'text-emerald-400', bg: 'bg-emerald-500/10', bar: 'bg-emerald-500' },
+                  medium: { dot: 'bg-yellow-400', text: 'text-yellow-400', bg: 'bg-yellow-500/10', bar: 'bg-yellow-500' },
+                  high: { dot: 'bg-orange-400', text: 'text-orange-400', bg: 'bg-orange-500/10', bar: 'bg-orange-500' },
+                  full: { dot: 'bg-red-400', text: 'text-red-400', bg: 'bg-red-500/10', bar: 'bg-red-500' },
+                };
+                const c = colors[level];
+                return (
+                  <motion.div
+                    key={v.id}
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.05 }}
+                    className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 space-y-3 hover:border-white/10 transition-all"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="text-sm font-black truncate">{v.venue_name}</h3>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">{v.venue_type}</p>
+                      </div>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black ${c.bg} ${c.text}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${c.dot} animate-pulse`} />
+                        {v.current_count}
+                      </span>
+                    </div>
+                    {v.capacity && (
+                      <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all duration-700 ${c.bar}`} style={{ width: `${Math.min(100, (v.current_count / v.capacity) * 100)}%` }} />
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center space-y-4 pt-4">
+              <p className="text-sm text-slate-500">¿Quieres ver <span className="text-white font-bold">quién</span> está dentro y mandar un <span className="text-fuchsia-400 font-bold">Toque 🔥</span>?</p>
+              <button onClick={handleStart} className="px-8 py-3 bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-full hover:scale-105 active:scale-95 transition-transform shadow-lg shadow-fuchsia-500/20">
+                Crea tu perfil en 1 clic
+              </button>
+            </motion.div>
+          </div>
+        </section>
+      )}
 
       {/* ═══ HOW IT WORKS ═══ */}
       <section className="py-24 md:py-32 px-6 border-t border-white/[0.04]">
