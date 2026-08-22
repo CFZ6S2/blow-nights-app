@@ -122,10 +122,7 @@ exports.purchaseVenueTicket = onCall({ enforceAppCheck: false, secrets: ["STRIPE
     const ticketPriceCents = pricing.amount || 0;
     const platformFeeCents = 100;
 
-    // BYPASS FOR PRODUCTION TESTING WITHOUT ACTIVE CONNECT ACCOUNT
-    const isBypass = stripeAccountId === 'acct_1U7IE6L1fBKMMPTs';
-    
-    const sessionPayload = {
+    const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [{
         price_data: {
@@ -136,6 +133,9 @@ exports.purchaseVenueTicket = onCall({ enforceAppCheck: false, secrets: ["STRIPE
         quantity: 1,
       }],
       mode: "payment",
+      payment_intent_data: {
+        application_fee_amount: platformFeeCents,
+      },
       success_url: `${origin}/wallet?success=true`,
       cancel_url: `${origin}/wallet?canceled=true`,
       metadata: {
@@ -146,16 +146,7 @@ exports.purchaseVenueTicket = onCall({ enforceAppCheck: false, secrets: ["STRIPE
         type: "ticket",
         platform: origin?.includes('darknights') ? 'darknights' : (data.platform || 'blownights'),
       },
-    };
-
-    if (!isBypass) {
-      sessionPayload.payment_intent_data = {
-        application_fee_amount: platformFeeCents,
-      };
-    }
-
-    const sessionOptions = isBypass ? undefined : { stripeAccount: stripeAccountId };
-    const session = await stripe.checkout.sessions.create(sessionPayload, sessionOptions);
+    }, { stripeAccount: stripeAccountId });
 
     return { sessionId: session.id, url: session.url };
 });
