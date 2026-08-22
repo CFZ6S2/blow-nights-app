@@ -8,7 +8,6 @@ import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/lib/firebase';
 import { motion } from 'framer-motion';
 import { useMedia } from '@/hooks/useMedia';
-import { useRequireAuth } from '@/hooks/useRequireAuth';
 import RRPPEventCard from './RRPPEventCard';
 import { useTranslation } from 'react-i18next';
 
@@ -18,7 +17,6 @@ function RRPPInner() {
   const tokenParam = searchParams.get('token');
   const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
-  const { isReady } = useRequireAuth();
   const { uploadFile, uploading } = useMedia();
 
   const [promoterDocs, setPromoterDocs] = useState<any[]>([]);
@@ -122,19 +120,6 @@ function RRPPInner() {
     }
   };
 
-  if (authLoading || loadingDocs) {
-    return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center text-slate-500 font-bold">
-        {t('rrpp.loadingPanel')}
-      </div>
-    );
-  }
-
-  if (!user && !tokenParam) {
-    if (typeof window !== 'undefined') router.push('/rrpp/register');
-    return null;
-  }
-
   if (tokenParam) {
     return (
       <div className="min-h-screen bg-black text-white p-6 pb-24">
@@ -143,6 +128,19 @@ function RRPPInner() {
         </div>
       </div>
     );
+  }
+
+  if (authLoading || loadingDocs) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center text-slate-500 font-bold">
+        {t('rrpp.loadingPanel')}
+      </div>
+    );
+  }
+
+  if (!user) {
+    if (typeof window !== 'undefined') router.push('/rrpp/register');
+    return null;
   }
 
   if (profile?.role !== 'rrpp') {
