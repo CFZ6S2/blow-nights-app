@@ -78,26 +78,24 @@ export default function VenueAdminPage() {
 
   useEffect(() => {
     if (!user) return;
+    const p = profileRef.current;
+    const isCityAdmin = p?.role === 'cityAdmin';
+    let q;
+    if (isAdmin) {
+      q = query(collection(db, 'venues'), where('isActive', '==', true));
+    } else if (isCityAdmin && p?.cityId) {
+      q = query(collection(db, 'venues'), where('cityId', '==', p.cityId), where('isActive', '==', true));
+    } else {
+      q = query(collection(db, 'venues'), where('ownerId', '==', user.uid));
+    }
 
-    const qOwned = query(collection(db, 'venues'), where('ownerId', '==', user.uid));
-    const qManaged = query(collection(db, 'venues'), where('managers', 'array-contains', user.uid));
-
-    const mergeAndSet = (ownedSnap: any, managedSnap: any) => {
-      const map = new Map<string, any>();
-      ownedSnap?.docs.forEach((d: any) => map.set(d.id, { id: d.id, ...d.data() }));
-      managedSnap?.docs.forEach((d: any) => { if (!map.has(d.id)) map.set(d.id, { id: d.id, ...d.data() }); });
-      const list = Array.from(map.values());
+    const unsub = onSnapshot(q, (snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       setMyVenues(list);
       if (list.length > 0 && !selectedVenue) setSelectedVenue(list[0]);
-    };
-
-    let ownedSnap: any = null;
-    let managedSnap: any = null;
-    const unsubOwned = onSnapshot(qOwned, (snap) => { ownedSnap = snap; mergeAndSet(ownedSnap, managedSnap); }, () => {});
-    const unsubManaged = onSnapshot(qManaged, (snap) => { managedSnap = snap; mergeAndSet(ownedSnap, managedSnap); }, () => {});
-
-    return () => { unsubOwned(); unsubManaged(); };
-  }, [user?.uid]);
+    }, () => {});
+    return unsub;
+  }, [user?.uid, isAdmin]);
 
   useEffect(() => {
     if (!selectedVenue) return;
