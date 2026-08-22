@@ -298,9 +298,6 @@
   "chills.create.create_social": "Crear Chill Social",
   "chills_manage.door_delegation": "Delegación de Puerta",
   "chills_manage.door_link_title": "Enlace para el Portero / Amigo",
-  "login.subtitle": "Tu Circuito Nocturno",
-  "login.google": "Entrar con Google",
-  "login.apple": "Entrar con Apple",
   "setup.step1": "TU IDENTIDAD",
   "setup.step2": "MÁS SOBRE TI",
   "setup.step3": "TU GALERÍA",
@@ -1317,6 +1314,7 @@
   },
   "login": {
     "title": "Iniciar Sesión",
+    "subtitle": "Tu Circuito Nocturno",
     "email": "Email",
     "emailPlaceholder": "tu@email.com",
     "password": "Contraseña",
@@ -1325,6 +1323,19 @@
     "forgotPassword": "¿Olvidaste tu contraseña?",
     "noAccount": "¿No tienes cuenta?",
     "signup": "Crear cuenta",
-    "or": "o"
+    "or": "o",
+    "google": "Entrar con Google",
+    "apple": "Entrar con Apple",
+    "confirm_age_1": "Confirmo que soy",
+    "confirm_age_2": "mayor de 18 años",
+    "confirm_age_3": "y acepto los",
+    "terms": "Términos de Servicio",
+    "privacy": "Política de Privacidad",
+    "pro_question": "¿Eres profesional del ocio nocturno?",
+    "pro_rrpp": "Soy RRPP",
+    "pro_venues": "Tengo un Local",
+    "badge_secure": "Seguro",
+    "badge_private": "Privado",
+    "badge_real": "Verificado"
   }
 }
