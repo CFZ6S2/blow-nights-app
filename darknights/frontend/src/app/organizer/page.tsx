@@ -24,6 +24,7 @@ interface IndependentEvent {
   title: string;
   description: string;
   banner_url: string;
+  platform?: string;
   start_date: Timestamp | null;
   scanner_token: string;
   ticket_tiers: TicketTier[];
