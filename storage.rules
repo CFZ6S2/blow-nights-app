@@ -47,17 +47,17 @@ service firebase.storage {
     // Eventos de Venues
     match /venues/{venueId}/events/{eventId}/{fileName} {
       allow read: if true;
-      // 1 y 2. MIME type y Size limit 10MB
       allow write: if isAuthenticated()
                    && isImage() && isSizeLessThan(10)
-                   && fileName.matches(request.auth.uid + '_.*');
+                   && firestore.get(/databases/(default)/documents/venues/$(venueId)).data.ownerId == request.auth.uid;
     }
 
     // Eventos Independientes / RRPP
-    match /events/{allPaths=**} {
+    match /events/{eventId}/{fileName} {
       allow read: if true;
       allow write: if isAuthenticated()
-                   && isImage() && isSizeLessThan(10);
+                   && isImage() && isSizeLessThan(10)
+                   && firestore.get(/databases/(default)/documents/events/$(eventId)).data.organizerId == request.auth.uid;
     }
 
     // 5. Ticket protection (Protección explícita de entradas/QRs)

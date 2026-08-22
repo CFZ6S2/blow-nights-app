@@ -189,12 +189,17 @@ service cloud.firestore {
 
     match /checkins/{checkinId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null
-        && (request.auth.uid == request.resource.data.userId
-            || request.auth.uid == request.resource.data.realUserId);
-      allow update, delete: if isAdmin()
-        || (request.auth != null && request.auth.uid == resource.data.userId)
-        || (request.auth != null && request.auth.uid == resource.data.realUserId);
+      allow write: if false; // Only written by Cloud Functions
+    }
+
+    match /financial_audits/{auditId} {
+      allow read: if isAdmin();
+      allow write: if false; // Only written by backend
+    }
+
+    match /territorial_splits/{splitId} {
+      allow read: if isAdmin();
+      allow write: if false; // Only written by backend
     }
 
     match /tickets/{ticketId} {
@@ -202,8 +207,7 @@ service cloud.firestore {
       allow list: if isAdmin()
         || (request.auth != null && request.auth.uid == resource.data.userId)
         || (request.auth != null && resource.data.venueOwnerId == request.auth.uid);
-      allow update: if isAdmin()
-        || (request.auth != null && resource.data.venueOwnerId == request.auth.uid);
+      allow update: if isAdmin();
 
       match /private/{docId} {
         allow read: if isAdmin()
