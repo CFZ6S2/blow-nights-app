@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Failsafe: Si Firebase Auth tarda demasiado o se bloquea, forzar renderizado
     const failsafeTimeout = setTimeout(() => {
       setLoading(false);
-    }, 3000);
+    }, 5000);
 
     // Registro de Service Worker para PWA con verificación forzada de nueva versión
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
@@ -82,6 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     let unsubscribeProfile: (() => void) | null = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      clearTimeout(failsafeTimeout);
       if (unsubscribeProfile) {
         unsubscribeProfile();
         unsubscribeProfile = null;

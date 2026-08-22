@@ -59,7 +59,7 @@ export default function VenueDetailPage() {
   };
 
   useEffect(() => {
-    if (!loading && !user) router.push('/login');
+    if (!loading && !user) router.replace('/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search));
   }, [user, loading, router]);
 
   useEffect(() => {
