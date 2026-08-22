@@ -9,6 +9,7 @@ import { useTickets } from '@/hooks/useTickets';
 import { httpsCallable } from 'firebase/functions';
 import { functions, db } from '@/lib/firebase';
 import DynamicQR from '@/components/DynamicQR';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function WalletPage() {
   const { t } = useTranslation();
@@ -17,6 +18,7 @@ export default function WalletPage() {
   const { tickets, valid, used, loading: ticketsLoading } = useTickets(user?.uid);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [ticketSecrets, setTicketSecrets] = useState<any>(null);
+  const [venueData, setVenueData] = useState<any>(null);
   const [tab, setTab] = useState<'valid' | 'used'>('valid');
 
   useEffect(() => {
@@ -30,17 +32,22 @@ export default function WalletPage() {
       if (selectedTicket.qrToken || selectedTicket.secretKey) {
         setTicketSecrets({ qrToken: selectedTicket.qrToken, secretKey: selectedTicket.secretKey });
       } else {
-        import('firebase/firestore').then(({ doc, getDoc }) => {
-          getDoc(doc(db, `tickets/${selectedTicket.id}/private/secrets`)).then(snap => {
-            if (snap.exists()) {
-              setTicketSecrets(snap.data());
-            }
-          });
+        getDoc(doc(db, `tickets/${selectedTicket.id}/private/secrets`)).then(snap => {
+          if (snap.exists()) {
+            setTicketSecrets(snap.data());
+          }
         });
       }
     } else {
       setTicketSecrets(null);
     }
+  }, [selectedTicket]);
+
+  useEffect(() => {
+    if (!selectedTicket?.venueId) { setVenueData(null); return; }
+    getDoc(doc(db, 'venues', selectedTicket.venueId)).then(snap => {
+      if (snap.exists()) setVenueData(snap.data());
+    });
   }, [selectedTicket]);
 
   if (loading || !profile) {
@@ -116,47 +123,7 @@ export default function WalletPage() {
         ) : (
           <div className="space-y-3">
             {displayTickets.map((ticket: any) => (
-              <motion.button
-                key={ticket.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                onClick={() => setSelectedTicket(ticket)}
-                className={`w-full bg-white/5 backdrop-blur-xl border rounded-3xl p-5 text-left transition-all ${
-                  ticket.status === 'valid'
-                    ? 'border-green-500/20 hover:bg-green-500/5'
-                    : 'border-white/10 opacity-60'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                      ticket.status === 'valid' ? 'bg-green-500/20' : 'bg-slate-800'
-                    }`}>
-                      <span className={`material-icons ${
-                        ticket.status === 'valid' ? 'text-green-400' : 'text-slate-600'
-                      }`}>
-                        {ticket.status === 'valid' ? 'qr_code_2' : 'check_circle'}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-black">{ticket.venueName || ticket.venueId}</p>
-                      <p className="text-[10px] text-slate-500 capitalize">{ticket.ticketType}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${
-                      ticket.status === 'valid' ? 'text-green-400' : 'text-slate-500'
-                    }`}>
-                      {ticket.status === 'valid' ? t('wallet.ticket_valid') : t('wallet.ticket_used')}
-                    </span>
-                    {ticket.purchasedAt && (
-                      <p className="text-[9px] text-slate-600 mt-0.5">
-                        {ticket.purchasedAt.toDate?.()?.toLocaleDateString('es-ES') || ''}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </motion.button>
+              <TicketCard key={ticket.id} ticket={ticket} t={t} onSelect={setSelectedTicket} />
             ))}
           </div>
         )}
@@ -176,11 +143,32 @@ export default function WalletPage() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm bg-slate-900 border border-white/10 rounded-[3rem] p-8 space-y-6 shadow-[0_40px_100px_rgba(0,0,0,0.8)]"
+              className="w-full max-w-sm bg-slate-900 border border-white/10 rounded-[3rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.8)]"
             >
+              {venueData?.coverImage && (
+                <div className="h-36 w-full overflow-hidden relative">
+                  <img src={venueData.coverImage} alt={venueData.name || ''} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900" />
+                </div>
+              )}
+
+              <div className="p-8 space-y-6">
               <div className="text-center space-y-2">
-                <h3 className="text-xl font-black">{selectedTicket.venueName || selectedTicket.venueId}</h3>
+                <h3 className="text-xl font-black">{venueData?.name || selectedTicket.venueName || selectedTicket.venueId}</h3>
                 <p className="text-xs text-slate-500 capitalize">{selectedTicket.ticketType}</p>
+                {(() => {
+                  const pricing = venueData?.ticketPricing?.[selectedTicket.ticketType];
+                  const price = pricing?.amount;
+                  return price ? (
+                    <p className="text-lg font-black text-fuchsia-400">{(price / 100).toFixed(2)}€</p>
+                  ) : null;
+                })()}
+                {(() => {
+                  const pricing = venueData?.ticketPricing?.[selectedTicket.ticketType];
+                  return pricing?.description ? (
+                    <p className="text-xs text-slate-400">{pricing.description}</p>
+                  ) : null;
+                })()}
                 <span className={`inline-block text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
                   selectedTicket.status === 'valid'
                     ? 'bg-green-500/20 text-green-400'
@@ -234,10 +222,78 @@ export default function WalletPage() {
               >
                 {t('wallet.close')}
               </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function TicketCard({ ticket, t, onSelect }: { ticket: any; t: any; onSelect: (t: any) => void }) {
+  const [venue, setVenue] = useState<any>(null);
+
+  useEffect(() => {
+    if (!ticket.venueId) return;
+    getDoc(doc(db, 'venues', ticket.venueId)).then(snap => {
+      if (snap.exists()) setVenue(snap.data());
+    });
+  }, [ticket.venueId]);
+
+  const pricing = venue?.ticketPricing?.[ticket.ticketType];
+
+  return (
+    <motion.button
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      onClick={() => onSelect(ticket)}
+      className={`w-full bg-white/5 backdrop-blur-xl border rounded-3xl overflow-hidden text-left transition-all ${
+        ticket.status === 'valid'
+          ? 'border-green-500/20 hover:bg-green-500/5'
+          : 'border-white/10 opacity-60'
+      }`}
+    >
+      {venue?.coverImage && (
+        <div className="h-20 w-full overflow-hidden relative">
+          <img src={venue.coverImage} alt={venue.name || ''} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white/5" />
+        </div>
+      )}
+      <div className="p-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+              ticket.status === 'valid' ? 'bg-green-500/20' : 'bg-slate-800'
+            }`}>
+              <span className={`material-icons ${
+                ticket.status === 'valid' ? 'text-green-400' : 'text-slate-600'
+              }`}>
+                {ticket.status === 'valid' ? 'qr_code_2' : 'check_circle'}
+              </span>
+            </div>
+            <div>
+              <p className="text-sm font-black">{venue?.name || ticket.venueName || ticket.venueId}</p>
+              <p className="text-[10px] text-slate-500 capitalize">{pricing?.name || ticket.ticketType}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            {pricing?.amount && (
+              <p className="text-sm font-black text-fuchsia-400">{(pricing.amount / 100).toFixed(2)}€</p>
+            )}
+            <span className={`text-[10px] font-black uppercase tracking-widest ${
+              ticket.status === 'valid' ? 'text-green-400' : 'text-slate-500'
+            }`}>
+              {ticket.status === 'valid' ? t('wallet.ticket_valid') : t('wallet.ticket_used')}
+            </span>
+            {ticket.purchasedAt && (
+              <p className="text-[9px] text-slate-600 mt-0.5">
+                {ticket.purchasedAt.toDate?.()?.toLocaleDateString('es-ES') || ''}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.button>
   );
 }
