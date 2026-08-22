@@ -16,6 +16,7 @@ export default function WalletPage() {
   const { cityPath, router } = useCityRouter();
   const { tickets, valid, used, loading: ticketsLoading } = useTickets(user?.uid);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [ticketSecrets, setTicketSecrets] = useState<any>(null);
   const [tab, setTab] = useState<'valid' | 'used'>('valid');
 
   useEffect(() => {
@@ -23,6 +24,24 @@ export default function WalletPage() {
       router.push('/login');
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (selectedTicket && selectedTicket.status === 'valid') {
+      if (selectedTicket.qrToken || selectedTicket.secretKey) {
+        setTicketSecrets({ qrToken: selectedTicket.qrToken, secretKey: selectedTicket.secretKey });
+      } else {
+        import('firebase/firestore').then(({ doc, getDoc }) => {
+          getDoc(doc(db, `tickets/${selectedTicket.id}/private/secrets`)).then(snap => {
+            if (snap.exists()) {
+              setTicketSecrets(snap.data());
+            }
+          });
+        });
+      }
+    } else {
+      setTicketSecrets(null);
+    }
+  }, [selectedTicket]);
 
   if (loading || !profile) {
     return (
@@ -172,12 +191,12 @@ export default function WalletPage() {
               </div>
 
               <div id="ticket-content" className="print:text-black">
-                {selectedTicket.status === 'valid' && (selectedTicket.qrToken || selectedTicket.secretKey) && (
+                {selectedTicket.status === 'valid' && ticketSecrets && (
                   <div className="flex justify-center mb-6">
                       <DynamicQR 
                         ticketId={selectedTicket.id}
-                        secretKey={selectedTicket.secretKey} 
-                        fallbackToken={selectedTicket.qrToken} 
+                        secretKey={ticketSecrets.secretKey} 
+                        fallbackToken={ticketSecrets.qrToken} 
                         size={200} 
                       />
                   </div>
