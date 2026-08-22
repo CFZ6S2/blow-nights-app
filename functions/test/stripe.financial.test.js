@@ -167,4 +167,38 @@ describe("Stripe Financial Integrity (Go-Live Gate)", () => {
     
     expect(docData.status).toBe("completed");
   });
+
+  test("4. Crash recovery: Si el proceso muere tras el Transfer pero antes del update, el retry recupera y reconcilia", async () => {
+    await db.collection("cities").doc("crash_city").set({
+      name: "Crash City",
+      partner_stripe_account_id: "acct_CM_CRASH",
+    });
+
+    const splitId = "evt_payment_intent_crash";
+    
+    // Simulate initial crash by manually setting the ledger to 'processing' and NOT clearing it
+    await db.collection("territorial_splits").doc(splitId).set({
+      status: 'processing',
+      timestamp: new admin.firestore.Timestamp(Math.floor(Date.now() / 1000) - 6 * 60, 0), // 6 minutes ago (timeout is 5 mins)
+    });
+
+    const amountCents = 3000;
+    
+    // El retry llamará a territorialSplit de nuevo.
+    // Como han pasado > 5 minutos, la transacción atómica lo detectará como timeout (stuck)
+    // y permitirá continuar.
+    await stripeModule.territorialSplit(mockStripe, db, {
+      amountCents,
+      cityId: "crash_city",
+      sourceType: "ticket",
+      splitId
+    });
+
+    // Validar que se ha recuperado y finalizado correctamente
+    const splitDoc = await db.collection("territorial_splits").doc(splitId).get();
+    const docData = splitDoc.data();
+    
+    expect(docData.status).toBe("completed");
+    expect(docData.payouts.find(p => p.role === "city_manager").amountCents).toBe(1500); // 50%
+  });
 });
