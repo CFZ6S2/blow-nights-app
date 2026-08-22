@@ -61,12 +61,18 @@ describe("validateTicket", () => {
     );
     const venueSnap = mockDocSnap({ ownerId: "owner1" }, "v1", "venues/v1");
 
-    const ticketQuery = {
-      where: () => ticketQuery,
-      limit: () => ({ get: jest.fn(async () => mockQuerySnap([ticketSnap])) }),
+    const secretSnap = mockDocSnap({ qrToken: "tok1" }, "secrets", "tickets/t1/private/secrets");
+    secretSnap.ref.parent = { parent: { get: jest.fn(async () => ticketSnap) } };
+
+    const secretQuery = {
+      where: () => secretQuery,
+      limit: () => ({ get: jest.fn(async () => mockQuerySnap([secretSnap])) }),
     };
+    mockDb.collectionGroup = jest.fn((id) => {
+      if (id === "private") return secretQuery;
+      return { where: () => ({ limit: () => ({ get: jest.fn(async () => mockQuerySnap([])) }) }) };
+    });
     mockDb.collection = jest.fn((path) => {
-      if (path === "tickets") return ticketQuery;
       if (path === "venues") return { doc: jest.fn(() => ({ get: jest.fn(async () => venueSnap) })) };
       const { buildDb } = require("./helpers/mocks");
       return buildDb().collection(path);
@@ -84,12 +90,18 @@ describe("validateTicket", () => {
     const venueSnap = mockDocSnap({ ownerId: "owner1" }, "v1", "venues/v1");
     const userSnap = mockDocSnap({ nick: "Buyer", fotoUrl: "https://photo.jpg" }, "buyer1", "users/buyer1");
 
-    const ticketQuery = {
-      where: () => ticketQuery,
-      limit: () => ({ get: jest.fn(async () => mockQuerySnap([ticketSnap])) }),
+    const secretSnap = mockDocSnap({ qrToken: "tok1" }, "secrets", "tickets/t1/private/secrets");
+    secretSnap.ref.parent = { parent: { get: jest.fn(async () => ticketSnap) } };
+
+    const secretQuery = {
+      where: () => secretQuery,
+      limit: () => ({ get: jest.fn(async () => mockQuerySnap([secretSnap])) }),
     };
+    mockDb.collectionGroup = jest.fn((id) => {
+      if (id === "private") return secretQuery;
+      return { where: () => ({ limit: () => ({ get: jest.fn(async () => mockQuerySnap([])) }) }) };
+    });
     mockDb.collection = jest.fn((path) => {
-      if (path === "tickets") return ticketQuery;
       if (path === "venues") return { doc: jest.fn(() => ({ get: jest.fn(async () => venueSnap) })) };
       if (path === "users") return { doc: jest.fn(() => ({ get: jest.fn(async () => userSnap) })) };
       const { buildDb } = require("./helpers/mocks");
@@ -120,12 +132,18 @@ describe("validateTicket", () => {
     const venueSnap = mockDocSnap({ ownerId: "owner1" }, "v1", "venues/v1");
     const userSnap = mockDocSnap({ nick: "Carlos", fotoUrl: "https://pic.jpg" }, "buyer1", "users/buyer1");
 
-    const ticketQuery = {
-      where: () => ticketQuery,
-      limit: () => ({ get: jest.fn(async () => mockQuerySnap([ticketSnap])) }),
+    const secretSnap = mockDocSnap({ qrToken: "tok1" }, "secrets", "tickets/t1/private/secrets");
+    secretSnap.ref.parent = { parent: { get: jest.fn(async () => ticketSnap) } };
+
+    const secretQuery = {
+      where: () => secretQuery,
+      limit: () => ({ get: jest.fn(async () => mockQuerySnap([secretSnap])) }),
     };
+    mockDb.collectionGroup = jest.fn((id) => {
+      if (id === "private") return secretQuery;
+      return { where: () => ({ limit: () => ({ get: jest.fn(async () => mockQuerySnap([])) }) }) };
+    });
     mockDb.collection = jest.fn((path) => {
-      if (path === "tickets") return ticketQuery;
       if (path === "venues") return { doc: jest.fn(() => ({ get: jest.fn(async () => venueSnap) })) };
       if (path === "users") return { doc: jest.fn(() => ({ get: jest.fn(async () => userSnap) })) };
       const { buildDb } = require("./helpers/mocks");
@@ -172,12 +190,18 @@ describe("validateTicket", () => {
     );
     const venueSnap = mockDocSnap({ ownerId: "owner1" }, "v1", "venues/v1");
 
-    const ticketQuery = {
-      where: () => ticketQuery,
-      limit: () => ({ get: jest.fn(async () => mockQuerySnap([ticketSnap])) }),
+    const secretSnap = mockDocSnap({ qrToken: "tok1" }, "secrets", "tickets/t1/private/secrets");
+    secretSnap.ref.parent = { parent: { get: jest.fn(async () => ticketSnap) } };
+
+    const secretQuery = {
+      where: () => secretQuery,
+      limit: () => ({ get: jest.fn(async () => mockQuerySnap([secretSnap])) }),
     };
+    mockDb.collectionGroup = jest.fn((id) => {
+      if (id === "private") return secretQuery;
+      return { where: () => ({ limit: () => ({ get: jest.fn(async () => mockQuerySnap([])) }) }) };
+    });
     mockDb.collection = jest.fn((path) => {
-      if (path === "tickets") return ticketQuery;
       if (path === "venues") return { doc: jest.fn(() => ({ get: jest.fn(async () => venueSnap) })) };
       const { buildDb } = require("./helpers/mocks");
       return buildDb().collection(path);
@@ -202,12 +226,18 @@ describe("validateTicket", () => {
     );
     const venueSnap = mockDocSnap({ ownerId: "owner1" }, "v1", "venues/v1");
 
-    const ticketQuery = {
-      where: () => ticketQuery,
-      limit: () => ({ get: jest.fn(async () => mockQuerySnap([ticketSnap])) }),
+    const secretSnap = mockDocSnap({ qrToken: "tok1" }, "secrets", "tickets/t1/private/secrets");
+    secretSnap.ref.parent = { parent: { get: jest.fn(async () => ticketSnap) } };
+
+    const secretQuery = {
+      where: () => secretQuery,
+      limit: () => ({ get: jest.fn(async () => mockQuerySnap([secretSnap])) }),
     };
+    mockDb.collectionGroup = jest.fn((id) => {
+      if (id === "private") return secretQuery;
+      return { where: () => ({ limit: () => ({ get: jest.fn(async () => mockQuerySnap([])) }) }) };
+    });
     mockDb.collection = jest.fn((path) => {
-      if (path === "tickets") return ticketQuery;
       if (path === "venues") return { doc: jest.fn(() => ({ get: jest.fn(async () => venueSnap) })) };
       const { buildDb } = require("./helpers/mocks");
       return buildDb().collection(path);

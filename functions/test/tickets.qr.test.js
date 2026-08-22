@@ -211,7 +211,13 @@ describe("generateDirectPromoterTicket", () => {
       }),
     }));
 
-    const autoTicketRef = { id: "ticket_auto_1", path: "tickets/ticket_auto_1" };
+    const autoTicketRef = { 
+      id: "ticket_auto_1", 
+      path: "tickets/ticket_auto_1",
+      collection: jest.fn(() => ({
+        doc: jest.fn(() => ({ path: "tickets/ticket_auto_1/private/secrets" }))
+      }))
+    };
 
     const countQuery = {
       where: () => countQuery,

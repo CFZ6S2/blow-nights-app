@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 function DoorScannerContent() {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
-  const eventId = searchParams.get('event');
+  const eventId = searchParams.get('eventId') || searchParams.get('event');
   const token = searchParams.get('token');
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -41,58 +41,14 @@ function DoorScannerContent() {
         return;
       }
       try {
-        let title = '';
-        let found = false;
-        let isUnclaimed = false;
+        const venueId = searchParams.get('venueId');
+        const checkDoorTokenFn = httpsCallable(functions, 'checkDoorToken');
+        const result = await checkDoorTokenFn({ eventId, venueId, token });
+        const data = result.data as any;
         
-        // 1. Try chills
-        const chillRef = doc(db, 'chills', eventId);
-        const snap = await getDoc(chillRef);
-        if (snap.exists() && snap.data()?.scanner_token === token) {
-          title = snap.data()?.title || 'Fiesta Privada';
-          found = true;
-        }
-
-        // 2. Try venues events if not found
-        if (!found) {
-          const venueId = searchParams.get('venueId');
-          if (venueId) {
-            const eventRef = doc(db, `venues/${venueId}/events`, eventId);
-            const eventSnap = await getDoc(eventRef);
-            if (eventSnap.exists() && eventSnap.data()?.scanner_token === token) {
-              title = eventSnap.data()?.title || eventSnap.data()?.name || 'Evento RRPP';
-              found = true;
-              
-              const venueRef = doc(db, 'venues', venueId);
-              const venueSnap = await getDoc(venueRef);
-              if (venueSnap.exists() && venueSnap.data()?.isClaimed === false) {
-                isUnclaimed = true;
-              }
-            }
-          } else {
-            // Fallback just in case (will fail without index, but backwards compatible)
-            const eventsQuery = query(collectionGroup(db, 'events'), where('scanner_token', '==', token));
-            const eventsSnap = await getDocs(eventsQuery);
-            for (const d of eventsSnap.docs) {
-              if (d.id === eventId) {
-                title = d.data().title || 'Evento RRPP';
-                found = true;
-
-                const venueRef = d.ref.parent.parent;
-                if (venueRef) {
-                  const venueSnap = await getDoc(venueRef);
-                  if (venueSnap.exists() && venueSnap.data()?.isClaimed === false) {
-                    isUnclaimed = true;
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        if (found) {
-          setEventTitle(title);
-          setIsUnclaimedVenue(isUnclaimed);
+        if (data.valid) {
+          setEventTitle(data.title);
+          setIsUnclaimedVenue(data.isUnclaimed || false);
           setAuthorized(true);
         } else {
           setAuthorized(false);

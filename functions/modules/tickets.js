@@ -416,15 +416,22 @@ exports.validateTicketByDoorToken = onCall({ enforceAppCheck: false }, async (re
   
   if (!eventSnap.exists) throw new HttpsError("not-found", "Evento no encontrado.");
   const event = eventSnap.data();
-  const tokenInDb = event.scanner_token || event.door_access_token;
+
+  const secretsSnap = await eventSnap.ref.collection("private").doc("secrets").get();
+  if (!secretsSnap.exists) {
+    throw new HttpsError("permission-denied", "Tokens de puerta no configurados para este evento.");
+  }
+  const secrets = secretsSnap.data();
+  const tokenInDb = secrets.scanner_token || secrets.door_access_token;
+  
   if (tokenInDb !== doorAccessToken) {
     throw new HttpsError("permission-denied", "Token de puerta inválido.");
   }
 
-  const secretsSnap = await db.collectionGroup("private").where("qrToken", "==", qrToken).limit(1).get();
-  if (secretsSnap.empty) return { valid: false, message: "ENTRADA NO ENCONTRADA" };
+  const ticketSecretsSnap = await db.collectionGroup("private").where("qrToken", "==", qrToken).limit(1).get();
+  if (ticketSecretsSnap.empty) return { valid: false, message: "ENTRADA NO ENCONTRADA" };
 
-  const secretDoc = secretsSnap.docs[0];
+  const secretDoc = ticketSecretsSnap.docs[0];
   const ticketDoc = await secretDoc.ref.parent.parent.get();
   const ticket = ticketDoc.data();
 
@@ -473,6 +480,51 @@ exports.validateTicketByDoorToken = onCall({ enforceAppCheck: false }, async (re
       userName: ticket.client_name || "Invitado",
       rrppName: ticket.promoter_name || null
     }
+  };
+});
+
+exports.checkDoorToken = onCall({ enforceAppCheck: false }, async (request) => {
+  const { data } = request;
+  const { eventId, venueId, token } = data;
+  if (!eventId || !token) throw new HttpsError("invalid-argument", "Missing parameters.");
+
+  let eventSnap;
+  let isUnclaimed = false;
+
+  if (venueId) {
+    eventSnap = await db.collection("venues").doc(venueId).collection("events").doc(eventId).get();
+    const venueSnap = await db.collection("venues").doc(venueId).get();
+    if (venueSnap.exists && venueSnap.data().isClaimed === false) isUnclaimed = true;
+  } else {
+    // Check global events first
+    eventSnap = await db.collection("events").doc(eventId).get();
+    if (!eventSnap.exists) {
+      // Check chills
+      const chillSnap = await db.collection("chills").doc(eventId).get();
+      if (chillSnap.exists) {
+        // Chills store scanner_token directly right now, or in private/secrets
+        const chillToken = chillSnap.data().scanner_token;
+        if (chillToken === token) {
+          return { valid: true, title: chillSnap.data().title || "Fiesta Privada", isUnclaimed: false };
+        }
+      }
+    }
+  }
+
+  if (!eventSnap.exists) throw new HttpsError("not-found", "Evento no encontrado");
+
+  const secretsSnap = await eventSnap.ref.collection("private").doc("secrets").get();
+  if (!secretsSnap.exists) throw new HttpsError("permission-denied", "No secrets");
+
+  const secrets = secretsSnap.data();
+  const validToken = secrets.scanner_token || secrets.door_access_token;
+  if (validToken !== token) throw new HttpsError("permission-denied", "Token inválido");
+
+  const event = eventSnap.data();
+  return {
+    valid: true,
+    title: event.title || event.name || "Evento",
+    isUnclaimed
   };
 });
 

@@ -168,6 +168,11 @@ service cloud.firestore {
           ));
           allow write: if isAdmin() || (request.auth != null && request.auth.uid == get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId);
         }
+
+        match /private/{docId} {
+          allow read: if isAdmin() || (request.auth != null && request.auth.uid == get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId);
+          allow write: if isAdmin() || (request.auth != null && request.auth.uid == get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId);
+        }
       }
     }
 
@@ -175,6 +180,11 @@ service cloud.firestore {
       allow read: if true;
       allow create: if request.auth != null && request.auth.token.role == 'event_organizer' && request.auth.uid == request.resource.data.organizerId;
       allow update, delete: if isAdmin() || (request.auth != null && request.auth.uid == resource.data.organizerId);
+
+      match /private/{docId} {
+        allow read: if isAdmin() || (request.auth != null && request.auth.uid == get(/databases/$(database)/documents/events/$(eventId)).data.organizerId);
+        allow write: if isAdmin() || (request.auth != null && request.auth.uid == get(/databases/$(database)/documents/events/$(eventId)).data.organizerId);
+      }
     }
 
     match /checkins/{checkinId} {
@@ -194,6 +204,13 @@ service cloud.firestore {
         || (request.auth != null && resource.data.venueOwnerId == request.auth.uid);
       allow update: if isAdmin()
         || (request.auth != null && resource.data.venueOwnerId == request.auth.uid);
+
+      match /private/{docId} {
+        allow read: if isAdmin()
+          || (request.auth != null && request.auth.uid == get(/databases/$(database)/documents/tickets/$(ticketId)).data.userId)
+          || (request.auth != null && request.auth.uid == get(/databases/$(database)/documents/tickets/$(ticketId)).data.venueOwnerId);
+        allow write: if false; // Only written by Cloud Functions
+      }
     }
 
     match /promotions/{promoId} {

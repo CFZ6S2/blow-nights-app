@@ -43,6 +43,41 @@ interface Promoter {
   }
 }
 
+function EventMagicLink({ venueId, eventId }: { venueId: string; eventId: string }) {
+  const [token, setToken] = useState<string | null>(null);
+  
+  useEffect(() => {
+    getDoc(doc(db, `venues/${venueId}/events/${eventId}/private`, 'secrets')).then(snap => {
+      if (snap.exists()) setToken(snap.data()?.door_access_token);
+    });
+  }, [venueId, eventId]);
+
+  const copyMagicLink = () => {
+    if (!token) return;
+    const link = `${window.location.origin}/door?venueId=${venueId}&eventId=${eventId}&token=${token}`;
+    navigator.clipboard.writeText(link);
+    alert('Enlace copiado al portapapeles. ¡Envíalo por WhatsApp a tus porteros!');
+  };
+
+  if (!token) return <div className="text-[10px] text-slate-500">Cargando enlace seguro...</div>;
+
+  return (
+    <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl border border-fuchsia-500/20">
+      <div>
+        <div className="text-[10px] text-fuchsia-400 font-bold uppercase tracking-widest">Enlace de Portero (Magic Link)</div>
+        <div className="text-xs text-slate-400 font-mono mt-1">/door/{venueId}/{eventId}?token={token.substring(0,8)}...</div>
+      </div>
+      <button 
+        onClick={copyMagicLink}
+        className="w-10 h-10 bg-fuchsia-600 rounded-full flex items-center justify-center hover:scale-105 transition-transform"
+        title="Copiar Enlace para Puerta"
+      >
+        <span className="material-icons text-white">content_copy</span>
+      </button>
+    </div>
+  );
+}
+
 function EventPromoters({ venueId, eventId }: { venueId: string; eventId: string }) {
   const [promoters, setPromoters] = useState<Promoter[]>([]);
   const [newName, setNewName] = useState('');
@@ -292,7 +327,6 @@ export default function EventsTab({ venueId }: { venueId: string }) {
         title,
         banner_url,
         start_date: Timestamp.fromDate(new Date(startDate)),
-        door_access_token,
         ticket_tiers: tiers,
         stats: {
           total_sold: 0,
@@ -301,6 +335,7 @@ export default function EventsTab({ venueId }: { venueId: string }) {
       };
 
       await setDoc(doc(db, `venues/${venueId}/events`, eventId), newEvent);
+      await setDoc(doc(db, `venues/${venueId}/events/${eventId}/private`, 'secrets'), { door_access_token });
       
       setIsCreating(false);
       setTitle('');
@@ -454,19 +489,7 @@ export default function EventsTab({ venueId }: { venueId: string }) {
               </div>
 
               <div className="pt-3 border-t border-white/5">
-                <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl border border-fuchsia-500/20">
-                  <div>
-                    <div className="text-[10px] text-fuchsia-400 font-bold uppercase tracking-widest">Enlace de Portero (Magic Link)</div>
-                    <div className="text-xs text-slate-400 font-mono mt-1">/door/{venueId}/{evt.id}?token={evt.door_access_token.substring(0,8)}...</div>
-                  </div>
-                  <button 
-                    onClick={() => copyMagicLink(evt.id, evt.door_access_token)}
-                    className="w-10 h-10 bg-fuchsia-600 rounded-full flex items-center justify-center hover:scale-105 transition-transform"
-                    title="Copiar Enlace para Puerta"
-                  >
-                    <span className="material-icons text-white">content_copy</span>
-                  </button>
-                </div>
+                <EventMagicLink venueId={venueId} eventId={evt.id} />
               </div>
 
               <EventPromoters venueId={venueId} eventId={evt.id} />

@@ -32,7 +32,6 @@ jobs:
 
       - name: Run tests
         run: npm run test
-        continue-on-error: true
 
   functions-test:
     runs-on: ubuntu-latest
@@ -66,7 +65,6 @@ jobs:
 
       - name: Run Firestore Rules tests
         run: firebase emulators:exec --only firestore "npx jest test/rules.test.js --forceExit"
-        continue-on-error: true
 
   ci-summary:
     runs-on: ubuntu-latest

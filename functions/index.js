@@ -67,6 +67,7 @@ exports.purchasePublicVenueTicket = tickets.purchasePublicVenueTicket;
 exports.purchaseIndependentEventTicket = tickets.purchaseIndependentEventTicket;
 exports.validateTicket = tickets.validateTicket;
 exports.validateTicketByDoorToken = tickets.validateTicketByDoorToken;
+exports.checkDoorToken = tickets.checkDoorToken;
 exports.generateDirectPromoterTicket = tickets.generateDirectPromoterTicket;
 exports.generateOrganizerQRTicket = tickets.generateOrganizerQRTicket;
 exports.closePromoterList = tickets.closePromoterList;

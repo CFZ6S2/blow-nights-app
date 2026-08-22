@@ -193,6 +193,41 @@ function EventPromoters({ eventId }: { eventId: string }) {
   );
 }
 
+function EventMagicLink({ eventId }: { eventId: string }) {
+  const [token, setToken] = useState<string | null>(null);
+  
+  useEffect(() => {
+    getDoc(doc(db, `events/${eventId}/private`, 'secrets')).then(snap => {
+      if (snap.exists()) setToken(snap.data()?.scanner_token);
+    });
+  }, [eventId]);
+
+  const copyMagicLink = () => {
+    if (!token) return;
+    const link = `${window.location.origin}/door?eventId=${eventId}&token=${token}`;
+    navigator.clipboard.writeText(link);
+    alert('Enlace copiado al portapapeles. ¡Envíalo por WhatsApp a tus porteros!');
+  };
+
+  if (!token) return <div className="text-[10px] text-slate-500">Cargando enlace seguro...</div>;
+
+  return (
+    <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl border border-fuchsia-500/20">
+      <div>
+        <div className="text-[10px] text-fuchsia-400 font-bold uppercase tracking-widest">Enlace de Portero (Magic Link)</div>
+        <div className="text-xs text-slate-400 font-mono mt-1">/door?eventId={eventId}&token={token.substring(0,8)}...</div>
+      </div>
+      <button 
+        onClick={copyMagicLink}
+        className="w-10 h-10 bg-fuchsia-600 rounded-full flex items-center justify-center hover:scale-105 transition-transform"
+        title="Copiar Enlace para Puerta"
+      >
+        <span className="material-icons text-white">content_copy</span>
+      </button>
+    </div>
+  );
+}
+
 export default function OrganizerDashboard() {
   const { t } = useTranslation();
   const { user, profile, loading: authLoading } = useAuth();
@@ -370,7 +405,6 @@ export default function OrganizerDashboard() {
         banner_url,
         platform: process.env.NEXT_PUBLIC_APP_PLATFORM || 'blownights',
         start_date: Timestamp.fromDate(new Date(startDate)),
-        scanner_token,
         ticket_tiers: tiers,
         organizerId: user.uid,
         cityId,
@@ -384,6 +418,7 @@ export default function OrganizerDashboard() {
       };
 
       await setDoc(doc(db, 'events', eventId), newEvent);
+      await setDoc(doc(db, `events/${eventId}/private`, 'secrets'), { scanner_token });
       
       setIsCreating(false);
       setTitle('');
@@ -601,19 +636,7 @@ export default function OrganizerDashboard() {
                 )}
 
                 <div className="pt-4 border-t border-white/5">
-                  <div className="flex items-center justify-between bg-black/40 p-4 rounded-xl border border-indigo-500/20">
-                    <div>
-                      <div className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Enlace de Portero (Scanner)</div>
-                      <div className="text-xs text-slate-400 font-mono mt-1">/door?eventId={evt.id}&token={evt.scanner_token.substring(0,8)}...</div>
-                    </div>
-                    <button 
-                      onClick={() => copyMagicLink(evt.id, evt.scanner_token)}
-                      className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center hover:scale-105 transition-transform"
-                      title="Copiar Enlace para Puerta"
-                    >
-                      <span className="material-icons text-white">content_copy</span>
-                    </button>
-                  </div>
+                  <EventMagicLink eventId={evt.id} />
                 </div>
 
                 <div className="pt-4 mt-4 border-t border-white/5 flex gap-2">
