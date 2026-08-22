@@ -14,7 +14,9 @@ export default function SuperAdminPage() {
   const { user, isSuperAdmin, loading } = useAuth();
   const router = useRouter();
   
-  const [activeTab, setActiveTab] = useState<'roles' | 'ciudades' | 'facturacion' | 'locales' | 'eventos' | 'partners' | 'rrpps' | 'usuarios' | 'organizadores'>('usuarios');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'roles' | 'ciudades' | 'facturacion' | 'locales' | 'eventos' | 'partners' | 'rrpps' | 'usuarios' | 'organizadores'>('dashboard');
+  const [dashStats, setDashStats] = useState<any>(null);
+  const [dashLoading, setDashLoading] = useState(false);
 
   // --- LOCALES & EVENTOS STATE ---
   const [venues, setVenues] = useState<any[]>([]);
@@ -99,6 +101,15 @@ export default function SuperAdminPage() {
     if (!loading && !user) router.push('/login');
     if (!loading && user && !isSuperAdmin) router.push('/');
   }, [user, loading, isSuperAdmin, router]);
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    setDashLoading(true);
+    const fn = httpsCallable(functions, 'getAdminAnalytics');
+    fn().then((res: any) => {
+      if (res.data?.success) setDashStats(res.data.stats);
+    }).catch(console.error).finally(() => setDashLoading(false));
+  }, [isSuperAdmin]);
 
   useEffect(() => {
     if (!isSuperAdmin) return;
@@ -694,6 +705,7 @@ export default function SuperAdminPage() {
         </div>
 
         <div className="flex gap-2 overflow-x-auto no-scrollbar border-b border-white/10 pb-2">
+          <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>Dashboard</button>
           <button onClick={() => setActiveTab('usuarios')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'usuarios' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>{t('tab_users')}</button>
           <button onClick={() => setActiveTab('roles')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'roles' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>{t('tab_roles')}</button>
           <button onClick={() => setActiveTab('ciudades')} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'ciudades' ? 'bg-fuchsia-600 text-white' : 'bg-white/5 text-slate-400'}`}>{t('tab_cities')}</button>
@@ -707,6 +719,101 @@ export default function SuperAdminPage() {
       </header>
 
       {/* TABS CONTENT */}
+
+      {activeTab === 'dashboard' && (
+        <div className="space-y-6">
+          {dashLoading ? (
+            <div className="text-center py-20 text-slate-500">Cargando métricas...</div>
+          ) : dashStats ? (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { label: 'Usuarios', value: dashStats.totalUsers, icon: 'people', color: 'fuchsia' },
+                  { label: 'Online ahora', value: dashStats.onlineUsers, icon: 'circle', color: 'green' },
+                  { label: 'Premium', value: dashStats.premiumUsers, icon: 'star', color: 'yellow' },
+                  { label: 'Locales', value: dashStats.totalVenues, icon: 'storefront', color: 'indigo' },
+                  { label: 'Ciudades', value: dashStats.totalCities, icon: 'location_city', color: 'blue' },
+                  { label: 'Promotores', value: dashStats.totalPromoters, icon: 'badge', color: 'purple' },
+                  { label: 'Partners pendientes', value: dashStats.pendingPartnerApps, icon: 'pending', color: 'orange' },
+                  { label: 'RRPP pendientes', value: dashStats.pendingRrppApps, icon: 'pending_actions', color: 'amber' },
+                ].map((s, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className={`material-icons text-sm text-${s.color}-400`}>{s.icon}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{s.label}</span>
+                    </div>
+                    <p className="text-3xl font-black text-white">{s.value?.toLocaleString() ?? 0}</p>
+                  </motion.div>
+                ))}
+              </div>
+
+              {(dashStats.pendingReports > 0 || dashStats.pendingVerifications > 0) && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-5 flex items-center gap-4">
+                  <span className="material-icons text-red-400 text-2xl">warning</span>
+                  <div>
+                    <p className="font-bold text-red-400">Requiere atención</p>
+                    <p className="text-sm text-slate-400">
+                      {dashStats.pendingReports > 0 && `${dashStats.pendingReports} reportes pendientes. `}
+                      {dashStats.pendingVerifications > 0 && `${dashStats.pendingVerifications} verificaciones pendientes.`}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
+                  <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Resumen de plataforma</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-slate-400">Ratio online</span>
+                      <span className="text-sm font-bold text-white">{dashStats.totalUsers > 0 ? ((dashStats.onlineUsers / dashStats.totalUsers) * 100).toFixed(1) : 0}%</span>
+                    </div>
+                    <div className="w-full bg-white/5 rounded-full h-2">
+                      <div className="bg-green-500 h-2 rounded-full transition-all" style={{ width: `${dashStats.totalUsers > 0 ? Math.min((dashStats.onlineUsers / dashStats.totalUsers) * 100, 100) : 0}%` }} />
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-slate-400">Ratio premium</span>
+                      <span className="text-sm font-bold text-white">{dashStats.totalUsers > 0 ? ((dashStats.premiumUsers / dashStats.totalUsers) * 100).toFixed(1) : 0}%</span>
+                    </div>
+                    <div className="w-full bg-white/5 rounded-full h-2">
+                      <div className="bg-yellow-500 h-2 rounded-full transition-all" style={{ width: `${dashStats.totalUsers > 0 ? Math.min((dashStats.premiumUsers / dashStats.totalUsers) * 100, 100) : 0}%` }} />
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
+                  <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Acciones rápidas</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button onClick={() => setActiveTab('partners')} className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-3 text-xs font-bold text-left transition-colors">
+                      <span className="material-icons text-sm text-orange-400 block mb-1">handshake</span>
+                      Partners ({dashStats.pendingPartnerApps})
+                    </button>
+                    <button onClick={() => setActiveTab('rrpps')} className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-3 text-xs font-bold text-left transition-colors">
+                      <span className="material-icons text-sm text-fuchsia-400 block mb-1">badge</span>
+                      RRPP ({dashStats.pendingRrppApps})
+                    </button>
+                    <button onClick={() => setActiveTab('locales')} className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-3 text-xs font-bold text-left transition-colors">
+                      <span className="material-icons text-sm text-indigo-400 block mb-1">storefront</span>
+                      Locales ({dashStats.totalVenues})
+                    </button>
+                    <button onClick={() => setActiveTab('usuarios')} className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-3 text-xs font-bold text-left transition-colors">
+                      <span className="material-icons text-sm text-blue-400 block mb-1">people</span>
+                      Usuarios ({dashStats.totalUsers})
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-20 text-slate-500">No se pudieron cargar las métricas.</div>
+          )}
+        </div>
+      )}
 
       {activeTab === 'usuarios' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
