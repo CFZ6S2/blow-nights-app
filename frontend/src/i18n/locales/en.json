@@ -251,8 +251,11 @@
     "footer_terms": "Terms",
     "footer_privacy": "Privacy",
     "footer_rules": "Rules",
-    "active_now_one": "{{count}} persona activa ahora",
-    "active_now_other": "{{count}} personas activas ahora"
+    "active_now_one": "{{count}} person active now",
+    "active_now_other": "{{count}} people active now",
+    "tickets_cta_title": "Buy Tickets Without Registration",
+    "tickets_cta_desc": "Browse the ticket catalog for all venues and events. Direct purchase, no account needed.",
+    "tickets_cta_btn": "View Tickets"
   },
   "cookie": {
     "text": "We use essential cookies for the app to function and analytics cookies to improve your experience. You can accept all or reject non-essential ones.",
@@ -1096,11 +1099,6 @@
     "install_android": "Install the app for quick access",
     "install_btn": "Install",
     "close_btn": "Not now"
-  },
-  "landing": {
-    "tickets_cta_title": "Buy Tickets Without Registration",
-    "tickets_cta_desc": "Browse the ticket catalog for all venues and events. Direct purchase, no account needed.",
-    "tickets_cta_btn": "View Tickets"
   },
   "entradas": {
     "back_home": "Home",
