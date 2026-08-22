@@ -24,3 +24,12 @@ credentials*.json
 .env.production
 .env.development
 .runtimeconfig.json
+
+# Manual debug scripts (contain API keys)
+functions/manual*.js
+functions/send_webhook.js
+check.js
+original_venues.js
+secret.txt
+secret_clean.txt
+scratch/

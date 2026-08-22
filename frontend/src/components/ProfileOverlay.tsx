@@ -341,7 +341,7 @@ export default function ProfileOverlay({ id, onClose }: ProfileOverlayProps) {
             <div className="flex justify-between items-start mb-6">
               <div>
                 <div className="flex items-center gap-3">
-                  <h1 className="text-4xl font-black tracking-tight">{profile.nick}, {profile.edad} {profile.mood}</h1>
+                  <h1 className="text-4xl font-black tracking-tight">{profile.nick}{profile.edad ? `, ${profile.edad}` : ''} {profile.mood}</h1>
                   {profile.online ? (
                     <div className="px-2 py-0.5 rounded-full bg-green-500/20 border border-green-500/30">
                       <p className="text-[8px] font-black text-green-400 uppercase tracking-widest">Online</p>

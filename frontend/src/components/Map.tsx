@@ -123,7 +123,7 @@ const UserMarker = memo(({ u, onClick, index }: { u: User, onClick: (id: string)
             className="bg-slate-900/90 backdrop-blur-xl border border-white/20 p-4 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] min-w-[160px]"
           >
             <div className="flex items-center gap-3 mb-2">
-              <p className="font-black text-base text-white">{u.nick}, {u.edad || '?'}</p>
+              <p className="font-black text-base text-white">{u.nick}{u.edad ? `, ${u.edad}` : ''}</p>
               {u.verified && <span className="material-icons text-blue-500 text-sm">verified</span>}
               {u.premium && <span className="text-[9px] bg-gradient-to-r from-yellow-400 to-yellow-600 text-black px-2 py-0.5 rounded-full font-black shadow-lg shadow-yellow-500/20">VIP</span>}
             </div>

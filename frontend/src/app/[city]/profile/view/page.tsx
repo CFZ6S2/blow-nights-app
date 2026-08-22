@@ -260,7 +260,7 @@ function PublicProfileContent() {
           <div className="flex justify-between items-start mb-6">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-4xl font-black tracking-tight">{profile.nick}, {profile.edad}</h1>
+                <h1 className="text-4xl font-black tracking-tight">{profile.nick}{profile.edad ? `, ${profile.edad}` : ''}</h1>
                 {profile.verified && (
                   <span className="material-icons text-blue-500 text-3xl">verified</span>
                 )}

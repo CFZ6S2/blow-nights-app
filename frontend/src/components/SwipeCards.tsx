@@ -173,7 +173,7 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
   }
 
   return (
-    <div className="relative w-full h-full min-h-[420px] flex items-center justify-center overflow-hidden">
+    <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
       {selectedProfileId && (
         <ProfileOverlay id={selectedProfileId} onClose={() => setSelectedProfileId(null)} />
       )}
@@ -192,7 +192,7 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
             return (
               <motion.div
                 key={c.id}
-                className="absolute w-full max-w-[350px] aspect-[3/4] rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/10 bg-slate-900 select-none"
+                className="absolute w-[calc(100%-2rem)] max-w-sm md:max-w-md h-[calc(100%-1rem)] max-h-[85vh] rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/10 bg-slate-900 select-none"
                 style={{
                   backgroundImage: `url(${activePhoto || '/placeholder.png'})`,
                   backgroundSize: 'cover',
@@ -246,7 +246,7 @@ export default function SwipeCards({ users, onSwipe, myVenueId }: SwipeCardsProp
                 <div className="absolute bottom-24 left-0 w-full p-6 text-white space-y-1 z-20 flex justify-between items-end">
                   <div className="cursor-pointer" onClick={() => setSelectedProfileId(c.id)}>
                     <h2 className="text-3xl font-black flex items-center gap-2">
-                      {c.nick}, {c.edad || '?'}
+                      {c.nick}{c.edad ? `, ${c.edad}` : ''}
                     </h2>
                     <div className="flex gap-2 text-[10px] font-black uppercase tracking-widest text-slate-300 mt-1">
                       <span>

@@ -178,7 +178,7 @@ export default function MyProfilePage() {
           
           <div>
             <div className="flex items-center justify-center gap-2">
-              <h1 className="text-3xl font-black tracking-tight">{profile.nick}, {profile.edad}</h1>
+              <h1 className="text-3xl font-black tracking-tight">{profile.nick}{profile.edad ? `, ${profile.edad}` : ''}</h1>
               {profile.verified && (
                 <span className="material-icons text-blue-500 text-xl" title={t('profile.verified_profile')}>verified</span>
               )}
