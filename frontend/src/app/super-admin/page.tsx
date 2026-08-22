@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { collection, doc, setDoc, updateDoc, getDocs, query, where, onSnapshot, collectionGroup, deleteDoc, orderBy, limit } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc, getDocs, query, where, onSnapshot, collectionGroup, deleteDoc, orderBy, limit, serverTimestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/lib/firebase';
 import { motion } from 'framer-motion';
@@ -23,6 +23,9 @@ export default function SuperAdminPage() {
   const [newVenueType, setNewVenueType] = useState('club');
   const [newVenueLat, setNewVenueLat] = useState('');
   const [newVenueLng, setNewVenueLng] = useState('');
+  const [newVenueAddress, setNewVenueAddress] = useState('');
+  const [newVenueCity, setNewVenueCity] = useState('madrid');
+  const [newVenueDesc, setNewVenueDesc] = useState('');
   const [savingVenue, setSavingVenue] = useState(false);
   const [searchNick, setSearchNick] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -179,18 +182,21 @@ export default function SuperAdminPage() {
 
   // --- LOCALES LOGIC ---
   const handleCreateVenue = async () => {
-    if (!newVenueName || !newVenueLat || !newVenueLng) return alert('Rellena todos los campos');
+    if (!newVenueName || !newVenueLat || !newVenueLng) return alert('Nombre, latitud y longitud son obligatorios.');
     setSavingVenue(true);
     try {
       const ref = doc(collection(db, 'venues'));
       await setDoc(ref, {
         name: newVenueName,
         type: newVenueType,
+        description: newVenueDesc || '',
+        address: newVenueAddress || '',
         platform: process.env.NEXT_PUBLIC_APP_PLATFORM || 'blownights',
         location: { latitude: parseFloat(newVenueLat), longitude: parseFloat(newVenueLng) },
-        isActive: true, currentCount: 0, cityId: 'madrid', ownerId: ''
+        isActive: true, currentCount: 0, cityId: newVenueCity, ownerId: '',
+        createdAt: serverTimestamp(),
       });
-      setNewVenueName(''); setNewVenueLat(''); setNewVenueLng('');
+      setNewVenueName(''); setNewVenueLat(''); setNewVenueLng(''); setNewVenueAddress(''); setNewVenueDesc('');
       alert('Local creado con éxito.');
     } catch (e) {
       console.error(e);
@@ -872,27 +878,42 @@ export default function SuperAdminPage() {
                     <span className="material-icons text-sm">assignment_ind</span> {selectedUserDetail.role === 'rrpp' ? 'Ya es RRPP' : 'Convertir a RRPP'}
                   </button>
 
-                  <button
-                    disabled={adminActionLoading || selectedUserDetail.role === 'venueOwner'}
-                    onClick={async () => {
-                      const venueId = prompt('ID del venue a asignar (lo encuentras en Directorio Local):');
-                      if (!venueId?.trim()) return;
-                      try {
-                        const assignRoleFunc = httpsCallable(functions, 'assignRole');
-                        await assignRoleFunc({ uid: selectedUserDetail.id, role: 'venueOwner' });
-                        await updateDoc(doc(db, 'venues', venueId.trim()), { ownerId: selectedUserDetail.id });
-                        await updateDoc(doc(db, 'users', selectedUserDetail.id), { role: 'venueOwner', venueId: venueId.trim() });
-                        alert('Venue Owner asignado correctamente.');
-                        setSelectedUserDetail({ ...selectedUserDetail, role: 'venueOwner', venueId: venueId.trim() });
-                      } catch (e: any) {
-                        console.error(e);
-                        alert('Error: ' + e.message);
-                      }
-                    }}
-                    className="w-full flex items-center justify-center gap-2 bg-blue-900/20 hover:bg-blue-900/40 text-blue-400 border border-blue-500/20 px-4 py-3 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
-                  >
-                    <span className="material-icons text-sm">storefront</span> {selectedUserDetail.role === 'venueOwner' ? 'Ya es Venue Owner' : 'Convertir a Venue Owner'}
-                  </button>
+                  <div className="space-y-2">
+                    <select
+                      id="venue-owner-select"
+                      className="w-full bg-black/50 border border-blue-500/20 rounded-xl px-4 py-3 text-sm text-white outline-none appearance-none"
+                      defaultValue=""
+                    >
+                      <option value="" disabled>Selecciona un local...</option>
+                      {venues.map((v: any) => (
+                        <option key={v.id} value={v.id}>{v.name} ({v.cityId || 'sin ciudad'})</option>
+                      ))}
+                    </select>
+                    <button
+                      disabled={adminActionLoading || selectedUserDetail.role === 'venueOwner'}
+                      onClick={async () => {
+                        const select = document.getElementById('venue-owner-select') as HTMLSelectElement;
+                        const venueId = select?.value;
+                        if (!venueId) return alert('Selecciona un local primero.');
+                        const venueName = venues.find((v: any) => v.id === venueId)?.name || venueId;
+                        if (!confirm(`¿Asignar "${selectedUserDetail.nick || selectedUserDetail.email}" como dueño de "${venueName}"?`)) return;
+                        try {
+                          const assignRoleFunc = httpsCallable(functions, 'assignRole');
+                          await assignRoleFunc({ uid: selectedUserDetail.id, role: 'venueOwner' });
+                          await updateDoc(doc(db, 'venues', venueId), { ownerId: selectedUserDetail.id });
+                          await updateDoc(doc(db, 'users', selectedUserDetail.id), { role: 'venueOwner', venueId });
+                          alert('Venue Owner asignado correctamente.');
+                          setSelectedUserDetail({ ...selectedUserDetail, role: 'venueOwner', venueId });
+                        } catch (e: any) {
+                          console.error(e);
+                          alert('Error: ' + e.message);
+                        }
+                      }}
+                      className="w-full flex items-center justify-center gap-2 bg-blue-900/20 hover:bg-blue-900/40 text-blue-400 border border-blue-500/20 px-4 py-3 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
+                    >
+                      <span className="material-icons text-sm">storefront</span> {selectedUserDetail.role === 'venueOwner' ? 'Ya es Venue Owner' : 'Convertir a Venue Owner'}
+                    </button>
+                  </div>
 
                   <button 
                     disabled={adminActionLoading || selectedUserDetail.banned}
@@ -1355,19 +1376,32 @@ export default function SuperAdminPage() {
           <section className="bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4">
             <h2 className="text-sm font-black uppercase tracking-widest text-slate-300">Crear Local / Punto</h2>
             <div className="space-y-3">
-              <input placeholder="Nombre (ej: Parque del Retiro)" value={newVenueName} onChange={e => setNewVenueName(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none" />
-              <select value={newVenueType} onChange={e => setNewVenueType(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none">
-                <option value="cruising">Cruising Spot</option>
-                <option value="club">Discoteca / Club</option>
-                <option value="sauna">Sauna</option>
-                <option value="bar">Bar</option>
-              </select>
+              <input placeholder="Nombre (ej: Club Nox)" value={newVenueName} onChange={e => setNewVenueName(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none" />
+              <input placeholder="Dirección (ej: Calle Gran Vía 42)" value={newVenueAddress} onChange={e => setNewVenueAddress(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none" />
+              <input placeholder="Descripción corta" value={newVenueDesc} onChange={e => setNewVenueDesc(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none" />
               <div className="flex gap-3">
-                <input placeholder="Latitud (ej: 40.4168)" type="number" value={newVenueLat} onChange={e => setNewVenueLat(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none" />
-                <input placeholder="Longitud (ej: -3.7038)" type="number" value={newVenueLng} onChange={e => setNewVenueLng(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none" />
+                <select value={newVenueType} onChange={e => setNewVenueType(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none">
+                  <option value="club">Discoteca / Club</option>
+                  <option value="bar">Bar</option>
+                  <option value="sauna">Sauna</option>
+                  <option value="cruising">Cruising Spot</option>
+                  <option value="restaurant">Restaurante</option>
+                  <option value="hotel">Hotel</option>
+                  <option value="shop">Tienda</option>
+                  <option value="other">Otro</option>
+                </select>
+                <select value={newVenueCity} onChange={e => setNewVenueCity(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none">
+                  <option value="madrid">Madrid</option>
+                  <option value="barcelona">Barcelona</option>
+                  <option value="london">Londres</option>
+                </select>
+              </div>
+              <div className="flex gap-3">
+                <input placeholder="Latitud (ej: 40.4168)" type="number" step="any" value={newVenueLat} onChange={e => setNewVenueLat(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none" />
+                <input placeholder="Longitud (ej: -3.7038)" type="number" step="any" value={newVenueLng} onChange={e => setNewVenueLng(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-fuchsia-500 outline-none" />
               </div>
               <button onClick={handleCreateVenue} disabled={savingVenue} className="w-full bg-fuchsia-600 py-3 rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-fuchsia-500 transition-colors">
-                Crear Punto
+                {savingVenue ? 'Creando...' : 'Crear Local'}
               </button>
             </div>
           </section>

@@ -13,6 +13,7 @@ const organizers = require("./modules/organizers");
 const scheduled = require("./modules/scheduled");
 const membership = require("./modules/membership");
 const partners = require("./modules/partners");
+const setupStripe = require("./modules/setup-stripe");
 
 // Auth & Users
 exports.onUserCreate = auth.onUserCreate;
@@ -52,6 +53,7 @@ exports.createStripeConnectAccount = stripe.createStripeConnectAccount;
 exports.createStripeAccountLink = stripe.createStripeAccountLink;
 exports.createQRPackageCheckout = stripe.createQRPackageCheckout;
 exports.createStripePortalSession = stripe.createStripePortalSession;
+exports.createVenueProductPrice = stripe.createVenueProductPrice;
 exports.stripeWebhook = stripe.stripeWebhook;
 
 // Memberships
@@ -89,3 +91,7 @@ exports.onCheckinCreated = venues.onCheckinCreated;
 exports.checkFranchiseTrigger = venues.checkFranchiseTrigger;
 exports.createRRPPParty = venues.createRRPPParty;
 exports.deleteRRPPParty = venues.deleteRRPPParty;
+
+// Setup (temporary)
+exports.setupStripeProducts = setupStripe.setupStripeProducts;
+exports.createTestPromoCode = setupStripe.createTestPromoCode;

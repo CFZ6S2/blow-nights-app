@@ -1,21 +1,20 @@
 import { useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '@/lib/firebase';
 import { Venue } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
 export default function VenueCatalogTab({ venue }: { venue: Venue }) {
   const { t } = useTranslation();
-  const [pricing, setPricing] = useState(venue.ticketPricing || {});
+  const [pricing, setPricing] = useState<Record<string, any>>(venue.ticketPricing || {});
   const [saving, setSaving] = useState(false);
 
-  // Nuevo producto form
   const [newKey, setNewKey] = useState('');
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newAmount, setNewAmount] = useState('');
-  const [newPriceId, setNewPriceId] = useState('');
   const [newQuota, setNewQuota] = useState('');
 
   const handleSave = async (updatedPricing: any) => {
@@ -34,23 +33,41 @@ export default function VenueCatalogTab({ venue }: { venue: Venue }) {
     }
   };
 
-  const handleAddProduct = () => {
-    if (!newKey || !newName || !newPriceId) {
-      alert('Llave, Nombre y Stripe Price ID son obligatorios.');
+  const handleAddProduct = async () => {
+    if (!newKey || !newName || !newAmount) {
+      alert('ID, Nombre y Precio son obligatorios.');
       return;
     }
-    const updated = {
-      ...pricing,
-      [newKey]: {
-        name: newName,
-        description: newDesc,
-        amount: newAmount ? parseInt(newAmount) : 0,
-        stripePriceId: newPriceId,
-        quota: newQuota ? parseInt(newQuota) : null
-      }
-    };
-    handleSave(updated);
-    setNewKey(''); setNewName(''); setNewDesc(''); setNewAmount(''); setNewPriceId(''); setNewQuota('');
+    setSaving(true);
+    try {
+      const createPrice = httpsCallable(functions, 'createVenueProductPrice');
+      const result = await createPrice({
+        venueId: venue.id,
+        productName: newName,
+        amount: parseInt(newAmount),
+      });
+      const { priceId } = result.data as any;
+
+      const updated = {
+        ...pricing,
+        [newKey]: {
+          name: newName,
+          description: newDesc,
+          amount: newAmount ? parseInt(newAmount) : 0,
+          stripePriceId: priceId,
+          quota: newQuota ? parseInt(newQuota) : null
+        }
+      };
+      await updateDoc(doc(db, 'venues', venue.id), { ticketPricing: updated });
+      setPricing(updated);
+      setNewKey(''); setNewName(''); setNewDesc(''); setNewAmount(''); setNewQuota('');
+      alert('Producto creado con precio en Stripe.');
+    } catch (e: any) {
+      console.error(e);
+      alert('Error: ' + e.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = (key: string) => {
@@ -63,7 +80,7 @@ export default function VenueCatalogTab({ venue }: { venue: Venue }) {
 
   return (
     <div className="space-y-6">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
@@ -82,7 +99,7 @@ export default function VenueCatalogTab({ venue }: { venue: Venue }) {
             {Object.keys(pricing).length} Productos
           </span>
         </div>
-        
+
         {Object.keys(pricing).length === 0 ? (
           <div className="text-center py-10 space-y-3">
             <span className="material-icons text-5xl text-white/10">production_quantity_limits</span>
@@ -92,18 +109,18 @@ export default function VenueCatalogTab({ venue }: { venue: Venue }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <AnimatePresence>
               {Object.entries(pricing).map(([key, item]: [string, any]) => (
-                <motion.div 
+                <motion.div
                   layout
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  key={key} 
+                  key={key}
                   className="group bg-gradient-to-br from-black/60 to-black/30 border border-white/10 p-5 rounded-3xl flex items-center justify-between hover:border-white/20 hover:shadow-lg transition-all"
                 >
                   <div>
                     <h4 className="text-sm font-black text-white capitalize">{item.name || key}</h4>
                     <p className="text-[10px] text-slate-400 mt-1 line-clamp-1">{item.description || 'Sin descripción'}</p>
-                    
+
                     <div className="flex items-center gap-3 mt-3">
                       <span className="text-xs font-black text-fuchsia-400 bg-fuchsia-500/10 px-2 py-1 rounded-lg border border-fuchsia-500/20">
                         {item.amount ? (item.amount/100).toFixed(2) : '0.00'}€
@@ -116,7 +133,7 @@ export default function VenueCatalogTab({ venue }: { venue: Venue }) {
                       )}
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={() => handleDelete(key)}
                     className="w-10 h-10 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors border border-red-500/20 opacity-0 group-hover:opacity-100"
                   >
@@ -129,7 +146,7 @@ export default function VenueCatalogTab({ venue }: { venue: Venue }) {
         )}
       </motion.div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1 }}
@@ -143,7 +160,7 @@ export default function VenueCatalogTab({ venue }: { venue: Venue }) {
             {t('add_new_product')}
           </h3>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="col-span-1">
             <label className="block text-[10px] font-black uppercase tracking-widest text-fuchsia-300/70 mb-2">ID Interno (sin espacios)</label>
@@ -189,19 +206,6 @@ export default function VenueCatalogTab({ venue }: { venue: Venue }) {
             </div>
           </div>
           <div className="col-span-1">
-            <label className="block text-[10px] font-black uppercase tracking-widest text-fuchsia-300/70 mb-2">Stripe Price ID</label>
-            <div className="relative">
-              <span className="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-fuchsia-300/50 text-sm">payment</span>
-              <input
-                type="text"
-                placeholder="price_1Nxy..."
-                value={newPriceId}
-                onChange={e => setNewPriceId(e.target.value)}
-                className="w-full bg-black/40 border border-fuchsia-500/20 rounded-2xl pl-11 pr-4 py-4 text-sm text-white focus:outline-none focus:border-fuchsia-400 focus:ring-1 focus:ring-fuchsia-400 transition-all font-mono text-xs placeholder:text-white/20"
-              />
-            </div>
-          </div>
-          <div className="col-span-1 md:col-span-2">
             <label className="block text-[10px] font-black uppercase tracking-widest text-fuchsia-300/70 mb-2">Stock (Vacío = Ilimitado)</label>
             <div className="relative">
               <span className="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-fuchsia-300/50 text-sm">inventory</span>
@@ -215,16 +219,16 @@ export default function VenueCatalogTab({ venue }: { venue: Venue }) {
             </div>
           </div>
         </div>
-        
+
         <motion.button
           whileHover={{ scale: saving ? 1 : 1.02 }}
           whileTap={{ scale: saving ? 1 : 0.98 }}
           onClick={handleAddProduct}
-          disabled={saving || !newKey || !newName || !newPriceId}
+          disabled={saving || !newKey || !newName || !newAmount}
           className="w-full py-5 mt-4 rounded-2xl bg-white text-fuchsia-900 text-xs font-black uppercase tracking-[0.2em] disabled:opacity-50 transition-all hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] flex items-center justify-center gap-2"
         >
           <span className="material-icons text-sm">add</span>
-          {t('create_product')}
+          {saving ? 'Creando en Stripe...' : t('create_product')}
         </motion.button>
       </motion.div>
     </div>

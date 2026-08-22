@@ -232,16 +232,52 @@ exports.createVenueSubscriptionCheckout = onCall({ secrets: ["STRIPE_SECRET_KEY"
     };
 
     const platform = origin?.includes('darknights') ? 'darknights' : (data.platform || 'blownights');
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams = {
       customer: customerId,
       payment_method_types: ["card"],
       line_items: [lineItem],
       mode: "subscription",
+      allow_promotion_codes: true,
       success_url: `${origin}/venue-admin?venueId=${venueId}&success=true`,
       cancel_url: `${origin}/venue-admin?venueId=${venueId}&canceled=true`,
       metadata: { type: "venue_subscription", venueId, tier, firebaseUID: uid, cityId: venueDoc.data().cityId || "", platform }
-    });
+    };
+    const session = await stripe.checkout.sessions.create(sessionParams);
     return { sessionId: session.id, url: session.url };
+  } catch (error) {
+    throw new HttpsError("internal", error.message);
+  }
+});
+
+exports.createVenueProductPrice = onCall({ secrets: ["STRIPE_SECRET_KEY"] }, async (request) => {
+  const { data, auth } = request;
+  if (!auth) throw new HttpsError("unauthenticated", "Login requerido.");
+
+  const stripe = getStripe();
+  if (!stripe) throw new HttpsError("failed-precondition", "Stripe no configurado.");
+
+  const { venueId, productName, amount } = data;
+  if (!venueId || !productName || !amount) {
+    throw new HttpsError("invalid-argument", "venueId, productName y amount son obligatorios.");
+  }
+
+  const venueDoc = await db.collection("venues").doc(venueId).get();
+  if (!venueDoc.exists) throw new HttpsError("not-found", "Local no encontrado.");
+  if (venueDoc.data().ownerId !== auth.uid) {
+    throw new HttpsError("permission-denied", "Solo el propietario puede crear productos.");
+  }
+
+  try {
+    const product = await stripe.products.create({
+      name: productName,
+      metadata: { venueId },
+    });
+    const price = await stripe.prices.create({
+      product: product.id,
+      unit_amount: parseInt(amount),
+      currency: "eur",
+    });
+    return { priceId: price.id, productId: product.id };
   } catch (error) {
     throw new HttpsError("internal", error.message);
   }
